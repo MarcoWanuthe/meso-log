@@ -3297,7 +3297,6 @@ function renderAlertasEstoque(){
   const semEstoque = allStock.filter(s=>!Number(s.quantidade)).length;
   const vencidos = allStock.filter(s=>calcValidade(s.dataValidade||'').status==='s-vencido').length;
   const vencendo = allStock.filter(s=>calcValidade(s.dataValidade||'').status==='s-vencendo').length;
-  const valorTotal = allStock.reduce((acc,s)=>{const v=Number(s.precoCusto)||0;const q=Number(s.quantidade)||0;return acc+v*q;},0);
   const card=(icon,label,val,bg,color,filter)=>`
     <div style="background:${bg};border-radius:8px;padding:12px 14px;cursor:pointer;transition:.15s"
          onclick="document.getElementById('est-filter-status').value='${filter}';renderEstoque()"
@@ -3306,11 +3305,15 @@ function renderAlertasEstoque(){
       <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
       <div style="font-size:11px;color:#555;margin-top:2px">${label}</div>
     </div>`;
-  el.innerHTML =
+  let cards =
     card('📦','Total de itens',total,'#F0F4FF','#002050','') +
     card('🚫','Sem estoque',semEstoque,'#FFF0F0','#B71C1C','Sem Estoque') +
-    card('⚠️','Vencendo em 90d',vencendo,'#FFF8E1','#E65100','Vencendo') +
-    card('💰','Valor em estoque','R$ '+valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),'#E8F5E9','#1B5E20','');
+    card('⚠️','Vencendo em 90d',vencendo,'#FFF8E1','#E65100','Vencendo');
+  if(admLoggedIn){
+    const valorTotal = allStock.reduce((acc,s)=>{const v=Number(s.precoCusto)||0;const q=Number(s.quantidade)||0;return acc+v*q;},0);
+    cards += card('💰','Valor em estoque','R$ '+valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),'#E8F5E9','#1B5E20','');
+  }
+  el.innerHTML = cards;
 }
 
 function renderEstoque(){
@@ -3335,7 +3338,7 @@ function renderEstoque(){
     return true;
   });
   if(!items.length){
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">Nenhum item encontrado.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa">Nenhum item encontrado.</td></tr>';
     return;
   }
   const catsPresent = CAT_ORDER.filter(c=>items.some(s=>s.categoria===c));
@@ -3344,7 +3347,7 @@ function renderEstoque(){
   [...catsPresent,...catsOther].forEach(cat=>{
     const group = items.filter(s=>s.categoria===cat);
     if(!group.length) return;
-    html += `<tr class="estoque-group-row"><td colspan="8">${cat} &mdash; ${group.length} item${group.length>1?'s':''}</td></tr>`;
+    html += `<tr class="estoque-group-row"><td colspan="7">${cat} &mdash; ${group.length} item${group.length>1?'s':''}</td></tr>`;
     group.forEach(s=>{
       const qty = Number(s.quantidade)||0;
       const val = calcValidade(s.dataValidade||'');
@@ -4633,7 +4636,7 @@ function opsTab(tab,btn){
   });
   document.querySelectorAll('#page-operacoes .tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if(tab==='inventario'&&inventarioSession.ativo) setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);
+  if(tab==='inventario'){renderHistoricoInventarios();if(invSessao)setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);}
   if(tab==='recebimento') setTimeout(()=>{const el=document.getElementById('rec-scan-input');if(el)el.focus();},100);
   if(tab==='perdas') setTimeout(()=>{const el=document.getElementById('perd-scan-input');if(el)el.focus();},100);
   if(tab==='relatorios') initRelatorioOps();
@@ -4765,6 +4768,221 @@ function verDetalhesPerda(id){
     `;
     showModal();
   });
+}
+
+// ==============================
+// MÓDULO INVENTÁRIO COM LEITOR
+// ==============================
+let invSessao = null;      // {nome, responsavel, data, local}
+let invItens  = [];        // [{codigo, descricao, lote, dataValidade, quantidade, barcode}]
+let invFoundItem = null;   // produto encontrado no scan
+
+function iniciarInventario(){
+  const nome = (document.getElementById('inv-nome')?.value||'').trim();
+  const resp = (document.getElementById('inv-responsavel')?.value||'').trim();
+  const data = document.getElementById('inv-data')?.value||new Date().toISOString().slice(0,10);
+  const local= (document.getElementById('inv-local')?.value||'').trim();
+  if(!nome){alert('Informe o nome do inventário.');return;}
+  if(!resp){alert('Informe o responsável.');return;}
+  invSessao = {nome, responsavel:resp, data, local};
+  invItens  = [];
+  invFoundItem = null;
+  document.getElementById('inv-session-title').textContent = nome;
+  document.getElementById('inv-session-info').textContent  = '0 itens contados';
+  document.getElementById('inv-count-badge').textContent   = '0';
+  document.getElementById('inv-setup').style.display  = 'none';
+  document.getElementById('inv-sessao').style.display = '';
+  document.getElementById('inv-found-card').style.display  = 'none';
+  document.getElementById('inv-not-found').style.display   = 'none';
+  document.getElementById('inv-itens-list').innerHTML =
+    '<p style="color:#aaa;font-size:12px;text-align:center;padding:30px">Nenhum item contado ainda.<br>Escaneie o primeiro produto.</p>';
+  setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},200);
+  toast('✅ Inventário iniciado: '+nome);
+}
+
+function cancelarInventario(){
+  if(!confirm('Cancelar inventário? Todos os itens contados serão perdidos.')) return;
+  invSessao=null; invItens=[]; invFoundItem=null;
+  document.getElementById('inv-sessao').style.display = 'none';
+  document.getElementById('inv-setup').style.display  = '';
+}
+
+function handleInvScan(val){
+  val = val.trim();
+  if(!val) return;
+  const inp = document.getElementById('inv-scan-input');
+  if(inp) inp.value='';
+  const found = buscarPorBarcode(val);
+  const status = document.getElementById('inv-scan-status');
+  if(found){
+    invFoundItem = found;
+    document.getElementById('inv-found-title').innerHTML =
+      '<span style="color:#002050">'+found.codigo+'</span> · '+found.descricao;
+    // badge with category
+    document.getElementById('inv-found-badge').innerHTML =
+      '<span style="background:#EBF3FB;color:#0078D4;padding:2px 8px;border-radius:10px;font-size:11px">'+
+      (found.categoria||'')+'</span>';
+    document.getElementById('inv-found-lote').value     = found.lote||'';
+    document.getElementById('inv-found-validade').value = found.dataValidade||'';
+    document.getElementById('inv-found-qty').value      = '';
+    document.getElementById('inv-found-codigo').value   = found.codigo;
+    document.getElementById('inv-found-descricao').value= found.descricao;
+    document.getElementById('inv-found-card').style.display = '';
+    document.getElementById('inv-not-found').style.display  = 'none';
+    if(status) status.innerHTML='✅ Encontrado: <strong>'+found.descricao+'</strong>';
+    setTimeout(()=>{const q=document.getElementById('inv-found-qty');if(q)q.focus();},100);
+  } else {
+    invFoundItem=null;
+    document.getElementById('inv-found-card').style.display = 'none';
+    document.getElementById('inv-not-found').style.display  = '';
+    document.getElementById('inv-not-found-code').textContent = val;
+    if(status) status.innerHTML='⚠️ Produto não encontrado: <strong>'+val+'</strong>';
+  }
+}
+
+function adicionarAoInventario(){
+  if(!invFoundItem){toast('Escaneie um produto primeiro.');return;}
+  const qty = Number(document.getElementById('inv-found-qty').value);
+  if(qty<0||isNaN(qty)){alert('Informe uma quantidade válida (0 ou mais).');return;}
+  const lote     = document.getElementById('inv-found-lote').value.trim();
+  const validade = document.getElementById('inv-found-validade').value.trim();
+  const codigo   = document.getElementById('inv-found-codigo').value;
+  const descricao= document.getElementById('inv-found-descricao').value;
+  // Se já existe o mesmo codigo+lote, atualiza
+  const idx = invItens.findIndex(i=>i.codigo===codigo&&i.lote===lote);
+  if(idx>=0){
+    invItens[idx].quantidade = qty;
+    invItens[idx].dataValidade = validade;
+    toast('🔄 Quantidade atualizada: '+descricao);
+  } else {
+    invItens.push({codigo, descricao, lote, dataValidade:validade, quantidade:qty, barcode:invFoundItem.barcode||''});
+    toast('➕ Adicionado: '+descricao);
+  }
+  invFoundItem=null;
+  document.getElementById('inv-found-card').style.display='none';
+  document.getElementById('inv-scan-status').innerHTML='🟢 Pronto — aponte o leitor ou clique aqui e escaneie';
+  renderInvItens();
+  const inp=document.getElementById('inv-scan-input');if(inp){inp.value='';inp.focus();}
+}
+
+function renderInvItens(){
+  const el = document.getElementById('inv-itens-list');
+  const badge = document.getElementById('inv-count-badge');
+  const info  = document.getElementById('inv-session-info');
+  if(!el) return;
+  if(badge) badge.textContent = invItens.length;
+  if(info)  info.textContent  = invItens.length+' item'+(invItens.length!==1?'s':'')+' contado'+(invItens.length!==1?'s':'');
+  if(!invItens.length){
+    el.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:30px">Nenhum item contado ainda.</p>';
+    return;
+  }
+  el.innerHTML = invItens.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:#002050;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.codigo}</div>
+        <div style="color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.descricao}</div>
+        <div style="color:#888;font-size:11px">Lote: ${it.lote||'—'} · Val: ${it.dataValidade||'—'}</div>
+      </div>
+      <span style="font-weight:700;color:#107C10;font-size:16px;min-width:32px;text-align:right">${it.quantidade}</span>
+      <button onclick="invItens.splice(${i},1);renderInvItens()"
+        style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>
+    </div>`).join('');
+}
+
+async function finalizarInventario(){
+  if(!invSessao){toast('Nenhuma sessão ativa.');return;}
+  if(!invItens.length){alert('Nenhum item contado. Escaneie ao menos um produto.');return;}
+  if(!confirm('Finalizar inventário e atualizar o estoque com as quantidades contadas?\n\n'+invItens.length+' item(ns) serão atualizados.')) return;
+  const btn = document.querySelector('#inv-sessao .btn-success');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
+  try{
+    // Salva o registro do inventário no Firestore
+    const docRef = await db.collection('inventarios').add({
+      nome:invSessao.nome,
+      responsavel:invSessao.responsavel,
+      data:invSessao.data,
+      local:invSessao.local||'',
+      itens:invItens,
+      totalItens:invItens.length,
+      criadoEm:new Date().toISOString()
+    });
+    // Atualiza o estoque para cada item contado
+    for(const it of invItens){
+      const docId = cleanDocId(it.codigo, it.lote||'');
+      const snap  = await db.collection('stock').doc(docId).get();
+      if(snap.exists){
+        await db.collection('stock').doc(docId).update({
+          quantidade:Number(it.quantidade),
+          lote:it.lote||snap.data().lote||'',
+          dataValidade:it.dataValidade||snap.data().dataValidade||''
+        });
+      } else {
+        // Tenta localizar no estoque por codigo para herdar metadados
+        const baseSnap = await db.collection('stock').where('codigo','==',it.codigo).limit(1).get();
+        const base = !baseSnap.empty ? baseSnap.docs[0].data() : {};
+        await db.collection('stock').doc(docId).set({
+          codigo:it.codigo,
+          descricao:it.descricao||base.descricao||'',
+          lote:it.lote||'',
+          dataValidade:it.dataValidade||'',
+          quantidade:Number(it.quantidade),
+          categoria:base.categoria||'',
+          barcode:it.barcode||base.barcode||''
+        });
+      }
+      // Registra movimento no kardex
+      await db.collection('kardex').add({
+        codigo:it.codigo, descricao:it.descricao||'', lote:it.lote||'',
+        tipo:'inventario', quantidade:Number(it.quantidade),
+        responsavel:invSessao.responsavel, inventarioId:docRef.id,
+        inventarioNome:invSessao.nome,
+        criadoEm:new Date().toISOString()
+      });
+    }
+    toast('✅ Inventário "'+invSessao.nome+'" finalizado! '+invItens.length+' item(ns) atualizados.');
+    invSessao=null; invItens=[]; invFoundItem=null;
+    document.getElementById('inv-sessao').style.display='none';
+    document.getElementById('inv-setup').style.display='';
+    // Limpa campos
+    ['inv-nome','inv-responsavel','inv-local'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    loadOpsStats();
+    renderHistoricoInventarios();
+  }catch(e){
+    alert('Erro ao finalizar inventário: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='✅ Finalizar Inventário';}
+  }
+}
+
+function exportarInventarioParcial(){
+  if(!invItens.length){toast('Nenhum item para exportar.');return;}
+  const header='Código,Descrição,Lote,Validade,Quantidade';
+  const rows=invItens.map(it=>[it.codigo,'"'+it.descricao+'"',it.lote||'',it.dataValidade||'',it.quantidade].join(','));
+  const csv=header+'\n'+rows.join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='inventario_parcial_'+(invSessao?.nome||'export').replace(/\s+/g,'_')+'.csv';
+  a.click();
+}
+
+function renderHistoricoInventarios(){
+  const el=document.getElementById('inv-historico');
+  if(!el) return;
+  el.innerHTML='<div class="loader"><div class="spinner"></div>Carregando...</div>';
+  db.collection('inventarios').orderBy('criadoEm','desc').limit(10).get()
+    .then(snap=>{
+      if(snap.empty){el.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:20px">Nenhum inventário registrado ainda.</p>';return;}
+      el.innerHTML=snap.docs.map(d=>{
+        const r=d.data();
+        const dt=(r.data||r.criadoEm?.slice(0,10)||'').split('-').reverse().join('/');
+        return `<div style="padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
+          <div style="font-weight:700;color:#002050">${r.nome||'—'}</div>
+          <div style="color:#555">${dt} · ${r.responsavel||'—'} · ${r.local||'Geral'}</div>
+          <div style="color:#107C10;font-weight:600">${r.totalItens||0} item(ns) contados</div>
+        </div>`;
+      }).join('');
+    })
+    .catch(()=>{el.innerHTML='<p style="color:#D13438;font-size:12px">Erro ao carregar histórico.</p>';});
 }
 
 // ==============================
