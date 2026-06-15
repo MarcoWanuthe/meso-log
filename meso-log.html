@@ -6272,12 +6272,6 @@ async function updateHomePdvCard(){
   }catch(e){if(card)card.style.display='none';}
 }
 
-// Hook into updateHome to also load PDV card if ADM
-const _origUpdateHome = typeof updateHome === 'function' ? updateHome : null;
-function updateHome(){
-  if(_origUpdateHome) _origUpdateHome();
-  if(admLoggedIn) updateHomePdvCard();
-}
 
 // Also call after admLogin
 const _checkAdmForHome = setInterval(()=>{
