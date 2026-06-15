@@ -303,9 +303,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
   <nav id="nav">
     <a onclick="showPage('home')" class="active" id="nav-home"><span class="icon">🏠</span><span>Início</span></a>
-    <a onclick="showPage('nova')" id="nav-nova"><span class="icon">📋</span><span>Nova Solicitação</span></a>
-    <a onclick="showPage('acompanhar')" id="nav-acompanhar"><span class="icon">🔍</span><span>Minhas Solicitações</span></a>
-    <a onclick="showPage('relatorios')" id="nav-relatorios"><span class="icon">📊</span><span>Relatórios</span></a>
+    <a onclick="showPage('solicitacoes')" id="nav-solicitacoes"><span class="icon">📋</span><span>1 · Solicitações</span></a>
     <a onclick="showPage('envios')" id="nav-envios"><span class="icon">📦</span><span>Envios</span></a>
     <a onclick="showPage('estoque')" id="nav-estoque"><span class="icon">📊</span><span>Estoque</span></a>
     <hr style="border-color:#003080;margin:8px 12px">
@@ -386,7 +384,13 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     </div>
 
     <!-- NOVA SOLICITAÇÃO -->
-    <div class="page" id="page-nova">
+    <div class="page" id="page-solicitacoes">
+  <div class="tab-bar" id="solic-tab-bar">
+    <button class="active" onclick="solicTab('nova',this)" id="stab-nova">📋 Nova Solicitação</button>
+    <button onclick="solicTab('acompanhar',this)" id="stab-acompanhar">🔍 Minhas Solicitações</button>
+    <button onclick="solicTab('relatorios',this)" id="stab-relatorios">📊 Relatórios</button>
+  </div>
+  <div id="sview-nova">
       <div class="steps">
         <div class="step active" id="step1-tab"><span>1</span>Selecionar Produtos</div>
         <div class="step" id="step2-tab"><span>2</span>Dados do Evento</div>
@@ -491,10 +495,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- MINHAS SOLICITAÇÕES -->
-    <div class="page" id="page-acompanhar">
+    </div><!-- /sview-nova -->
+  <div id="sview-acompanhar" style="display:none">
       <div id="identity-section" class="card" style="margin-bottom:16px;display:none">
         <p style="font-size:13px;color:#444;margin-bottom:10px">Para ver suas solicitações, informe o e-mail que você usou ao fazer o pedido:</p>
         <div style="display:flex;gap:10px;align-items:flex-end">
@@ -525,10 +527,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
         <div class="pagination" id="track-pagination"></div>
       </div>
-    </div>
-
-    <!-- RELATÓRIOS -->
-    <div class="page" id="page-relatorios">
+    </div><!-- /sview-acompanhar -->
+  <div id="sview-relatorios" style="display:none">
       <div class="card" style="margin-bottom:18px">
         <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📊 Filtrar Relatório</h3>
         <div class="report-filters">
@@ -547,10 +547,9 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
       </div>
       <div id="rel-result"></div>
-    </div>
-
-    <!-- MÓDULO 5: ENVIOS -->
-    <div class="page" id="page-envios">
+    </div><!-- /sview-relatorios -->
+</div><!-- /page-solicitacoes -->
+<div class="page" id="page-envios">
       <!-- Tabs usuário normal -->
       <div class="tab-bar" id="envios-tab-bar">
         <button class="active" onclick="enviosTab('form',this)" id="etab-form">📦 Nova Solicitação</button>
@@ -2021,16 +2020,28 @@ function startListeners(){
 // ==============================
 // NAVIGATION
 // ==============================
+function solicTab(tab,btn){
+  ['nova','acompanhar','relatorios'].forEach(t=>{
+    const v=document.getElementById('sview-'+t);
+    const b=document.getElementById('stab-'+t);
+    if(v) v.style.display=(t===tab?'':'none');
+    if(b) b.classList.toggle('active',t===tab);
+  });
+  if(tab==='nova'){resetForm();goStep1();}
+  if(tab==='acompanhar') initTrackPage();
+  if(tab==='relatorios') initRelatorio();
+}
 function showPage(p){
+  if(p==='nova'){showPage('solicitacoes');solicTab('nova');return;}
+  if(p==='acompanhar'){showPage('solicitacoes');solicTab('acompanhar');return;}
+  if(p==='relatorios'){showPage('solicitacoes');solicTab('relatorios');return;}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  document.getElementById('nav-'+p).classList.add('active');
-  const titles={home:'Início',nova:'Nova Solicitação',acompanhar:'Minhas Solicitações',relatorios:'Relatórios',envios:'Módulo 5 · Envios — Correios / Transportadoras',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações — Recebimento · Inventário · Perdas',pdv:'PDV · Eventos'};
+  const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
-  if(p==='nova'){resetForm();goStep1();}
-  if(p==='acompanhar') initTrackPage();
-  if(p==='relatorios') initRelatorio();
+  if(p==='solicitacoes') solicTab('nova');
   if(p==='envios') initEnviosPage();
   if(p==='estoque') initEstoquePage();
   if(p==='operacoes') initOpsPage();
@@ -2466,7 +2477,7 @@ function initRelatorio(){
 }
 
 function renderRelatorio(){
-  if(document.getElementById('page-relatorios').classList.contains('active')) gerarRelatorio();
+  if(document.getElementById('sview-relatorios')&&document.getElementById('sview-relatorios').style.display!=='none') gerarRelatorio();
 }
 
 function gerarRelatorio(){
