@@ -1955,15 +1955,28 @@ async function seedProducts(){
 function startListeners(){
   // All requests — live
   if(unsubRequests) unsubRequests();
+  const processSnap = snap=>{
+    allRequests = snap.docs.map(d=>({id:d.id,...d.data()}));
+    allRequests.sort((a,b)=>(b.dataSolicitacao||'').localeCompare(a.dataSolicitacao||''));
+    updateHome();
+    renderTrack();
+    if(admLoggedIn) renderAdmTable();
+    renderRelatorio();
+  };
+  const tryWithoutOrder = ()=>{
+    unsubRequests = db.collection('requests')
+      .onSnapshot(processSnap, err2=>{
+        console.error('requests listener fallback error:', err2);
+        const el=document.getElementById('recent-list');
+        if(el) el.innerHTML='<p style="color:#D13438;font-size:12px">Erro ao carregar solicitações. Verifique as regras do Firestore.</p>';
+      });
+  };
   unsubRequests = db.collection('requests')
     .orderBy('dataSolicitacao','desc')
-    .onSnapshot(snap=>{
-      allRequests = snap.docs.map(d=>({id:d.id,...d.data()}));
-      updateHome();
-      renderTrack();
-      if(admLoggedIn) renderAdmTable();
-      renderRelatorio();
-    }, err=>console.warn('requests listener:', err));
+    .onSnapshot(processSnap, err=>{
+      console.warn('requests orderBy failed, retrying without order:', err.message);
+      tryWithoutOrder();
+    });
 
   // Products — live
   if(unsubProducts) unsubProducts();
