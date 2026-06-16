@@ -4994,7 +4994,7 @@ function invNBprosseguir(){
     confirmed.push({codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',dataValidade:it.dataValidade||'',quantidade:qty,barcode:it.barcode||''});
   });
   if(err)return;
-  document.getElementById(\'inv-nb-modal\').remove();
+  document.getElementById('inv-nb-modal').remove();
   if(window._invNBcb)window._invNBcb(confirmed);
 }
 
@@ -5034,8 +5034,8 @@ async function invVerificarRascunho(){
     banner.style.cssText='background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
     const dt=latest.savedAt?latest.savedAt.substring(0,16).replace('T',' '):'';
     banner.innerHTML='<span>⏸ <strong>Sessão pausada:</strong> "'+latest.sessao.nome+'" — '+(latest.totalItens||latest.itens?.length||0)+' item(ns) · '+dt+'</span>'
-      +'<button class="btn btn-warning" onclick="invRetomarRascunho(''+latest.id+'')">▶ Retomar</button>'
-      +'<button class="btn btn-danger" onclick="invDescartarRascunho(''+latest.id+'')">🗑 Descartar</button>';
+      +'<button class="btn btn-warning" onclick="invRetomarRascunho(\''+latest.id+'\')">▶ Retomar</button>'
+      +'<button class="btn btn-danger" onclick="invDescartarRascunho(\''+latest.id+'\')">🗑 Descartar</button>';
     const container=document.getElementById('ops-inventario');
     if(container)container.insertBefore(banner,container.firstChild);
   }catch(e){console.warn('invVerificarRascunho:',e);}
@@ -5068,11 +5068,7 @@ async function finalizarInventario(){
   if(!invItens.length){alert('Nenhum item contado. Escaneie ao menos um produto.');return;}
   confirmarNaoBipados(async function(confirmedZeros){
     const todosItens=[...invItens,...confirmedZeros];
-    const msg='Finalizar inventário e atualizar estoque?
-
-✅ Bipados: '+invItens.length+'
-⚠️ Confirmados (não bipados): '+confirmedZeros.length+'
-📦 Total: '+todosItens.length+' item(ns)';
+    const msg='Finalizar inventário e atualizar estoque?\n\n✅ Bipados: '+invItens.length+'\n⚠️ Confirmados (não bipados): '+confirmedZeros.length+'\n📦 Total: '+todosItens.length+' item(ns)';
     if(!confirm(msg)) return;
     const btn=document.querySelector('#inv-sessao .btn-success');
     if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
