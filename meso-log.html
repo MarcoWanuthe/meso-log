@@ -951,6 +951,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               </div>
               <div style="display:flex;gap:8px">
                 <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);font-size:12px" onclick="cancelarInventario()">❌ Cancelar</button>
+                <button class="btn btn-warning" id="btn-pausar-inv" onclick="invPausarContagem()" style="display:none">⏸ Pausar</button>
                 <button class="btn btn-success" onclick="finalizarInventario()">✅ Finalizar Inventário</button>
               </div>
             </div>
@@ -4661,7 +4662,7 @@ function opsTab(tab,btn){
   });
   document.querySelectorAll('#page-operacoes .tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if(tab==='inventario'){renderHistoricoInventarios();if(invSessao)setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);}
+  if(tab==='inventario'){invVerificarRascunho();renderHistoricoInventarios();if(invSessao)setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);}
   if(tab==='recebimento') setTimeout(()=>{const el=document.getElementById('rec-scan-input');if(el)el.focus();},100);
   if(tab==='perdas') setTimeout(()=>{const el=document.getElementById('perd-scan-input');if(el)el.focus();},100);
   if(tab==='relatorios') initRelatorioOps();
@@ -4817,6 +4818,7 @@ function iniciarInventario(){
   document.getElementById('inv-count-badge').textContent   = '0';
   document.getElementById('inv-setup').style.display  = 'none';
   document.getElementById('inv-sessao').style.display = '';
+  const _pb=document.getElementById('btn-pausar-inv');if(_pb)_pb.style.display='';
   document.getElementById('inv-found-card').style.display  = 'none';
   document.getElementById('inv-not-found').style.display   = 'none';
   document.getElementById('inv-itens-list').innerHTML =
@@ -4827,7 +4829,7 @@ function iniciarInventario(){
 
 function cancelarInventario(){
   if(!confirm('Cancelar inventário? Todos os itens contados serão perdidos.')) return;
-  invSessao=null; invItens=[]; invFoundItem=null;
+  invDeletarRascunho();invSessao=null; invItens=[]; invFoundItem=null;
   document.getElementById('inv-sessao').style.display = 'none';
   document.getElementById('inv-setup').style.display  = '';
 }
@@ -4881,6 +4883,7 @@ function adicionarAoInventario(){
     toast('🔄 Quantidade atualizada: '+descricao);
   } else {
     invItens.push({codigo, descricao, lote, dataValidade:validade, quantidade:qty, barcode:invFoundItem.barcode||''});
+    invSalvarRascunho();
     toast('➕ Adicionado: '+descricao);
   }
   invFoundItem=null;
@@ -4993,6 +4996,72 @@ function invNBprosseguir(){
   document.getElementById('inv-nb-modal').remove();
   if(window._invNBcb)window._invNBcb(confirmed);
 }
+
+async function invSalvarRascunho(){
+  if(!invSessao) return;
+  try{
+    await db.collection('inventarios_rascunho').doc(invSessao.id).set({
+      sessao:invSessao, itens:invItens, savedAt:new Date().toISOString(), totalItens:invItens.length
+    });
+  }catch(e){console.warn('Rascunho não salvo:',e);}
+}
+async function invDeletarRascunho(){
+  if(!invSessao) return;
+  try{await db.collection('inventarios_rascunho').doc(invSessao.id).delete();}catch(e){}
+}
+async function invPausarContagem(){
+  if(!invSessao){toast('Nenhuma sessão ativa.');return;}
+  const sessNome=invSessao.nome, count=invItens.length;
+  await invSalvarRascunho();
+  invSessao=null; invItens=[]; invFoundItem=null;
+  document.getElementById('inv-sessao').style.display='none';
+  document.getElementById('inv-setup').style.display='';
+  const pb=document.getElementById('btn-pausar-inv');if(pb)pb.style.display='none';
+  toast('⏸ Sessão "'+sessNome+'" pausada com '+count+' item(ns). Abra a aba novamente para retomar.');
+  if(typeof renderHistoricoInventarios==='function')renderHistoricoInventarios();
+}
+async function invVerificarRascunho(){
+  try{
+    if(invSessao) return;
+    const snap=await db.collection('inventarios_rascunho').get();
+    const oldB=document.getElementById('inv-rascunho-banner');if(oldB)oldB.remove();
+    if(snap.empty) return;
+    const drafts=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const latest=drafts.sort((a,b)=>(b.savedAt||'').localeCompare(a.savedAt||''))[0];
+    const banner=document.createElement('div');
+    banner.id='inv-rascunho-banner';
+    banner.style.cssText='background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+    const dt=latest.savedAt?latest.savedAt.substring(0,16).replace('T',' '):'';
+    banner.innerHTML='<span>⏸ <strong>Sessão pausada:</strong> "'+latest.sessao.nome+'" — '+(latest.totalItens||latest.itens?.length||0)+' item(ns) · '+dt+'</span>'
+      +'<button class="btn btn-warning" onclick="invRetomarRascunho(''+latest.id+'')">▶ Retomar</button>'
+      +'<button class="btn btn-danger" onclick="invDescartarRascunho(''+latest.id+'')">🗑 Descartar</button>';
+    const container=document.getElementById('ops-inventario');
+    if(container)container.insertBefore(banner,container.firstChild);
+  }catch(e){console.warn('invVerificarRascunho:',e);}
+}
+async function invRetomarRascunho(id){
+  try{
+    const docSnap=await db.collection('inventarios_rascunho').doc(id).get();
+    if(!docSnap.exists){toast('Rascunho não encontrado.');return;}
+    const data=docSnap.data();
+    invSessao=data.sessao; invItens=data.itens||[];
+    const banner=document.getElementById('inv-rascunho-banner');if(banner)banner.remove();
+    document.getElementById('inv-setup').style.display='none';
+    document.getElementById('inv-sessao').style.display='';
+    const pb=document.getElementById('btn-pausar-inv');if(pb)pb.style.display='';
+    if(typeof renderInvItens==='function')renderInvItens();
+    toast('▶ Sessão "'+invSessao.nome+'" retomada com '+invItens.length+' item(ns) já contados.');
+    setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},200);
+  }catch(e){toast('Erro ao retomar: '+e.message);}
+}
+async function invDescartarRascunho(id){
+  if(!confirm('Descartar sessão pausada? Os itens contados serão perdidos.'))return;
+  try{
+    await db.collection('inventarios_rascunho').doc(id).delete();
+    const banner=document.getElementById('inv-rascunho-banner');if(banner)banner.remove();
+    toast('Rascunho descartado.');
+  }catch(e){}
+}
 async function finalizarInventario(){
   if(!invSessao){toast('Nenhuma sessão ativa.');return;}
   if(!invItens.length){alert('Nenhum item contado. Escaneie ao menos um produto.');return;}
@@ -5045,7 +5114,7 @@ async function finalizarInventario(){
       document.getElementById('inv-sessao').style.display='none';
       document.getElementById('inv-setup').style.display='';
       ['inv-nome','inv-responsavel','inv-local'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-      loadOpsStats();renderHistoricoInventarios();
+      loadOpsStats();invDeletarRascunho();renderHistoricoInventarios();
     }catch(e){alert('Erro ao finalizar inventário: '+e.message);}
     finally{if(btn){btn.disabled=false;btn.textContent='✅ Finalizar Inventário';}}
   });
