@@ -1197,6 +1197,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button id="pdv-tab-relatorios" onclick="pdvTab('relatorios',this)" style="display:none">📊 Relatórios</button>
           <button id="pdv-tab-vendedores" onclick="pdvTab('vendedores',this)" style="display:none">👥 Vendedores</button>
           <button id="pdv-tab-comparativo" onclick="pdvTab('comparativo',this)" style="display:none">📊 Comparativo</button>
+          <button id="pdv-tab-retorno" onclick="pdvTab('retorno',this)">↩️ Retorno</button>
+          <button id="pdv-tab-ajuda" onclick="pdvTab('ajuda',this)">❓ Ajuda</button>
         </div>
 
         <!-- ABA EVENTOS -->
@@ -1260,6 +1262,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                       <input id="pdv-qty" type="number" min="1" value="1" class="form-control" style="width:70px">
                       <select id="pdv-lote-sel" class="form-control" style="flex:1;font-size:12px"></select>
                     </div>
+                    <div style="display:flex;gap:6px;margin-top:8px;align-items:center;background:#F8F9FB;border-radius:6px;padding:6px 8px">
+                      <span style="font-size:11px;color:#555;font-weight:600;min-width:56px">Entrega:</span>
+                      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+                        <input type="radio" name="pdv-tipo-entrega" id="pdv-tipo-entregue" value="entregue" checked> 🟢 Pronta Entrega
+                      </label>
+                      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;margin-left:8px">
+                        <input type="radio" name="pdv-tipo-entrega" id="pdv-tipo-sob-pedido" value="sob_pedido"> 🟡 Sob Pedido
+                      </label>
+                    </div>
                     <div style="display:flex;gap:8px;margin-top:8px">
                       <button class="btn btn-primary" style="flex:1" onclick="pdvAddCarrinho('venda')">+ Venda</button>
                       <button class="btn" style="flex:1;background:#FF8C00;color:#fff" onclick="pdvAddCarrinho('bonificacao')">+ Bonificação</button>
@@ -1293,8 +1304,16 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                     <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
                       <span>Vendas:</span><strong id="pdv-total-vendas">0 un</strong>
                     </div>
-                    <div style="display:flex;justify-content:space-between;font-size:13px;color:#FF8C00">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;color:#FF8C00;margin-bottom:4px">
                       <span>Bonificações:</span><strong id="pdv-total-boni">0 un</strong>
+                    </div>
+                    <div style="border-top:1px dashed #E0E4EC;padding-top:6px;margin-top:6px">
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#107C10;margin-bottom:2px">
+                        <span>🟢 Entregue no evento:</span><strong id="pdv-total-entregue">0 un</strong>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#C07800">
+                        <span>🟡 A entregar:</span><strong id="pdv-total-sob-pedido">0 un</strong>
+                      </div>
                     </div>
                   </div>
                   <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:12px;font-size:15px" onclick="pdvFinalizarPedido()">✅ Finalizar Pedido</button>
@@ -1453,7 +1472,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
           <div id="pdv-form-vendedor" style="display:none;background:#F8F9FB;border:1px solid #E0E4EC;border-radius:8px;padding:16px;margin-bottom:16px">
             <h4 style="color:#002050;margin-bottom:12px">Novo Vendedor</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
               <div class="form-group"><label>Nome *</label><input id="vend-nome" class="form-control" placeholder="Nome completo"></div>
               <div class="form-group"><label>PIN (4-6 dígitos) *</label><input id="vend-pin" type="password" class="form-control" placeholder="••••" maxlength="6"></div>
               <div class="form-group"><label>Perfil</label>
@@ -1464,6 +1483,18 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 </select>
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group">
+                <label>Evento de Atuação</label>
+                <select id="vend-evento" class="form-control">
+                  <option value="">— Todos os eventos (supervisor) —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Ref. Pedido Mercus</label>
+                <input id="vend-mercus" class="form-control" placeholder="Nº do pedido Mercus (opcional)">
+              </div>
+            </div>
             <div style="display:flex;gap:8px;margin-top:10px">
               <button class="btn btn-primary" onclick="salvarVendedor()">💾 Salvar</button>
               <button class="btn btn-secondary" onclick="document.getElementById('pdv-form-vendedor').style.display='none'">Cancelar</button>
@@ -1471,6 +1502,110 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <p id="vend-err" style="color:#D13438;font-size:12px;margin-top:6px"></p>
           </div>
           <div id="pdv-vendedores-lista"></div>
+        </div>
+
+        <!-- ABA RETORNO DO EVENTO -->
+        <div id="pdv-view-retorno" style="display:none">
+          <h3 style="color:#002050;margin-bottom:6px">↩️ Retorno do Evento</h3>
+          <p style="font-size:12px;color:#666;margin-bottom:14px">Registre os produtos que estão retornando ao depósito sede. O gestor de logística validará as quantidades antes de dar entrada no estoque central.</p>
+
+          <!-- Formulário de registro de retorno (vendedor) -->
+          <div id="retorno-form-section">
+            <div class="card" style="margin-bottom:16px">
+              <h4 style="color:#002050;margin-bottom:12px">📦 Produtos Retornando</h4>
+              <div id="retorno-estoque-lista" style="margin-bottom:14px">
+                <p style="color:#aaa;text-align:center;padding:20px">Carregando estoque do evento...</p>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:12px">
+                <button class="btn btn-primary" onclick="salvarRetorno()" id="btn-salvar-retorno">📨 Enviar Retorno para Validação</button>
+                <button class="btn btn-secondary" onclick="renderRetornoEstoque()">🔄 Recarregar</button>
+              </div>
+              <p id="retorno-err" style="color:#D13438;font-size:12px;margin-top:6px"></p>
+            </div>
+          </div>
+
+          <!-- Histórico / validação (ADM/supervisor vê aqui também) -->
+          <div class="card">
+            <h4 style="color:#002050;margin-bottom:12px">📋 Histórico de Retornos</h4>
+            <div id="retorno-historico"></div>
+          </div>
+        </div>
+
+        <!-- ABA AJUDA / ONBOARDING -->
+        <div id="pdv-view-ajuda" style="display:none;max-width:800px">
+          <h3 style="color:#002050;margin-bottom:4px">❓ Guia de Uso — PDV & Eventos</h3>
+          <p style="font-size:12px;color:#888;margin-bottom:20px">Leia antes de usar. Em caso de dúvidas, contate o gestor de logística.</p>
+
+          <!-- ADM -->
+          <div class="card" style="margin-bottom:16px;border-left:4px solid #0078D4">
+            <h4 style="color:#0078D4;margin-bottom:14px">🔐 Para o Administrador (ADM / Gestor)</h4>
+            <div style="counter-reset:step">
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+                <div><strong style="color:#002050">Criar o Evento</strong><br><span style="font-size:12px;color:#555">Acesse a aba <strong>Eventos</strong> → clique em <em>+ Novo Evento</em>. Preencha nome, data, local e o número do pedido Mercus (referência interna). Salve para criar o evento com status <em>aberto</em>.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+                <div><strong style="color:#002050">Subir o Estoque do Evento</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Estoque do Evento</strong>, faça o upload da NF-e XML de remessa. O sistema importará automaticamente todos os itens, quantidades e lotes. Você também pode adicionar itens manualmente se necessário.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
+                <div><strong style="color:#002050">Cadastrar os Vendedores</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Vendedores</strong>, clique em <em>+ Novo Vendedor</em>. Defina nome, PIN (4–6 dígitos) e selecione o <strong>Evento de Atuação</strong>. O vendedor só enxergará o estoque do evento vinculado ao seu cadastro. Anote o PIN e entregue ao vendedor com segurança.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
+                <div><strong style="color:#002050">Acompanhar as Vendas em Tempo Real</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Pedidos</strong>, visualize todos os pedidos do evento em tempo real. Filtre por status (<em>Entregue</em> / <em>A Entregar</em>) ou por vendedor. O dashboard mostra KPIs consolidados.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
+                <div><strong style="color:#002050">Validar o Retorno do Evento</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Retorno</strong>, o vendedor terá registrado o que está voltando. Confira fisicamente os produtos, ajuste quantidades se houver divergência (com justificativa), e clique em <em>Aprovar Retorno</em>. O estoque retornará automaticamente ao depósito central.</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</div>
+                <div><strong style="color:#002050">Fechar o Evento + Exportar para Mercus</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Relatórios</strong>, exporte o Excel com todos os pedidos. Use o botão <em>Exportar Excel (Mercus)</em> para gerar o arquivo formatado para lançamento no Mercus. Em seguida, use o <strong>Fechamento</strong> para encerrar o evento oficialmente.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vendedor -->
+          <div class="card" style="border-left:4px solid #107C10">
+            <h4 style="color:#107C10;margin-bottom:14px">🛒 Para o Vendedor</h4>
+            <div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+                <div><strong style="color:#002050">Fazer Login com seu PIN</strong><br><span style="font-size:12px;color:#555">Na tela inicial do PDV, informe seu PIN pessoal (4–6 dígitos). Você será automaticamente direcionado ao seu evento de atuação — nenhuma configuração adicional é necessária.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+                <div><strong style="color:#002050">Buscar Produtos</strong><br><span style="font-size:12px;color:#555">Use o scanner de código de barras <strong>(📷 Código)</strong> ou busque pelo nome <strong>(🔤 Nome)</strong>. O sistema exibe <strong>todo o catálogo</strong> Mesoestetic — não apenas o que está no evento. Cada produto mostrará:<br>
+                  <span style="display:inline-block;margin-top:4px">🟢 <strong>Pronta Entrega</strong> — produto disponível no estoque do evento</span><br>
+                  <span style="display:inline-block">🟡 <strong>Sob Pedido</strong> — produto do catálogo, a ser entregue depois</span></span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
+                <div><strong style="color:#002050">Montar o Carrinho</strong><br><span style="font-size:12px;color:#555">Para cada produto, defina:<br>
+                  • <strong>Natureza:</strong> Venda ou Bonificação<br>
+                  • <strong>Entrega:</strong> 🟢 Pronta Entrega (sai do estoque agora) ou 🟡 Sob Pedido (registrado para entrega futura)<br>
+                  Você pode misturar os dois tipos no mesmo pedido.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
+                <div><strong style="color:#002050">Finalizar o Pedido</strong><br><span style="font-size:12px;color:#555">Preencha o nome do cliente (e CNPJ/CPF se disponível), adicione observações, e clique em <strong>✅ Finalizar Pedido</strong>. O sistema registrará os itens entregues e os itens a entregar em abas separadas. O estoque do evento é debitado apenas para os itens de Pronta Entrega.</span></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-bottom:14px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
+                <div><strong style="color:#002050">Ver seus Pedidos</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Pedidos</strong>, visualize todos os pedidos que você registrou. Cada pedido mostra duas abas: <em>✅ Entregue</em> (o que o cliente já recebeu) e <em>📦 A Entregar</em> (o que ainda será enviado pela sede).</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</div>
+                <div><strong style="color:#002050">Registrar o Retorno (final do evento)</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Retorno</strong>, informe a quantidade real de cada produto que está voltando para a sede. Confira o estoque físico com cuidado — essa informação será validada pelo gestor de logística antes de dar entrada no depósito central. Você é responsável pela carga do evento.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFF8E7;border:1px solid #FFC107;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;color:#555">
+            ⚠️ <strong>Importante:</strong> Toda venda fica registrada com seu nome e horário. Em caso de dúvida durante o evento, entre em contato com o supervisor. Não compartilhe seu PIN com outras pessoas.
+          </div>
         </div>
 
       </div><!-- /pdv-panel -->
@@ -5193,6 +5328,10 @@ async function pdvPinConfirm(){
     pdvVendedorAtivo={id:match.id,...match.data()};
     pdvPinBuffer='';
     pdvAbrirPainel();
+    // Auto-select event if vendor has eventoId
+    if(pdvVendedorAtivo.eventoId){
+      setTimeout(()=>selecionarEvento(pdvVendedorAtivo.eventoId),500);
+    }
   }catch(e){err.textContent='Erro ao verificar PIN.';}
 }
 
@@ -5211,6 +5350,9 @@ function pdvAbrirPainel(){
     const t5=document.getElementById('pdv-tab-comparativo');if(t5)t5.style.display='';
     const btn=document.getElementById('pdv-btn-novo-evento');if(btn)btn.style.display='';
   }
+  // Show retorno tab for all (vendors + ADM)
+  const tabRet=document.getElementById('pdv-tab-retorno');if(tabRet)tabRet.style.display='';
+  const tabAjuda=document.getElementById('pdv-tab-ajuda');if(tabAjuda)tabAjuda.style.display='';
   pdvTab('eventos',document.querySelector('#pdv-tab-bar button'));
   initPdvEventos();
 }
@@ -5227,7 +5369,7 @@ function vendedorLogout(){
 
 /* ---- TABS ---- */
 function pdvTab(tab,btn){
-  ['eventos','pdv','pedidos','estoque-evento','expedicao','fechamento','relatorios','vendedores'].forEach(t=>{
+  ['eventos','pdv','pedidos','estoque-evento','expedicao','fechamento','relatorios','vendedores','comparativo','retorno','ajuda'].forEach(t=>{
     const el=document.getElementById('pdv-view-'+t);if(el)el.style.display='none';
   });
   const active=document.getElementById('pdv-view-'+tab);
@@ -5241,6 +5383,7 @@ function pdvTab(tab,btn){
   if(tab==='relatorios')renderRelatorioEvento();
   if(tab==='vendedores')renderVendedores();
   if(tab==='comparativo')initComparativo();
+  if(tab==='retorno')renderRetorno();
 }
 
 /* ---- EVENTOS ---- */
@@ -5349,28 +5492,40 @@ async function pdvScanProduto(val){
   val=val.trim();
   if(val.length<2) return;
   const found=document.getElementById('pdv-found-card');
-  if(!pdvEventoAtivo){found.style.display='none';return;}
-  // Search in deposito_evento for current event
   try{
-    const snap=await db.collection('deposito_evento')
-      .where('eventoId','==',pdvEventoAtivo.id)
-      .where('barcode','==',val).limit(1).get();
-    let item=null;
-    if(!snap.empty) item={id:snap.docs[0].id,...snap.docs[0].data()};
-    else{
-      // fallback: search by codigo
-      const snap2=await db.collection('deposito_evento')
-        .where('eventoId','==',pdvEventoAtivo.id)
-        .where('codigo','==',val).limit(1).get();
-      if(!snap2.empty) item={id:snap2.docs[0].id,...snap2.docs[0].data()};
+    // First: check event deposit (for availability badge)
+    let depItem=null;
+    if(pdvEventoAtivo){
+      const s1=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
+      if(!s1.empty) depItem={id:s1.docs[0].id,...s1.docs[0].data()};
+      else{
+        const s2=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('codigo','==',val).limit(1).get();
+        if(!s2.empty) depItem={id:s2.docs[0].id,...s2.docs[0].data()};
+      }
     }
-    if(!item){found.style.display='none';pdvFoundItem=null;return;}
-    pdvFoundItem=item;
-    document.getElementById('pdv-found-nome').textContent=item.descricao;
-    document.getElementById('pdv-found-info').textContent=
-      'Cód: '+item.codigo+' | Lote: '+(item.lote||'—')+' | Disponível: '+item.quantidade+' un';
+    // Also search full catalog
+    let catItem=null;
+    const c1=await db.collection('stock').where('barcode','==',val).limit(1).get();
+    if(!c1.empty) catItem={stockId:c1.docs[0].id,...c1.docs[0].data()};
+    else{
+      const c2=await db.collection('stock').where('codigo','==',val).limit(1).get();
+      if(!c2.empty) catItem={stockId:c2.docs[0].id,...c2.docs[0].data()};
+    }
+    if(!depItem&&!catItem){found.style.display='none';pdvFoundItem=null;toast('Produto não encontrado no catálogo.');return;}
+    const disponivel=depItem&&depItem.quantidade>0;
+    const qtdEvento=depItem?depItem.quantidade:0;
+    const base=catItem||depItem;
+    pdvFoundItem={id:depItem?.id||base.stockId,stockId:base.stockId||depItem?.id,codigo:base.codigo,descricao:base.descricao,lote:base.lote||'',quantidade:qtdEvento,barcode:base.barcode||val};
+    const radioEnt=document.getElementById('pdv-tipo-entregue');
+    const radioSP=document.getElementById('pdv-tipo-sob-pedido');
+    if(disponivel&&radioEnt) radioEnt.checked=true;
+    else if(radioSP) radioSP.checked=true;
+    const badge=disponivel?'🟢 Pronta Entrega ('+qtdEvento+' un)':'🟡 Sob Pedido';
+    const badgeColor=disponivel?'#107C10':'#C07800';
+    document.getElementById('pdv-found-nome').textContent=base.descricao;
+    document.getElementById('pdv-found-info').innerHTML='Cód: '+base.codigo+' | Lote: '+(base.lote||'—')+'&nbsp;&nbsp;<strong style="color:'+badgeColor+'">'+badge+'</strong>';
     const loteEl=document.getElementById('pdv-lote-sel');
-    if(loteEl){loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'} (${item.quantidade} un)</option>`;}
+    if(loteEl) loteEl.innerHTML=`<option value="${base.lote||''}">${base.lote||'S/Lote'}</option>`;
     document.getElementById('pdv-qty').value=1;
     found.style.display='block';
   }catch(e){}
@@ -5380,8 +5535,10 @@ function pdvAddCarrinho(natureza){
   if(!pdvFoundItem){toast('Escaneie um produto primeiro.');return;}
   const qty=Number(document.getElementById('pdv-qty').value)||1;
   if(qty<=0){toast('Quantidade inválida.');return;}
-  // Check if already in cart
-  const idx=pdvCarrinho.findIndex(c=>c.id===pdvFoundItem.id);
+  const tipoRadio=document.querySelector('input[name="pdv-tipo-entrega"]:checked');
+  const tipoEntrega=tipoRadio?tipoRadio.value:'entregue';
+  // Check if already in cart (same id + same tipoEntrega)
+  const idx=pdvCarrinho.findIndex(c=>c.id===pdvFoundItem.id&&c.tipoEntrega===tipoEntrega);
   if(idx>=0){
     pdvCarrinho[idx].quantidade+=qty;
     pdvCarrinho[idx].natureza=natureza;
@@ -5392,15 +5549,18 @@ function pdvAddCarrinho(natureza){
       descricao:pdvFoundItem.descricao,
       lote:pdvFoundItem.lote||'',
       quantidade:qty,
-      natureza // 'venda' | 'bonificacao'
+      natureza,
+      tipoEntrega
     });
   }
   pdvFoundItem=null;
   document.getElementById('pdv-found-card').style.display='none';
   document.getElementById('pdv-scan-input').value='';
   document.getElementById('pdv-scan-input').focus();
+  const radioEnt=document.getElementById('pdv-tipo-entregue');if(radioEnt)radioEnt.checked=true;
   renderCarrinho();
-  toast(natureza==='venda'?'🛒 Adicionado como Venda':'🎁 Adicionado como Bonificação');
+  const label=tipoEntrega==='entregue'?'🟢 Pronta Entrega':'🟡 Sob Pedido';
+  toast((natureza==='venda'?'🛒 Venda':'🎁 Bonificação')+' — '+label);
 }
 
 function renderCarrinho(){
@@ -5412,29 +5572,41 @@ function renderCarrinho(){
     count.textContent='0 itens';totais.style.display='none';return;
   }
   count.textContent=pdvCarrinho.length+' iten'+(pdvCarrinho.length>1?'s':'');
-  lista.innerHTML=pdvCarrinho.map((it,i)=>`
-    <div class="pdv-cart-item">
+  lista.innerHTML=pdvCarrinho.map((it,i)=>{
+    const ent=it.tipoEntrega||'entregue';
+    const entColor=ent==='entregue'?'#107C10':'#C07800';
+    const entLabel=ent==='entregue'?'🟢 Pronta Entrega':'🟡 Sob Pedido';
+    return `<div class="pdv-cart-item">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="flex:1">
           <strong style="font-size:13px">${it.descricao}</strong>
           <div style="font-size:11px;color:#666">Lote: ${it.lote||'—'}</div>
         </div>
         <button onclick="pdvRemoverItem(${i})" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1">×</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-        <input type="number" min="1" value="${it.quantidade}" class="form-control" style="width:65px;font-size:12px"
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <input type="number" min="1" value="${it.quantidade}" class="form-control" style="width:62px;font-size:12px"
           onchange="pdvCarrinho[${i}].quantidade=Number(this.value)||1;renderCarrinho()">
         <div class="natureza-toggle" style="flex:1">
           <button class="${it.natureza==='venda'?'active-venda':''}" onclick="pdvCarrinho[${i}].natureza='venda';renderCarrinho()">#Venda</button>
-          <button class="${it.natureza==='bonificacao'?'active-boni':''}" onclick="pdvCarrinho[${i}].natureza='bonificacao';renderCarrinho()">#Bonificação</button>
+          <button class="${it.natureza==='bonificacao'?'active-boni':''}" onclick="pdvCarrinho[${i}].natureza='bonificacao';renderCarrinho()">#Bonif.</button>
         </div>
+        <button onclick="pdvCarrinho[${i}].tipoEntrega=pdvCarrinho[${i}].tipoEntrega==='entregue'?'sob_pedido':'entregue';renderCarrinho()"
+          style="font-size:11px;padding:2px 7px;border:1px solid ${entColor};border-radius:10px;background:#fff;color:${entColor};cursor:pointer;white-space:nowrap">
+          ${entLabel}
+        </button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   totais.style.display='';
   const totalV=pdvCarrinho.filter(c=>c.natureza==='venda').reduce((s,c)=>s+c.quantidade,0);
   const totalB=pdvCarrinho.filter(c=>c.natureza==='bonificacao').reduce((s,c)=>s+c.quantidade,0);
+  const totalEnt=pdvCarrinho.filter(c=>(c.tipoEntrega||'entregue')==='entregue').reduce((s,c)=>s+c.quantidade,0);
+  const totalSP=pdvCarrinho.filter(c=>c.tipoEntrega==='sob_pedido').reduce((s,c)=>s+c.quantidade,0);
   document.getElementById('pdv-total-vendas').textContent=totalV+' un';
   document.getElementById('pdv-total-boni').textContent=totalB+' un';
+  const elE=document.getElementById('pdv-total-entregue');if(elE)elE.textContent=totalEnt+' un';
+  const elS=document.getElementById('pdv-total-sob-pedido');if(elS)elS.textContent=totalSP+' un';
 }
 
 function pdvRemoverItem(i){pdvCarrinho.splice(i,1);renderCarrinho();}
@@ -5447,18 +5619,25 @@ async function pdvFinalizarPedido(){
   const entrega=document.getElementById('pdv-entrega-tipo').value;
   const obs=document.getElementById('pdv-obs').value.trim();
   const btn=event.target;btn.disabled=true;btn.textContent='⏳ Salvando...';
+  const itensAll=JSON.parse(JSON.stringify(pdvCarrinho));
+  const itensEntregues=itensAll.filter(it=>(it.tipoEntrega||'entregue')==='entregue');
+  const itensAEntregar=itensAll.filter(it=>it.tipoEntrega==='sob_pedido');
   const pedido={
     eventoId:pdvEventoAtivo.id,eventoNome:pdvEventoAtivo.nome,
     vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,
-    cliente,doc,entrega,obs,
-    itens:JSON.parse(JSON.stringify(pdvCarrinho)),
-    status:entrega==='evento'?'entregue':'pendente',
+    cliente,doc,obs,
+    itens:itensAll,
+    itensEntregues,
+    itensAEntregar,
+    statusEntregue:itensEntregues.length>0?'entregue':'',
+    statusAEntregar:itensAEntregar.length>0?'pendente':'',
+    status:itensAEntregar.length>0?'parcial':'entregue',
     criadoEm:new Date().toISOString(),
     numero:'PED-'+Date.now().toString(36).toUpperCase()
   };
   try{
-    // Debit event deposit
-    for(const it of pedido.itens){
+    // Debit event deposit ONLY for entregues
+    for(const it of itensEntregues){
       const snap=await db.collection('deposito_evento').doc(it.id).get();
       if(snap.exists){
         const nova=Math.max(0,(Number(snap.data().quantidade)||0)-it.quantidade);
@@ -5509,6 +5688,10 @@ async function renderPedidosEvento(){
     lista.innerHTML=docs.map(d=>{
       const p=d.data();
       const dtFmt=(p.criadoEm||'').slice(0,16).replace('T',' ');
+      const itensAll=p.itens||[];
+      const itEnt=p.itensEntregues||itensAll.filter(it=>(it.tipoEntrega||'entregue')==='entregue');
+      const itSP=p.itensAEntregar||itensAll.filter(it=>it.tipoEntrega==='sob_pedido');
+      const pedidoId='ped-'+d.id;
       return `<div class="pedido-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
@@ -5517,24 +5700,56 @@ async function renderPedidosEvento(){
           </div>
           <span class="pedido-status" style="background:${statusBg[p.status]||'#eee'};color:${statusColor[p.status]||'#333'}">${p.status}</span>
         </div>
-        <div style="font-size:12px;color:#333;margin-bottom:6px">
+        <div style="font-size:12px;color:#333;margin-bottom:8px">
           👤 <strong>${p.cliente||'—'}</strong> · 💼 ${p.vendedorNome}
-          · 🚚 ${p.entrega==='evento'?'Entregue no evento':p.entrega==='sede'?'A entregar pela sede':'Pendente'}
+          ${p.doc?'· 📄 '+p.doc:''}
         </div>
-        <div style="font-size:11px;color:#666">
-          ${(p.itens||[]).map(it=>`<span style="background:#F0F4F8;border-radius:3px;padding:2px 5px;margin-right:3px">
-            ${it.descricao} ×${it.quantidade}
-            <span style="color:${it.natureza==='bonificacao'?'#FF8C00':'#0078D4'}">#${it.natureza==='bonificacao'?'Bon':'Venda'}</span>
-          </span>`).join('')}
+        <div style="display:flex;gap:0;margin-bottom:6px;border-bottom:1px solid #E0E4EC">
+          <button id="tab-ent-${pedidoId}" onclick="pedidoTab('${pedidoId}','ent')" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid #107C10;background:none;cursor:pointer;color:#107C10;font-weight:600">✅ Entregue (${itEnt.length})</button>
+          <button id="tab-sp-${pedidoId}" onclick="pedidoTab('${pedidoId}','sp')" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;color:#aaa">📦 A Entregar (${itSP.length})</button>
+        </div>
+        <div id="view-ent-${pedidoId}" style="font-size:11px;color:#666;margin-bottom:6px">
+          ${itEnt.length?itEnt.map(it=>'<span style="background:#F0FFF4;border:1px solid #c3e6cb;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#0078D4')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Nenhum item entregue no evento.</em>'}
+        </div>
+        <div id="view-sp-${pedidoId}" style="display:none;font-size:11px;color:#666;margin-bottom:6px">
+          ${itSP.length?itSP.map(it=>'<span style="background:#FFF8E7;border:1px solid #ffc107;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#0078D4')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Sem itens sob pedido.</em>'}
+          ${itSP.length&&p.statusAEntregar!=='entregue_sede'?`<div style="margin-top:6px"><button onclick="marcarAEntregar('${d.id}')" class="btn" style="font-size:11px;padding:3px 8px;background:#C07800;color:#fff">📦 Marcar como Entregue pela Sede</button></div>`:''}
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          ${p.status!=='entregue'&&p.status!=='cancelado'?`<button onclick="confirmarEntregaPedido('${d.id}')" class="btn" style="font-size:11px;padding:4px 10px;background:#107C10;color:#fff">✅ Entregue</button>`:''}
           ${p.status!=='cancelado'?`<button onclick="solicitarCancelamentoPedido('${d.id}','${p.numero||d.id}')" class="btn" style="font-size:11px;padding:4px 10px;background:#D13438;color:#fff">✕ Cancelar</button>`:''}
           <button onclick="imprimirPedidoPDF(${JSON.stringify(p).replace(/'/g,'\'').replace(/"/g,'&quot;')},'${d.id}')" class="btn btn-secondary" style="font-size:11px;padding:4px 10px">🖨️ Recibo</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){lista.innerHTML='<p style="color:#D13438;text-align:center">Erro: '+e.message+'</p>';}
+}
+
+function pedidoTab(pedidoId,tab){
+  const vEnt=document.getElementById('view-ent-'+pedidoId);
+  const vSP=document.getElementById('view-sp-'+pedidoId);
+  const tEnt=document.getElementById('tab-ent-'+pedidoId);
+  const tSP=document.getElementById('tab-sp-'+pedidoId);
+  if(tab==='ent'){
+    if(vEnt)vEnt.style.display='';if(vSP)vSP.style.display='none';
+    if(tEnt){tEnt.style.borderBottomColor='#107C10';tEnt.style.color='#107C10';tEnt.style.fontWeight='600';}
+    if(tSP){tSP.style.borderBottomColor='transparent';tSP.style.color='#aaa';tSP.style.fontWeight='400';}
+  }else{
+    if(vEnt)vEnt.style.display='none';if(vSP)vSP.style.display='';
+    if(tSP){tSP.style.borderBottomColor='#C07800';tSP.style.color='#C07800';tSP.style.fontWeight='600';}
+    if(tEnt){tEnt.style.borderBottomColor='transparent';tEnt.style.color='#aaa';tEnt.style.fontWeight='400';}
+  }
+}
+
+async function marcarAEntregar(pedidoId){
+  if(!confirm('Confirmar que os itens "A Entregar" foram enviados pela sede?')) return;
+  await db.collection('pedidos_evento').doc(pedidoId).update({
+    statusAEntregar:'entregue_sede',
+    entregueSedeEm:new Date().toISOString(),
+    entregueSedeBy:pdvVendedorAtivo?.nome||'ADM',
+    status:'entregue'
+  });
+  renderPedidosEvento();
+  toast('✅ Itens marcados como entregues pela sede!');
 }
 
 async function confirmarEntregaPedido(id){
@@ -5934,10 +6149,22 @@ async function renderVendedores(){
   }catch(e){lista.innerHTML='<p style="color:#D13438">Erro: '+e.message+'</p>';}
 }
 
-function pdvShowFormVendedor(){
+async function pdvShowFormVendedor(){
   const f=document.getElementById('pdv-form-vendedor');
   if(f) f.style.display=f.style.display==='none'||!f.style.display?'block':'none';
-  ['vend-nome','vend-pin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['vend-nome','vend-pin','vend-mercus'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Load eventos into select
+  try{
+    const sel=document.getElementById('vend-evento');
+    if(sel){
+      const snap=await db.collection('eventos').where('status','==','aberto').orderBy('criadoEm','desc').get();
+      sel.innerHTML='<option value="">— Todos os eventos (supervisor) —</option>';
+      snap.docs.forEach(d=>{
+        const ev=d.data();
+        sel.innerHTML+=`<option value="${d.id}">${ev.nome} (${(ev.data||'').split('-').reverse().join('/')})</option>`;
+      });
+    }
+  }catch(e){}
 }
 
 async function salvarVendedor(){
@@ -5952,7 +6179,9 @@ async function salvarVendedor(){
     // Check duplicate PIN
     const dup=await db.collection('vendedores').where('pin','==',pin).get();
     if(!dup.empty){errEl.textContent='PIN já está em uso por outro vendedor.';return;}
-    await db.collection('vendedores').add({nome,pin,perfil,ativo:true,criadoEm:new Date().toISOString()});
+    const eventoId=document.getElementById('vend-evento')?.value||'';
+    const mercusRef=document.getElementById('vend-mercus')?.value.trim()||'';
+    await db.collection('vendedores').add({nome,pin,perfil,eventoId,mercusRef,ativo:true,criadoEm:new Date().toISOString()});
     toast('✅ Vendedor cadastrado: '+nome);
     document.getElementById('pdv-form-vendedor').style.display='none';
     renderVendedores();
@@ -5972,6 +6201,157 @@ async function redefinirPinVendedor(id){
   if(!dup.empty){alert('PIN já em uso. Escolha outro.');return;}
   await db.collection('vendedores').doc(id).update({pin:novoPin});
   toast('✅ PIN redefinido!');
+}
+
+
+// ==============================
+// RETORNO DO EVENTO
+// ==============================
+
+async function renderRetorno(){
+  if(!pdvEventoAtivo){
+    document.getElementById('retorno-form-section').innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Selecione um evento primeiro.</p>';
+    return;
+  }
+  renderRetornoEstoque();
+  renderRetornoHistorico();
+}
+
+async function renderRetornoEstoque(){
+  const lista=document.getElementById('retorno-estoque-lista');
+  if(!lista||!pdvEventoAtivo) return;
+  lista.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Carregando...</p>';
+  try{
+    const snap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+    if(snap.empty){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Nenhum produto no estoque do evento.</p>';return;}
+    lista.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#F0F4F8">
+        <th style="padding:8px;text-align:left">Produto</th>
+        <th style="padding:8px;text-align:center">Lote</th>
+        <th style="padding:8px;text-align:center">Saldo no Evento</th>
+        <th style="padding:8px;text-align:center">Qtd Retornando</th>
+      </tr></thead>
+      <tbody>${snap.docs.map(d=>{
+        const it=d.data();
+        return `<tr style="border-bottom:1px solid #F0F0F0">
+          <td style="padding:8px"><strong>${it.descricao||it.codigo}</strong><div style="font-size:11px;color:#666">${it.codigo}</div></td>
+          <td style="padding:8px;text-align:center">${it.lote||'—'}</td>
+          <td style="padding:8px;text-align:center;color:#0078D4;font-weight:700">${it.quantidade||0} un</td>
+          <td style="padding:8px;text-align:center">
+            <input type="number" min="0" max="${it.quantidade||0}" value="${it.quantidade||0}"
+              class="form-control" style="width:70px;font-size:12px;text-align:center;display:inline-block"
+              id="ret-qty-${d.id}">
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    // Store doc ids for saving
+    window._retornoDocIds=snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){lista.innerHTML='<p style="color:#D13438">Erro: '+e.message+'</p>';}
+}
+
+async function salvarRetorno(){
+  if(!pdvEventoAtivo){toast('Selecione um evento.');return;}
+  if(!window._retornoDocIds||!window._retornoDocIds.length){toast('Nenhum item para registrar.');return;}
+  const btn=document.getElementById('btn-salvar-retorno');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
+  const itens=window._retornoDocIds.map(it=>{
+    const inp=document.getElementById('ret-qty-'+it.id);
+    const qtdRetorno=inp?Number(inp.value)||0:0;
+    return {docId:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',qtdEvento:it.quantidade||0,qtdRetorno};
+  }).filter(it=>it.qtdRetorno>=0);
+  try{
+    await db.collection('retornos_evento').add({
+      eventoId:pdvEventoAtivo.id,eventoNome:pdvEventoAtivo.nome,
+      vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,
+      itens,
+      status:'aguardando_validacao',
+      criadoEm:new Date().toISOString()
+    });
+    toast('✅ Retorno enviado para validação do gestor!');
+    renderRetornoHistorico();
+  }catch(e){
+    const err=document.getElementById('retorno-err');
+    if(err)err.textContent='Erro: '+e.message;
+  }
+  if(btn){btn.disabled=false;btn.textContent='📨 Enviar Retorno para Validação';}
+}
+
+async function renderRetornoHistorico(){
+  const hist=document.getElementById('retorno-historico');
+  if(!hist||!pdvEventoAtivo) return;
+  hist.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Carregando...</p>';
+  try{
+    const snap=await db.collection('retornos_evento').where('eventoId','==',pdvEventoAtivo.id).orderBy('criadoEm','desc').get();
+    if(snap.empty){hist.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Nenhum retorno registrado ainda.</p>';return;}
+    const isAdmUser=pdvVendedorAtivo&&(pdvVendedorAtivo.id==='adm'||pdvVendedorAtivo.perfil==='supervisor');
+    hist.innerHTML=snap.docs.map(d=>{
+      const r=d.data();
+      const dt=r.criadoEm?r.criadoEm.substring(0,16).replace('T',' '):'';
+      const statusColor=r.status==='aprovado'?'#107C10':r.status==='aguardando_validacao'?'#C07800':'#0078D4';
+      const statusLabel=r.status==='aprovado'?'✅ Aprovado':r.status==='aguardando_validacao'?'⏳ Aguardando validação':'📝 '+r.status;
+      return `<div style="border:1px solid #E0E4EC;border-radius:8px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <strong style="font-size:13px">${r.vendedorNome||'Vendedor'}</strong>
+            <span style="font-size:11px;color:#666;margin-left:8px">${dt}</span>
+          </div>
+          <span style="font-size:11px;padding:2px 10px;border-radius:10px;background:${statusColor}20;color:${statusColor};font-weight:600">${statusLabel}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px">
+          <thead><tr style="background:#F8F9FB"><th style="padding:4px 8px;text-align:left">Produto</th><th style="padding:4px 8px;text-align:center">Lote</th><th style="padding:4px 8px;text-align:center">Saldo</th><th style="padding:4px 8px;text-align:center">Retorno</th>${isAdmUser?'<th style="padding:4px 8px;text-align:center">Ajuste</th>':''}</tr></thead>
+          <tbody>${(r.itens||[]).map((it,idx)=>`
+            <tr style="border-bottom:1px solid #F0F0F0">
+              <td style="padding:4px 8px">${it.descricao||it.codigo}</td>
+              <td style="padding:4px 8px;text-align:center">${it.lote||'—'}</td>
+              <td style="padding:4px 8px;text-align:center">${it.qtdEvento}</td>
+              <td style="padding:4px 8px;text-align:center;font-weight:700;color:#0078D4">${it.qtdRetorno}</td>
+              ${isAdmUser&&r.status==='aguardando_validacao'?`<td style="padding:4px 8px;text-align:center"><input type="number" min="0" value="${it.qtdRetorno}" class="form-control" style="width:60px;font-size:11px;text-align:center;display:inline-block" id="adj-${d.id}-${idx}"></td>`:(isAdmUser?`<td style="padding:4px 8px;text-align:center;color:#aaa">—</td>`:'')}
+            </tr>`).join('')}</tbody>
+        </table>
+        ${isAdmUser&&r.status==='aguardando_validacao'?`
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="mot-${d.id}" class="form-control" placeholder="Motivo de ajuste (obrigatório se houver alteração)..." style="flex:1;font-size:12px">
+            <button onclick="aprovarRetorno('${d.id}')" class="btn btn-primary" style="font-size:12px;padding:6px 12px">✅ Aprovar e Devolver ao Estoque</button>
+          </div>`:''}
+        ${r.motivoAjuste?`<p style="font-size:12px;color:#555;margin-top:8px">📝 <em>${r.motivoAjuste}</em></p>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){hist.innerHTML='<p style="color:#D13438">Erro: '+e.message+'</p>';}
+}
+
+async function aprovarRetorno(retornoId){
+  const r=(await db.collection('retornos_evento').doc(retornoId).get()).data();
+  const motivo=document.getElementById('mot-'+retornoId)?.value.trim()||'';
+  // Collect adjusted quantities
+  const itensAjustados=r.itens.map((it,idx)=>{
+    const inp=document.getElementById('adj-'+retornoId+'-'+idx);
+    const qtdAjustada=inp?Number(inp.value)||0:it.qtdRetorno;
+    return {...it,qtdAjustada};
+  });
+  const houveDivergencia=itensAjustados.some((it,idx)=>it.qtdAjustada!==r.itens[idx].qtdRetorno);
+  if(houveDivergencia&&!motivo){alert('Informe o motivo do ajuste nas quantidades.');return;}
+  try{
+    // Return to central stock
+    for(const it of itensAjustados){
+      if(it.qtdAjustada<=0) continue;
+      // Find main stock doc by codigo+lote
+      const sn=await db.collection('stock').where('codigo','==',it.codigo).where('lote','==',it.lote||'').limit(1).get();
+      if(!sn.empty){
+        const cur=Number(sn.docs[0].data().quantidade)||0;
+        await db.collection('stock').doc(sn.docs[0].id).update({quantidade:cur+it.qtdAjustada});
+      }
+    }
+    // Update retorno status
+    await db.collection('retornos_evento').doc(retornoId).update({
+      status:'aprovado',
+      itensAjustados,
+      motivoAjuste:motivo||null,
+      aprovadoPor:pdvVendedorAtivo?.nome||'ADM',
+      aprovadoEm:new Date().toISOString()
+    });
+    toast('✅ Retorno aprovado! Estoque central atualizado.');
+    renderRetornoHistorico();
+  }catch(e){alert('Erro: '+e.message);}
 }
 
 // ==============================
@@ -6016,41 +6396,64 @@ async function pdvScanProduto(val){
 
 async function pdvBuscarPorNome(termo){
   const sug=document.getElementById('pdv-nome-sugestoes');
-  if(!sug||!pdvEventoAtivo) return;
-  sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Buscando...</div>';
+  if(!sug) return;
+  sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Buscando no catálogo...</div>';
   sug.style.display='block';
   try{
-    const snap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+    // Search full catalog
     const termoLow=termo.toLowerCase();
-    const matches=snap.docs
-      .map(d=>({id:d.id,...d.data()}))
+    const snapStock=await db.collection('stock').get();
+    const todos=snapStock.docs.map(d=>({stockId:d.id,...d.data()}));
+    const matches=todos
       .filter(it=>(it.descricao||'').toLowerCase().includes(termoLow)||(it.codigo||'').toLowerCase().includes(termoLow))
-      .slice(0,8);
-    if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto encontrado.</div>';return;}
-    sug.innerHTML=matches.map(it=>`
-      <div onclick="pdvSelecionarItemNome(${JSON.stringify({id:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',quantidade:it.quantidade,barcode:it.barcode||''}).replace(/"/g,"'")})"
-        style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;transition:.1s"
+      .slice(0,10);
+    if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto encontrado no catálogo.</div>';return;}
+    // Cross-reference with event deposit for availability
+    let eventoMap={};
+    if(pdvEventoAtivo){
+      const snapDep=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+      snapDep.docs.forEach(d=>{const dd=d.data();eventoMap[dd.codigo+'|'+(dd.lote||'')]=d.data().quantidade||0;});
+    }
+    sug.innerHTML=matches.map(it=>{
+      const depQtd=eventoMap[it.codigo+'|'+(it.lote||'')]||0;
+      const disponivel=depQtd>0;
+      const badge=disponivel?`<span style="color:#107C10;font-weight:700;font-size:11px">🟢 ${depQtd} un</span>`:`<span style="color:#C07800;font-size:11px">🟡 Sob Pedido</span>`;
+      const safeProd=JSON.stringify({stockId:it.stockId,codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',quantidade:depQtd,barcode:it.barcode||it.ean||'',disponivel}).replace(/"/g,"'");
+      return `<div onclick="pdvSelecionarItemCatalogo(${safeProd})"
+        style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between;align-items:center"
         onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
-        <strong>${it.descricao}</strong>
-        <span style="color:#666;margin-left:6px;font-size:11px">${it.codigo}</span>
-        <span style="float:right;color:${it.quantidade>0?'#107C10':'#D13438'};font-size:11px;font-weight:700">${it.quantidade} un</span>
-      </div>`).join('');
+        <div><strong>${it.descricao}</strong><span style="color:#666;margin-left:6px;font-size:11px">${it.codigo}</span></div>
+        ${badge}
+      </div>`;
+    }).join('');
   }catch(e){sug.innerHTML='<div style="padding:8px;color:#D13438;font-size:12px">Erro na busca.</div>';}
 }
 
-function pdvSelecionarItemNome(item){
-  // item comes in as JS object (quotes already safe)
+function pdvSelecionarItemCatalogo(item){
   const sug=document.getElementById('pdv-nome-sugestoes');
   if(sug) sug.style.display='none';
   const inp=document.getElementById('pdv-scan-input');
   if(inp) inp.value=item.descricao;
-  pdvFoundItem=item;
+  pdvFoundItem={id:item.stockId,codigo:item.codigo,descricao:item.descricao,lote:item.lote||'',quantidade:item.quantidade,barcode:item.barcode||''};
+  const disponivel=item.disponivel===true||item.disponivel==='true';
+  const radioEnt=document.getElementById('pdv-tipo-entregue');
+  const radioSP=document.getElementById('pdv-tipo-sob-pedido');
+  // Auto-set delivery type based on availability
+  if(disponivel&&radioEnt) radioEnt.checked=true;
+  else if(radioSP) radioSP.checked=true;
+  const badge=disponivel?'🟢 Pronta Entrega ('+item.quantidade+' un)':'🟡 Sob Pedido (sem estoque no evento)';
+  const badgeColor=disponivel?'#107C10':'#C07800';
   document.getElementById('pdv-found-nome').textContent=item.descricao;
-  document.getElementById('pdv-found-info').textContent='Cód: '+item.codigo+' | Lote: '+(item.lote||'—')+' | Disponível: '+item.quantidade+' un';
+  document.getElementById('pdv-found-info').innerHTML='Cód: '+item.codigo+' | Lote: '+(item.lote||'—')+'&nbsp;&nbsp;<strong style="color:'+badgeColor+'">'+badge+'</strong>';
   const loteEl=document.getElementById('pdv-lote-sel');
-  if(loteEl) loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'} (${item.quantidade} un)</option>`;
+  if(loteEl) loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'}</option>`;
   document.getElementById('pdv-qty').value=1;
   document.getElementById('pdv-found-card').style.display='block';
+}
+
+function pdvSelecionarItemNome(item){
+  // Legacy — redirect to new catalog selector
+  pdvSelecionarItemCatalogo({...item,stockId:item.id,disponivel:item.quantidade>0});
 }
 
 // Close suggestions when clicking outside
