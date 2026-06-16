@@ -4994,7 +4994,7 @@ function invNBprosseguir(){
     confirmed.push({codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',dataValidade:it.dataValidade||'',quantidade:qty,barcode:it.barcode||''});
   });
   if(err)return;
-  document.getElementById('inv-nb-modal').remove();
+  document.getElementById(\'inv-nb-modal\').remove();
   if(window._invNBcb)window._invNBcb(confirmed);
 }
 
