@@ -5556,13 +5556,13 @@ async function apagarEvento(id, nome){
       await batch.commit();
       estSnap=await db.collection('deposito_evento').where('eventoId','==',id).get();
     }
-    // 2. Delete pedidos
-    let pedSnap=await db.collection('pedidos').where('eventoId','==',id).get();
+    // 2. Delete pedidos_evento
+    let pedSnap=await db.collection('pedidos_evento').where('eventoId','==',id).get();
     while(!pedSnap.empty){
       const batch=db.batch();
       pedSnap.docs.forEach(d=>batch.delete(d.ref));
       await batch.commit();
-      pedSnap=await db.collection('pedidos').where('eventoId','==',id).get();
+      pedSnap=await db.collection('pedidos_evento').where('eventoId','==',id).get();
     }
     // 3. Delete evento
     await db.collection('eventos').doc(id).delete();
@@ -5824,34 +5824,33 @@ async function pdvFinalizarPedido(){
 
 /* ---- PEDIDOS ---- */
 async function renderPedidosEvento(){
-  // Lock vendedor filter for non-supervisors
-  if(pdvVendedorAtivo&&pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor'){
-    const selF=document.getElementById('pdv-filtro-vendedor');
-    if(selF){selF.value=pdvVendedorAtivo.nome;selF.disabled=true;}
-  } else {
-    const selF=document.getElementById('pdv-filtro-vendedor');
-    if(selF) selF.disabled=false;
-  }
   const lista=document.getElementById('pdv-pedidos-lista');
   if(!lista) return;
   if(!pdvEventoAtivo){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:30px">Selecione um evento.</p>';return;}
   lista.innerHTML='<p style="color:#aaa;text-align:center">Carregando...</p>';
   const filtroStatus=document.getElementById('pdv-filtro-status')?.value||'';
-  const filtroVend=document.getElementById('pdv-filtro-vendedor')?.value||'';
   try{
-    let q=db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id).orderBy('criadoEm','desc');
-    const snap=await q.get();
-    let docs=snap.docs;
-    if(filtroStatus) docs=docs.filter(d=>d.data().status===filtroStatus);
-    if(filtroVend) docs=docs.filter(d=>d.data().vendedorId===filtroVend);
-    // Populate vendedor filter
-    const vendedores=[...new Set(snap.docs.map(d=>d.data().vendedorNome))];
+    const snap=await db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+    // Populate vendedor filter FIRST (before applying lock)
+    const vendedores=[...new Set(snap.docs.map(d=>d.data().vendedorNome).filter(Boolean))];
     const vSel=document.getElementById('pdv-filtro-vendedor');
     if(vSel){
-      const cur=vSel.value;
+      const prev=vSel.value;
       vSel.innerHTML='<option value="">Todos os vendedores</option>'+
-        vendedores.map(v=>`<option value="${v}" ${cur===v?'selected':''}>${v}</option>`).join('');
+        vendedores.map(v=>`<option value="${v}">${v}</option>`).join('');
+      // Re-apply non-supervisor lock AFTER options are populated
+      if(pdvVendedorAtivo&&pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor'){
+        vSel.value=pdvVendedorAtivo.nome;
+        vSel.disabled=true;
+      } else {
+        vSel.value=prev;
+        vSel.disabled=false;
+      }
     }
+    const filtroVend=document.getElementById('pdv-filtro-vendedor')?.value||'';
+    let docs=snap.docs.slice().sort((a,b)=>(b.data().criadoEm||'').localeCompare(a.data().criadoEm||''));
+    if(filtroStatus) docs=docs.filter(d=>d.data().status===filtroStatus);
+    if(filtroVend) docs=docs.filter(d=>d.data().vendedorNome===filtroVend);
     if(!docs.length){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:30px">Nenhum pedido encontrado.</p>';return;}
     const statusColor={pendente:'#856404',parcial:'#004085',entregue:'#155724'};
     const statusBg={pendente:'#FFF3CD',parcial:'#CCE5FF',entregue:'#D4EDDA'};
