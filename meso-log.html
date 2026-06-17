@@ -2,6 +2,33 @@
 <!-- MESO-LOG v2.1 2026-06-15 -->
 <html lang="pt-BR">
 <head>
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // ── EmailJS Config ──────────────────────────────────────────────────────
+  // Preencha com suas credenciais em https://emailjs.com → Account → API Keys
+  // SERVICE_ID: Settings → Email Services → Service ID
+  // PUBLIC_KEY: Account → API Keys → Public Key
+  // Crie 3 templates (IDs configuráveis abaixo)
+  const EJS_SERVICE  = 'SEU_SERVICE_ID';   // ex: 'service_abc123'
+  const EJS_PUB_KEY  = 'SUA_PUBLIC_KEY';   // ex: 'user_xyz789'
+  const EJS_TMPL_NOVA    = 'tmpl_nova_solic';   // template: nova solicitação
+  const EJS_TMPL_APROV   = 'tmpl_aprovada';     // template: aprovada
+  const EJS_TMPL_REPROV  = 'tmpl_reprovada';    // template: reprovada
+  const EJS_TMPL_ENVIADA = 'tmpl_enviada';      // template: enviada/expedida
+  const EJS_ATIVO = (EJS_SERVICE !== 'SEU_SERVICE_ID'); // auto-desativa se não configurado
+  if(EJS_ATIVO) emailjs.init({publicKey: EJS_PUB_KEY});
+
+  async function sendSolicEmail(tipo, params){
+    if(!EJS_ATIVO) return; // silencioso se não configurado
+    const tmplMap = {nova:EJS_TMPL_NOVA, aprovada:EJS_TMPL_APROV, reprovada:EJS_TMPL_REPROV, enviada:EJS_TMPL_ENVIADA};
+    const tmpl = tmplMap[tipo];
+    if(!tmpl || !params.to_email) return;
+    try{
+      await emailjs.send(EJS_SERVICE, tmpl, params);
+    }catch(e){ console.warn('EmailJS erro:', e); }
+  }
+</script>
 <script>/* MESO-LOG embedded config - bypass setup screen */localStorage.setItem('ml_firebase_config','{"apiKey":"AIzaSyC6bIbD2JhbRLUrP1EOV6TLaVHfGDSfCmU","authDomain":"meso-log.firebaseapp.com","projectId":"meso-log","storageBucket":"meso-log.firebasestorage.app","messagingSenderId":"314532395858","appId":"1:314532395858:web:c338319fac53ac7f07d88b","measurementId":"G-0K2HW36N44"}');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -337,49 +364,90 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
     <!-- HOME -->
     <div class="page active" id="page-home">
-      <div class="intro-banner">
-        <h2>Bem-vindo à Plataforma MESO-LOG</h2>
-        <p>Plataforma destinada à comunicação e solicitação das áreas de atuação da Logística da <strong>Mesoestetic Pharma Group Brasil</strong>. Gerencie solicitações de materiais para aulas práticas e workshops, acompanhe status em tempo real e gere relatórios completos.</p>
+      <!-- DASHBOARD HEADER -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:24px">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#111;letter-spacing:-0.5px;line-height:1.1">MESO-LOG</div>
+          <div style="font-size:12px;color:#777;margin-top:3px">Mesoestetic Pharma Group Brasil — Painel de Controle</div>
+        </div>
+        <div id="dash-timestamp" style="font-size:11px;color:#aaa;text-align:right"></div>
       </div>
-      <div class="card-grid">
-        <div class="stat-card blue"><h3>Total de Solicitações</h3><div class="num" id="stat-total">—</div></div>
-        <div class="stat-card yellow"><h3>Aguardando Aprovação</h3><div class="num" id="stat-aguardando">—</div></div>
-        <div class="stat-card green"><h3>Aprovadas / Enviadas</h3><div class="num" id="stat-ok">—</div></div>
-        <div class="stat-card red"><h3>Canceladas</h3><div class="num" id="stat-canceladas">—</div></div>
+
+      <!-- KPI CARDS -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+        <div style="background:#111;color:#fff;border-radius:10px;padding:20px 22px;position:relative;overflow:hidden">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:.5;text-transform:uppercase;margin-bottom:10px">TOTAL</div>
+          <div id="stat-total" style="font-size:36px;font-weight:800;line-height:1;color:#fff">—</div>
+          <div style="font-size:11px;opacity:.4;margin-top:5px">Solicitações</div>
+          <div style="position:absolute;right:-10px;bottom:-14px;font-size:56px;opacity:.07">📋</div>
+        </div>
+        <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:20px 22px;position:relative;overflow:hidden">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-bottom:10px">PENDENTES</div>
+          <div id="stat-aguardando" style="font-size:36px;font-weight:800;color:#111;line-height:1">—</div>
+          <div style="font-size:11px;color:#aaa;margin-top:5px">Aguardando aprovação</div>
+          <div style="position:absolute;right:-10px;bottom:-14px;font-size:56px;opacity:.06">⏳</div>
+        </div>
+        <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:20px 22px;position:relative;overflow:hidden">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-bottom:10px">APROVADAS</div>
+          <div id="stat-ok" style="font-size:36px;font-weight:800;color:#111;line-height:1">—</div>
+          <div style="font-size:11px;color:#aaa;margin-top:5px">Aprovadas / Enviadas</div>
+          <div style="position:absolute;right:-10px;bottom:-14px;font-size:56px;opacity:.06">✅</div>
+        </div>
+        <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:20px 22px;position:relative;overflow:hidden">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#999;text-transform:uppercase;margin-bottom:10px">CANCELADAS</div>
+          <div id="stat-canceladas" style="font-size:36px;font-weight:800;color:#111;line-height:1">—</div>
+          <div style="font-size:11px;color:#aaa;margin-top:5px">Reprovadas / Canceladas</div>
+          <div style="position:absolute;right:-10px;bottom:-14px;font-size:56px;opacity:.06">❌</div>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📋 Módulos da Plataforma</h3>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="padding:9px 13px;border-radius:6px;background:#EBF3FB;border-left:4px solid #0078D4;font-size:13px;cursor:pointer;transition:.15s" onclick="showPage('nova')" onmouseover="this.style.background='#D9ECFB'" onmouseout="this.style.background='#EBF3FB'">
-              <strong style="color:#002050">1 · Solicitação de Materiais — Aulas Práticas e Workshop</strong> <span style="font-size:11px;color:#0078D4;font-weight:600">● Disponível</span>
-              <div style="color:#555;font-size:12px;margin-top:2px">Solicite produtos, acompanhe envio e gere relatórios.</div>
+
+      <!-- BODY GRID -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+        <!-- MODULES -->
+        <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:22px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;margin-bottom:16px">MÓDULOS DA PLATAFORMA</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div onclick="showPage('nova')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:7px;border:1.5px solid #e8e8e8;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='#111';this.style.background='#f7f7f7'" onmouseout="this.style.borderColor='#e8e8e8';this.style.background='#fff'">
+              <div style="width:28px;height:28px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📦</div>
+              <div><div style="font-size:12px;font-weight:700;color:#111">1 · Solicitação de Materiais</div><div style="font-size:11px;color:#999;margin-top:1px">Aulas Práticas e Workshop</div></div>
+              <div style="margin-left:auto;width:7px;height:7px;background:#111;border-radius:50%;flex-shrink:0"></div>
             </div>
-            <div style="padding:9px 13px;border-radius:6px;background:#EBF3FB;border-left:4px solid #107C10;font-size:13px;cursor:pointer;transition:.15s" onclick="showPage('operacoes')" onmouseover="this.style.background='#D9ECFB'" onmouseout="this.style.background='#EBF3FB'">
-              <strong style="color:#002050">2 · 3 · 4 · Operações — Recebimento · Inventário · Perdas</strong> <span style="font-size:11px;color:#107C10;font-weight:600">● Módulo ADM</span>
-              <div style="color:#555;font-size:12px;margin-top:2px">Receba mercadorias com leitor de código, faça inventário contando item a item, registre perdas, avarias e vencimentos.</div>
+            <div onclick="showPage('operacoes')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:7px;border:1.5px solid #e8e8e8;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='#111';this.style.background='#f7f7f7'" onmouseout="this.style.borderColor='#e8e8e8';this.style.background='#fff'">
+              <div style="width:28px;height:28px;background:#555;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">⚙️</div>
+              <div><div style="font-size:12px;font-weight:700;color:#111">2·3·4 · Operações</div><div style="font-size:11px;color:#999;margin-top:1px">Recebimento · Inventário · Perdas</div></div>
+              <div style="margin-left:auto;font-size:10px;background:#111;color:#fff;padding:2px 7px;border-radius:10px;font-weight:600;flex-shrink:0">ADM</div>
             </div>
-            <div style="padding:9px 13px;border-radius:6px;background:#EBF3FB;border-left:4px solid #0078D4;font-size:13px;cursor:pointer;transition:.15s" onclick="showPage('envios')" onmouseover="this.style.background='#D9ECFB'" onmouseout="this.style.background='#EBF3FB'">
-              <strong style="color:#002050">5 · Solicitação de Envios — Correios / Transportadoras</strong> <span style="font-size:11px;color:#0078D4;font-weight:600">● Disponível</span>
+            <div onclick="showPage('envios')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:7px;border:1.5px solid #e8e8e8;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='#111';this.style.background='#f7f7f7'" onmouseout="this.style.borderColor='#e8e8e8';this.style.background='#fff'">
+              <div style="width:28px;height:28px;background:#333;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🚚</div>
+              <div><div style="font-size:12px;font-weight:700;color:#111">5 · Solicitação de Envios</div><div style="font-size:11px;color:#999;margin-top:1px">Correios / Transportadoras</div></div>
+              <div style="margin-left:auto;width:7px;height:7px;background:#111;border-radius:50%;flex-shrink:0"></div>
             </div>
-            <div style="padding:9px 13px;border-radius:6px;background:#EBF3FB;border-left:4px solid #0078D4;font-size:13px;cursor:pointer;transition:.15s" onclick="showPage('estoque')" onmouseover="this.style.background='#D9ECFB'" onmouseout="this.style.background='#EBF3FB'">
-              <strong style="color:#002050">6 · Consulta de Estoque — Quantidade e Lote</strong> <span style="font-size:11px;color:#0078D4;font-weight:600">● Disponível</span>
+            <div onclick="showPage('estoque')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:7px;border:1.5px solid #e8e8e8;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='#111';this.style.background='#f7f7f7'" onmouseout="this.style.borderColor='#e8e8e8';this.style.background='#fff'">
+              <div style="width:28px;height:28px;background:#333;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🗄️</div>
+              <div><div style="font-size:12px;font-weight:700;color:#111">6 · Consulta de Estoque</div><div style="font-size:11px;color:#999;margin-top:1px">Quantidade e Lote em tempo real</div></div>
+              <div style="margin-left:auto;width:7px;height:7px;background:#111;border-radius:50%;flex-shrink:0"></div>
             </div>
           </div>
         </div>
-        <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📬 Últimas Solicitações (Todas)</h3>
-          <div id="recent-list"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
+
+        <!-- RECENT ACTIVITY -->
+        <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:22px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;margin-bottom:16px">ÚLTIMAS ATIVIDADES</div>
+          <div id="recent-list"><div style="display:flex;align-items:center;gap:8px;color:#aaa;font-size:13px"><div style="width:16px;height:16px;border:2px solid #ddd;border-top-color:#111;border-radius:50%;animation:spin 1s linear infinite"></div>Carregando...</div></div>
         </div>
       </div>
-      <!-- PDV Dashboard card -->
-      <div id="home-pdv-card" style="display:none;margin-top:20px">
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin:0">🛒 Eventos em Aberto — PDV em Tempo Real</h3>
-            <button onclick="showPage('pdv')" class="btn btn-primary" style="font-size:11px;padding:4px 12px">Acessar PDV →</button>
+
+      <!-- PDV CARD (shown when ADM logged in) -->
+      <div id="home-pdv-card" style="display:none">
+        <div style="background:#111;border-radius:10px;padding:22px;color:#fff">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:.5;text-transform:uppercase;margin-bottom:4px">PDV — TEMPO REAL</div>
+              <div style="font-size:14px;font-weight:700">Eventos em Aberto</div>
+            </div>
+            <button onclick="showPage('pdv')" style="background:#fff;color:#111;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s" onmouseover="this.style.background='#eee'" onmouseout="this.style.background='#fff'">Acessar PDV →</button>
           </div>
-          <div id="home-pdv-eventos-lista"><p style="color:#aaa;font-size:13px">Carregando eventos...</p></div>
+          <div id="home-pdv-eventos-lista"><p style="color:#aaa;font-size:13px;margin:0">Carregando eventos...</p></div>
         </div>
       </div>
     </div>
@@ -2536,13 +2604,29 @@ function updateHome(){
   document.getElementById('stat-aguardando').textContent = r.filter(x=>x.status==='Aguardando Aprovação').length;
   document.getElementById('stat-ok').textContent = r.filter(x=>['Aprovado','Em Separação','Enviado','Entregue'].includes(x.status)).length;
   document.getElementById('stat-canceladas').textContent = r.filter(x=>x.status==='Cancelado').length;
+  // Timestamp
+  const ts = document.getElementById('dash-timestamp');
+  if(ts){ const now=new Date(); ts.innerHTML='Atualizado em<br>'+now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+  // Recent activity (sorted by most recent)
   const el = document.getElementById('recent-list');
-  const recent = r.slice(0,6);
-  if(!recent.length){el.innerHTML='<p style="color:#aaa;font-size:13px">Nenhuma solicitação registrada.</p>';return;}
-  el.innerHTML = recent.map(x=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:13px">
-      <div><strong style="color:#002050">${x.id}</strong><span style="color:#666;margin-left:8px;font-size:12px">${x.evento?.nome||''}</span><div style="font-size:11px;color:#aaa">${x.solicitante?.nome||''}</div></div>
-      <span class="status-badge ${statusClass(x.status)}">${x.status}</span>
+  const sorted = [...r].sort((a,b)=>(b.timestampISO||'').localeCompare(a.timestampISO||'')).slice(0,8);
+  if(!sorted.length){el.innerHTML='<p style="color:#aaa;font-size:13px">Nenhuma solicitação registrada.</p>';return;}
+  const statusDot={
+    'Aguardando Aprovação':'background:#555',
+    'Aprovado':'background:#111',
+    'Em Separação':'background:#333',
+    'Enviado':'background:#111',
+    'Entregue':'background:#111',
+    'Cancelado':'background:#aaa'
+  };
+  el.innerHTML = sorted.map(x=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
+      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;${statusDot[x.status]||'background:#ccc'}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:#111">${x.id} <span style="font-weight:400;color:#888">${x.evento?.nome||''}</span></div>
+        <div style="color:#bbb;font-size:11px;margin-top:1px">${x.solicitante?.nome||''} · ${x.dataSolicitacao||''}</div>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:#fff;background:#333;padding:2px 8px;border-radius:10px;flex-shrink:0;white-space:nowrap">${x.status}</div>
     </div>`).join('');
   if(admLoggedIn) updateHomePdvCard();
 }
@@ -2855,6 +2939,15 @@ async function submitSolicitacao(){
     const id='SOL-'+String(count+1).padStart(4,'0');
     const req={id,dataSolicitacao:new Date().toISOString().slice(0,10),timestampISO:new Date().toISOString(),...data,produtos:JSON.parse(JSON.stringify(cart)),status:'Aguardando Aprovação',codigoRastreamento:'',transportadora:'',obsInterna:''};
     await db.collection('requests').doc(id).set(req);
+    // Email: nova solicitação
+    sendSolicEmail('nova',{
+      to_email: data.solicitante.email,
+      to_name:  data.solicitante.nome||'',
+      id_solic: id,
+      evento:   data.evento?.nome||'',
+      data_ev:  data.evento?.data||'',
+      status:   'Aguardando Aprovação'
+    });
     // Save identity
     localStorage.setItem('ml_identity',data.solicitante.email);
     identityEmail=data.solicitante.email;
@@ -7717,7 +7810,17 @@ function solicAbrirAprovar(id){
 async function solicConfirmarAprovar(id){
   const obs=document.getElementById('solic-modal-obs')?.value||'';
   try{
+    const _snapA = await db.collection('requests').doc(id).get();
+    const _dA = _snapA.data()||{};
     await db.collection('requests').doc(id).update({status:'Aprovado',obsInterna:obs,aprovadoPor:solicUser?.nome||'',aprovadoEm:new Date().toISOString()});
+    sendSolicEmail('aprovada',{
+      to_email: _dA.solicitante?.email||'',
+      to_name:  _dA.solicitante?.nome||'',
+      id_solic: id,
+      evento:   _dA.evento?.nome||'',
+      obs_interna: obs||'',
+      aprovado_por: solicUser?.nome||''
+    });
     solicCloseModal();
     toast('✅ Solicitação aprovada!');
   }catch(e){alert('Erro: '+e.message);}
@@ -7742,7 +7845,17 @@ async function solicConfirmarRejeitar(id){
   const obs=document.getElementById('solic-modal-obs')?.value||'';
   if(!obs.trim()){alert('Informe o motivo da rejeição.');return;}
   try{
+    const _snapR = await db.collection('requests').doc(id).get();
+    const _dR = _snapR.data()||{};
     await db.collection('requests').doc(id).update({status:'Cancelado',obsInterna:obs,rejeitadoPor:solicUser?.nome||'',rejeitadoEm:new Date().toISOString()});
+    sendSolicEmail('reprovada',{
+      to_email: _dR.solicitante?.email||'',
+      to_name:  _dR.solicitante?.nome||'',
+      id_solic: id,
+      evento:   _dR.evento?.nome||'',
+      motivo:   obs||'',
+      rejeitado_por: solicUser?.nome||''
+    });
     solicCloseModal();
     toast('Solicitação rejeitada.');
   }catch(e){alert('Erro: '+e.message);}
@@ -7780,7 +7893,19 @@ async function solicConfirmarExpedir(id){
   const produtosEnviados=(r.produtos||[]).map(p=>({...p,qty:parseInt(document.getElementById('solic-exp-qty-'+p.codigo)?.value||p.qty)||p.qty}));
   const comAlteracoes=produtosEnviados.some((p,i)=>p.qty!==(r.produtos[i]?.qty||p.qty));
   try{
+    const _snapE = await db.collection('requests').doc(id).get();
+    const _dE = _snapE.data()||{};
     await db.collection('requests').doc(id).update({status:'Enviado',transportadora:transp,codigoRastreamento:track,obsExpedicao:obs,produtosEnviados,comAlteracoes,expedidoPor:solicUser?.nome||'',expedidoEm:new Date().toISOString()});
+    sendSolicEmail('enviada',{
+      to_email: _dE.solicitante?.email||'',
+      to_name:  _dE.solicitante?.nome||'',
+      id_solic: id,
+      evento:   _dE.evento?.nome||'',
+      transportadora: transp||'',
+      rastreamento:   track||'',
+      obs_expedicao:  obs||'',
+      expedido_por:   solicUser?.nome||''
+    });
     solicCloseModal();
     toast('🚚 Saída confirmada!');
   }catch(e){alert('Erro: '+e.message);}
