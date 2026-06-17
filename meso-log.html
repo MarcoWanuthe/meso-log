@@ -2463,7 +2463,7 @@ function startListeners(){
 // ==============================
 function solicTab(tab,btn){
   // Guard: redirect to first allowed tab if user tries an unauthorized one
-  const _roleTabMap={marketing:['nova','acompanhar','relatorios'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
+  const _roleTabMap={marketing:['nova','acompanhar','relatorios','pendentes'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
   if(solicUser&&!(_roleTabMap[solicUser.perfil]||[]).includes(tab)) tab=(_roleTabMap[solicUser.perfil]||['nova'])[0];
   const _allTabs=['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'];
   _allTabs.forEach(t=>{
@@ -7567,7 +7567,7 @@ function solicLogout(){
 }
 
 function solicSetupForRole(perfil){
-  const show={marketing:['nova','acompanhar','relatorios'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
+  const show={marketing:['nova','acompanhar','relatorios','pendentes'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
   ['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'].forEach(t=>{
     const btn=document.getElementById('stab-'+t);
     if(btn)btn.style.display=(show[perfil]||[]).includes(t)?'':'none';
