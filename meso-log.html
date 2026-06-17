@@ -1344,20 +1344,83 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA ESTOQUE DO EVENTO -->
         <div id="pdv-view-estoque-evento" style="display:none">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <!-- Header com botões de import -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <h3 style="color:#002050;margin:0">📦 Estoque do Evento</h3>
-            <button id="btn-entrada-manual" onclick="toggleEntradaManual()" class="btn btn-primary" style="display:none;font-size:12px">+ Entrada Manual</button>
+            <div id="est-evento-btn-group" style="display:none;display:flex;gap:6px;flex-wrap:wrap">
+              <button onclick="estEventoTogglePanel('xml')" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">📄 Importar XML</button>
+              <button onclick="estEventoTogglePanel('excel')" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">📊 Importar Excel</button>
+              <button onclick="estEventoTogglePanel('lote')" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">✏️ Entrada em Lote</button>
+              <button id="btn-entrada-manual" onclick="estEventoTogglePanel('manual')" class="btn btn-primary" style="font-size:12px;padding:5px 12px">➕ Entrada Manual</button>
+            </div>
           </div>
 
-          <!-- Painel entrada manual (ADM) -->
+          <!-- D: Painel de confirmação pós-import -->
+          <div id="import-confirmacao" style="display:none;background:#F0FFF4;border:1px solid #00C851;border-radius:8px;padding:14px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:15px;font-weight:700;color:#107C10;margin-bottom:4px" id="import-conf-titulo">✅ Importação concluída</div>
+                <div style="font-size:13px;color:#333;margin-bottom:10px" id="import-conf-resumo"></div>
+              </div>
+              <button onclick="document.getElementById('import-confirmacao').style.display='none'" style="background:none;border:none;color:#666;font-size:18px;cursor:pointer;line-height:1">×</button>
+            </div>
+            <div id="import-conf-lista" style="max-height:200px;overflow-y:auto;font-size:12px"></div>
+          </div>
+
+          <!-- A: Painel import XML -->
+          <div id="est-panel-xml" style="display:none;background:#EBF3FB;border:1px solid #0078D4;border-radius:8px;padding:16px;margin-bottom:14px">
+            <h4 style="color:#002050;margin-bottom:10px">📄 Importar NF-e XML</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:10px">Selecione o arquivo XML da NF-e de remessa. Os produtos e quantidades serão adicionados automaticamente ao estoque deste evento.</p>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <input type="file" id="est-xml-file" accept=".xml" class="form-control" style="flex:1;min-width:200px">
+              <button onclick="estImportarXML()" class="btn btn-primary" style="white-space:nowrap">📥 Importar XML</button>
+              <button onclick="estEventoTogglePanel(null)" class="btn btn-secondary" style="font-size:12px">Fechar</button>
+            </div>
+            <p id="est-xml-err" style="color:#D13438;font-size:12px;margin-top:6px;min-height:14px"></p>
+          </div>
+
+          <!-- B: Painel import Excel -->
+          <div id="est-panel-excel" style="display:none;background:#FFF8E7;border:1px solid #FFC107;border-radius:8px;padding:16px;margin-bottom:14px">
+            <h4 style="color:#002050;margin-bottom:8px">📊 Importar Excel (Mercus)</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:10px">Abra o pedido no Mercus, exporte como Excel (.xlsx ou .xls) e importe aqui. A plataforma detecta automaticamente as colunas de código, lote e quantidade.</p>
+            <div id="est-excel-drop" onclick="document.getElementById('est-excel-file').click()"
+              style="border:2px dashed #FFC107;border-radius:8px;padding:20px;text-align:center;cursor:pointer;background:#fff;margin-bottom:10px;transition:.2s"
+              ondragover="event.preventDefault();this.style.background='#FFF3CD'"
+              ondragleave="this.style.background='#fff'"
+              ondrop="event.preventDefault();this.style.background='#fff';estExcelDrop(event)">
+              <div style="font-size:28px;margin-bottom:6px">📂</div>
+              <div style="font-size:13px;color:#555">Arraste o arquivo Excel aqui ou <strong>clique para selecionar</strong></div>
+              <div style="font-size:11px;color:#aaa;margin-top:4px">.xlsx · .xls · .csv</div>
+            </div>
+            <input type="file" id="est-excel-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="estImportarExcel(this.files[0])">
+            <div id="est-excel-preview" style="display:none;margin-bottom:10px"></div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-confirmar-excel" onclick="estConfirmarExcel()" class="btn btn-primary" style="display:none">✅ Confirmar e Adicionar ao Evento</button>
+              <button onclick="estEventoTogglePanel(null)" class="btn btn-secondary" style="font-size:12px">Fechar</button>
+            </div>
+            <p id="est-excel-err" style="color:#D13438;font-size:12px;margin-top:6px;min-height:14px"></p>
+          </div>
+
+          <!-- C: Painel entrada em lote -->
+          <div id="est-panel-lote" style="display:none;background:#F8F9FB;border:1px solid #E0E4EC;border-radius:8px;padding:16px;margin-bottom:14px">
+            <h4 style="color:#002050;margin-bottom:8px">✏️ Entrada Rápida em Lote</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:10px">Adicione vários produtos de uma vez. Digite o código ou nome do produto em cada linha.</p>
+            <div id="lote-linhas" style="margin-bottom:10px"></div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button onclick="loteAdicionarLinha()" class="btn btn-secondary" style="font-size:12px">+ Adicionar linha</button>
+              <button onclick="estEventoTogglePanel(null)" class="btn btn-secondary" style="font-size:12px">Fechar</button>
+              <button onclick="estConfirmarLote()" class="btn btn-primary" style="font-size:12px;margin-left:auto">✅ Adicionar Tudo ao Evento</button>
+            </div>
+            <p id="est-lote-err" style="color:#D13438;font-size:12px;margin-top:6px;min-height:14px"></p>
+          </div>
+
+          <!-- Painel entrada manual (ADM) - existing, preserved -->
           <div id="pdv-entrada-manual" style="display:none;background:#F0FFF4;border:1px solid #00C851;border-radius:8px;padding:16px;margin-bottom:16px">
             <h4 style="color:#002050;margin-bottom:12px">➕ Adicionar Produto ao Estoque do Evento</h4>
             <div style="display:flex;gap:8px;margin-bottom:12px">
               <input id="em-scan" class="form-control" placeholder="📷 Bipe o código ou EAN..." oninput="emScanProduto(this.value)" style="font-size:14px;flex:1;letter-spacing:1px" autofocus>
               <button onclick="emScanProduto(document.getElementById('em-scan').value,true)" class="btn btn-secondary" style="font-size:12px;white-space:nowrap">🔍 Buscar</button>
             </div>
-
-            <!-- Resultado do scan -->
             <div id="em-found-card" style="display:none;background:#fff;border:1px solid #D0D7E2;border-radius:6px;padding:14px;margin-bottom:10px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
                 <div>
@@ -1386,8 +1449,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               </div>
               <p id="em-err" style="color:#D13438;font-size:12px;margin-top:8px;min-height:16px"></p>
             </div>
-
-            <!-- Itens adicionados na sessão -->
             <div id="em-sessao-lista" style="display:none">
               <h5 style="color:#002050;font-size:12px;margin-bottom:8px">Adicionados nesta sessão:</h5>
               <div id="em-sessao-itens"></div>
@@ -5798,6 +5859,288 @@ let emFoundItem = null;      // produto encontrado no scan
 let emLotesDisponiveis = []; // lotes do produto no estoque base
 let emSessaoItens = [];      // itens adicionados nesta sessão
 
+// ==============================
+// ESTOQUE DO EVENTO — IMPORTS A/B/C/D
+// ==============================
+
+let _excelPreviewData = []; // B: staging buffer for Excel import
+
+// Panel toggle (accordion — one at a time)
+function estEventoTogglePanel(panel){
+  ['xml','excel','lote','manual'].forEach(p=>{
+    const el=document.getElementById(p==='manual'?'pdv-entrada-manual':'est-panel-'+p);
+    if(el) el.style.display='none';
+  });
+  if(!panel) return;
+  const target=panel==='manual'?'pdv-entrada-manual':'est-panel-'+panel;
+  const el=document.getElementById(target);
+  if(el) el.style.display='block';
+  if(panel==='lote') loteInicializar();
+}
+
+// ---- D: Show confirmation ----
+function mostrarConfirmacaoImport(titulo, itens){
+  if(!pdvEventoAtivo) return;
+  const conf=document.getElementById('import-confirmacao');
+  const tit=document.getElementById('import-conf-titulo');
+  const res=document.getElementById('import-conf-resumo');
+  const lista=document.getElementById('import-conf-lista');
+  if(!conf) return;
+  tit.textContent='✅ '+titulo;
+  res.textContent=itens.length+' item(ns) adicionado(s) ao estoque de "'+pdvEventoAtivo.nome+'"';
+  lista.innerHTML='<table style="width:100%;border-collapse:collapse">'+
+    '<thead><tr style="background:#E8F5E9"><th style="padding:4px 8px;text-align:left;font-size:11px">Produto</th><th style="padding:4px 8px;text-align:center;font-size:11px">Lote</th><th style="padding:4px 8px;text-align:center;font-size:11px">Qtd</th></tr></thead>'+
+    '<tbody>'+itens.map(it=>`<tr style="border-bottom:1px solid #E8F5E9">
+      <td style="padding:4px 8px;font-size:12px">${it.descricao||it.codigo}</td>
+      <td style="padding:4px 8px;text-align:center;font-size:11px;color:#666">${it.lote||'—'}</td>
+      <td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#107C10">${it.quantidade}</td>
+    </tr>`).join('')+'</tbody></table>';
+  conf.style.display='block';
+  conf.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ---- A: Import XML into existing event ----
+async function estImportarXML(){
+  const fileInput=document.getElementById('est-xml-file');
+  const err=document.getElementById('est-xml-err');
+  if(!fileInput.files[0]){err.textContent='Selecione um arquivo XML.';return;}
+  if(!pdvEventoAtivo){err.textContent='Selecione um evento primeiro.';return;}
+  err.textContent='⏳ Processando XML...';
+  const file=fileInput.files[0];
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    try{
+      const parser=new DOMParser();
+      const xml=parser.parseFromString(e.target.result,'text/xml');
+      const itens=xml.querySelectorAll('det');
+      if(!itens.length){err.textContent='Nenhum item encontrado no XML. Verifique o arquivo.';return;}
+      const importados=[];
+      for(const item of itens){
+        const xProd=item.querySelector('xProd')?.textContent||'';
+        const cProd=item.querySelector('cProd')?.textContent||'';
+        const cEAN=item.querySelector('cEAN')?.textContent||'';
+        const qCom=parseFloat(item.querySelector('qCom')?.textContent||'0');
+        const lote=item.querySelector('nLote')?.textContent||'';
+        const validade=item.querySelector('dVal,dFab')?.textContent||'';
+        if(!cProd||!qCom) continue;
+        const docId=cleanDocId(cProd,lote);
+        await db.collection('deposito_evento').doc(pdvEventoAtivo.id+'_'+docId).set({
+          eventoId:pdvEventoAtivo.id,codigo:cProd,descricao:xProd,barcode:cEAN,
+          lote,dataValidade:validade,
+          quantidadeInicial:qCom,quantidade:qCom,
+          criadoEm:new Date().toISOString(),importadoPor:pdvVendedorAtivo?.nome||'ADM'
+        },{merge:true});
+        importados.push({codigo:cProd,descricao:xProd,lote,quantidade:qCom});
+      }
+      err.textContent='';
+      fileInput.value='';
+      estEventoTogglePanel(null);
+      mostrarConfirmacaoImport('NF-e XML importada com sucesso',importados);
+      renderEstoqueEvento();
+    }catch(e2){err.textContent='Erro ao processar XML: '+e2.message;}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// ---- B: Import Excel (Mercus) ----
+function estExcelDrop(event){
+  const file=event.dataTransfer.files[0];
+  if(file) estImportarExcel(file);
+}
+
+function estImportarExcel(file){
+  const err=document.getElementById('est-excel-err');
+  const prev=document.getElementById('est-excel-preview');
+  const btnConf=document.getElementById('btn-confirmar-excel');
+  if(!file){return;}
+  err.textContent='⏳ Lendo arquivo...';
+  _excelPreviewData=[];
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!raw.length){err.textContent='Planilha vazia ou sem dados.';return;}
+      // Flexible column detection (case-insensitive)
+      const keys=Object.keys(raw[0]);
+      const find=(candidates)=>{
+        for(const c of candidates){
+          const k=keys.find(k=>k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(c.toLowerCase().replace(/[^a-z0-9]/g,'')));
+          if(k) return k;
+        }
+        return null;
+      };
+      const colCodigo=find(['codigo','cód','code','cProd','produto','sku','referencia','ref']);
+      const colDescricao=find(['descricao','descr','nome','produto','xprod','name','item']);
+      const colLote=find(['lote','lot','batch','nlote']);
+      const colQtd=find(['quantidade','qtd','qty','quantity','qcom','quant']);
+      const colValidade=find(['validade','vencimento','dval','expiry','expire','exp']);
+      if(!colQtd){err.textContent='Coluna de quantidade não encontrada. Verifique as colunas da planilha.';return;}
+      _excelPreviewData=raw.map(r=>({
+        codigo:colCodigo?String(r[colCodigo]||'').trim():'',
+        descricao:colDescricao?String(r[colDescricao]||'').trim():'',
+        lote:colLote?String(r[colLote]||'').trim():'',
+        quantidade:Number(r[colQtd])||0,
+        dataValidade:colValidade?String(r[colValidade]||'').trim():''
+      })).filter(r=>r.quantidade>0);
+      if(!_excelPreviewData.length){err.textContent='Nenhum item com quantidade > 0 encontrado.';return;}
+      err.textContent='';
+      prev.style.display='block';
+      prev.innerHTML=`<div style="background:#fff;border:1px solid #E0E4EC;border-radius:6px;overflow:auto;max-height:200px;font-size:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#FFF8E7;position:sticky;top:0">
+            <th style="padding:6px 8px;text-align:left">Código</th>
+            <th style="padding:6px 8px;text-align:left">Descrição</th>
+            <th style="padding:6px 8px;text-align:center">Lote</th>
+            <th style="padding:6px 8px;text-align:center">Qtd</th>
+          </tr></thead>
+          <tbody>${_excelPreviewData.map(r=>`<tr style="border-bottom:1px solid #F0F0F0">
+            <td style="padding:5px 8px">${r.codigo||'—'}</td>
+            <td style="padding:5px 8px">${r.descricao||'—'}</td>
+            <td style="padding:5px 8px;text-align:center">${r.lote||'—'}</td>
+            <td style="padding:5px 8px;text-align:center;font-weight:700;color:#107C10">${r.quantidade}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:#555;margin-top:6px">📋 ${_excelPreviewData.length} item(ns) detectado(s). Confira e confirme abaixo.</p>`;
+      btnConf.style.display='';
+    }catch(e2){err.textContent='Erro ao ler Excel: '+e2.message;}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function estConfirmarExcel(){
+  if(!_excelPreviewData.length){return;}
+  if(!pdvEventoAtivo){document.getElementById('est-excel-err').textContent='Selecione um evento primeiro.';return;}
+  const btn=document.getElementById('btn-confirmar-excel');
+  btn.disabled=true;btn.textContent='⏳ Salvando...';
+  try{
+    for(const r of _excelPreviewData){
+      const docId=cleanDocId(r.codigo||r.descricao,r.lote);
+      await db.collection('deposito_evento').doc(pdvEventoAtivo.id+'_'+docId).set({
+        eventoId:pdvEventoAtivo.id,
+        codigo:r.codigo,descricao:r.descricao,lote:r.lote,
+        dataValidade:r.dataValidade,
+        quantidadeInicial:r.quantidade,quantidade:r.quantidade,
+        criadoEm:new Date().toISOString(),
+        importadoPor:pdvVendedorAtivo?.nome||'ADM',
+        origem:'excel'
+      },{merge:true});
+    }
+    estEventoTogglePanel(null);
+    document.getElementById('est-excel-preview').style.display='none';
+    btn.style.display='none';
+    _excelPreviewData=[];
+    mostrarConfirmacaoImport('Excel importado com sucesso',_excelPreviewData.length?_excelPreviewData:[]);
+    // Re-read since we cleared
+    const snap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).orderBy('criadoEm','desc').limit(50).get();
+    mostrarConfirmacaoImport('Excel importado com sucesso',snap.docs.map(d=>d.data()));
+    renderEstoqueEvento();
+  }catch(e){document.getElementById('est-excel-err').textContent='Erro: '+e.message;}
+  btn.disabled=false;btn.textContent='✅ Confirmar e Adicionar ao Evento';
+}
+
+// ---- C: Batch entry table ----
+let _loteSuggestions = {};
+
+function loteInicializar(){
+  const div=document.getElementById('lote-linhas');
+  if(!div) return;
+  div.innerHTML='';
+  for(let i=0;i<4;i++) loteAdicionarLinha();
+}
+
+function loteAdicionarLinha(){
+  const div=document.getElementById('lote-linhas');
+  if(!div) return;
+  const idx=div.children.length;
+  const row=document.createElement('div');
+  row.style.cssText='display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
+  row.innerHTML=`
+    <div style="position:relative">
+      <input class="form-control lote-prod" data-idx="${idx}" placeholder="Código ou nome do produto..."
+        style="font-size:12px" oninput="loteBuscarProduto(${idx},this.value)" autocomplete="off">
+      <div id="lote-sug-${idx}" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #0078D4;border-radius:0 0 6px 6px;z-index:200;max-height:140px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);font-size:12px"></div>
+    </div>
+    <input class="form-control lote-lot" data-idx="${idx}" placeholder="Lote" style="font-size:12px">
+    <input class="form-control lote-qty" data-idx="${idx}" type="number" min="0" placeholder="Qtd" style="font-size:12px;text-align:center">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>`;
+  div.appendChild(row);
+}
+
+let _loteDebounce={};
+async function loteBuscarProduto(idx, termo){
+  clearTimeout(_loteDebounce[idx]);
+  const sug=document.getElementById('lote-sug-'+idx);
+  if(!termo||termo.length<2){if(sug)sug.style.display='none';return;}
+  _loteDebounce[idx]=setTimeout(async()=>{
+    try{
+      const snap=await db.collection('stock').get();
+      const termoL=termo.toLowerCase();
+      const matches=snap.docs.map(d=>({id:d.id,...d.data()}))
+        .filter(it=>(it.descricao||'').toLowerCase().includes(termoL)||(it.codigo||'').toLowerCase().includes(termoL))
+        .slice(0,6);
+      if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa">Nenhum produto encontrado.</div>';sug.style.display='block';return;}
+      sug.innerHTML=matches.map(it=>
+        `<div onclick="loteSelecionarProduto(${idx},'${it.codigo}','${(it.descricao||'').replace(/'/g,'\'')}')"
+          style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #f0f0f0"
+          onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+          <strong>${it.descricao}</strong> <span style="color:#888">${it.codigo}</span>
+        </div>`).join('');
+      sug.style.display='block';
+    }catch(e){}
+  },300);
+}
+
+function loteSelecionarProduto(idx,codigo,descricao){
+  const sug=document.getElementById('lote-sug-'+idx);
+  if(sug) sug.style.display='none';
+  const row=document.querySelectorAll('#lote-linhas > div')[idx];
+  if(!row) return;
+  const inp=row.querySelector('.lote-prod');
+  const lotInp=row.querySelector('.lote-lot');
+  if(inp) inp.value=descricao+' ('+codigo+')';
+  if(inp) inp.dataset.codigo=codigo;
+  if(inp) inp.dataset.descricao=descricao;
+  if(lotInp) lotInp.focus();
+}
+
+async function estConfirmarLote(){
+  if(!pdvEventoAtivo){document.getElementById('est-lote-err').textContent='Selecione um evento primeiro.';return;}
+  const rows=document.querySelectorAll('#lote-linhas > div');
+  const itens=[];
+  for(const row of rows){
+    const prodInp=row.querySelector('.lote-prod');
+    const lotInp=row.querySelector('.lote-lot');
+    const qtyInp=row.querySelector('.lote-qty');
+    if(!prodInp||!qtyInp) continue;
+    const qty=Number(qtyInp.value)||0;
+    if(!qty) continue;
+    const codigo=prodInp.dataset.codigo||prodInp.value.trim();
+    const descricao=prodInp.dataset.descricao||prodInp.value.trim();
+    const lote=lotInp?lotInp.value.trim():'';
+    if(!codigo) continue;
+    itens.push({codigo,descricao,lote,quantidade:qty});
+  }
+  if(!itens.length){document.getElementById('est-lote-err').textContent='Adicione pelo menos um item com código e quantidade.';return;}
+  document.getElementById('est-lote-err').textContent='⏳ Salvando '+itens.length+' item(ns)...';
+  try{
+    for(const it of itens){
+      const docId=cleanDocId(it.codigo,it.lote);
+      await db.collection('deposito_evento').doc(pdvEventoAtivo.id+'_'+docId).set({
+        eventoId:pdvEventoAtivo.id,codigo:it.codigo,descricao:it.descricao,
+        lote:it.lote,quantidadeInicial:it.quantidade,quantidade:it.quantidade,
+        criadoEm:new Date().toISOString(),importadoPor:pdvVendedorAtivo?.nome||'ADM',origem:'lote_manual'
+      },{merge:true});
+    }
+    document.getElementById('est-lote-err').textContent='';
+    estEventoTogglePanel(null);
+    mostrarConfirmacaoImport('Entrada em lote concluída',itens);
+    renderEstoqueEvento();
+  }catch(e){document.getElementById('est-lote-err').textContent='Erro: '+e.message;}
+}
+
 function toggleEntradaManual(){
   const p = document.getElementById('pdv-entrada-manual');
   if(!p) return;
@@ -5812,8 +6155,10 @@ function toggleEntradaManual(){
 const _origRenderEstoqueEvento = renderEstoqueEvento;
 async function renderEstoqueEvento(){
   const isAdmUser = pdvVendedorAtivo && (pdvVendedorAtivo.id==='adm' || pdvVendedorAtivo.perfil==='supervisor');
+  const btnGroup = document.getElementById('est-evento-btn-group');
   const btnEm = document.getElementById('btn-entrada-manual');
   if(btnEm) btnEm.style.display = isAdmUser ? '' : 'none';
+  if(btnGroup) btnGroup.style.display = isAdmUser ? 'flex' : 'none';
   return _origRenderEstoqueEvento();
 }
 
