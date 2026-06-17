@@ -1344,6 +1344,22 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA ESTOQUE DO EVENTO -->
         <div id="pdv-view-estoque-evento" style="display:none">
+
+          <!-- Contexto de importação: Evento destino + Nº Pedido Mercus -->
+          <div style="background:#EBF3FB;border:1px solid #0078D4;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px">
+              <label style="font-size:11px;font-weight:700;color:#0078D4;display:block;margin-bottom:4px">📋 EVENTO DESTINO *</label>
+              <select id="est-evt-sel" class="form-control" style="font-size:13px" onchange="estSelecionarEventoDestino(this.value)">
+                <option value="">— selecione o evento —</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:180px">
+              <label style="font-size:11px;font-weight:700;color:#0078D4;display:block;margin-bottom:4px">📦 Nº PEDIDO MERCUS</label>
+              <input id="est-mercus-num" class="form-control" placeholder="Ex: PED-0001 / NF 000123" style="font-size:13px">
+            </div>
+            <div id="est-evt-status-badge" style="font-size:12px;color:#555;padding-bottom:4px"></div>
+          </div>
+
           <!-- Header com botões de import -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <h3 style="color:#002050;margin:0">📦 Estoque do Evento</h3>
@@ -1593,79 +1609,163 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
 
         <!-- ABA AJUDA / ONBOARDING -->
-        <div id="pdv-view-ajuda" style="display:none;max-width:800px">
-          <h3 style="color:#002050;margin-bottom:4px">❓ Guia de Uso — PDV & Eventos</h3>
-          <p style="font-size:12px;color:#888;margin-bottom:20px">Leia antes de usar. Em caso de dúvidas, contate o gestor de logística.</p>
+        <div id="pdv-view-ajuda" style="display:none;max-width:860px">
+          <h3 style="color:#002050;margin-bottom:2px">📖 Guia Completo — Plataforma MESO-LOG</h3>
+          <p style="font-size:12px;color:#888;margin-bottom:20px">Passo a passo de todos os módulos. Leia antes de usar.</p>
 
-          <!-- ADM -->
-          <div class="card" style="margin-bottom:16px;border-left:4px solid #0078D4">
-            <h4 style="color:#0078D4;margin-bottom:14px">🔐 Para o Administrador (ADM / Gestor)</h4>
-            <div style="counter-reset:step">
-              <div style="display:flex;gap:12px;margin-bottom:14px">
+          <!-- VISÃO GERAL DO FLUXO -->
+          <div style="background:#002050;color:#fff;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px">
+            <strong style="font-size:14px;display:block;margin-bottom:8px">🗺️ Fluxo Geral da Plataforma</strong>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px">
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">1· Solicitações</span><span>→</span>
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">ADM aprova</span><span>→</span>
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">2·3·4 Operações</span><span>→</span>
+              <span style="background:#107C10;padding:4px 10px;border-radius:12px">Estoque atualizado</span><span>→</span>
+              <span style="background:#C07800;padding:4px 10px;border-radius:12px">PDV/Eventos</span><span>→</span>
+              <span style="background:#107C10;padding:4px 10px;border-radius:12px">Relatórios &amp; Mercus</span>
+            </div>
+          </div>
+
+          <!-- MÓDULO 1 — SOLICITAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #6264A7">
+            <h4 style="color:#6264A7;margin-bottom:12px">📋 Módulo 1 — Solicitação de Materiais</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Qualquer colaborador pode solicitar materiais para aulas práticas ou workshops. Não é preciso fazer login — apenas informe os dados e envie.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Clique em "Solicitação de Materiais"</strong> no canto superior direito <em>ou</em> acesse o menu <strong>1·Solicitações</strong>.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Preencha o formulário:</strong> nome, área, evento/curso, data e os produtos desejados com quantidades. Use o campo de busca por nome ou código.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Envie.</strong> A solicitação aparece com status <em>Aguardando Aprovação</em>. O ADM será notificado.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px">Acompanhe o status na aba <strong>1·Solicitações</strong>. Quando aprovado, o ADM atualiza para <em>Aprovado/Enviado</em> e você receberá os materiais.</div></div>
+            </div>
+          </div>
+
+          <!-- ADM — APROVAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #D13438">
+            <h4 style="color:#D13438;margin-bottom:12px">🔐 ADM — Painel Administrativo</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Acesse com a senha do gestor. Fica no menu lateral <strong>ADM</strong>. Após login, novos menus (Operações, PDV/Eventos) aparecem automaticamente.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Login ADM:</strong> vá ao menu ADM → informe a senha → clique "Entrar no ADM".</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Todas as Solicitações:</strong> visualize e filtre todas as solicitações. Clique em uma para aprovar, rejeitar ou atualizar o status de envio.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Gerenciar Produtos:</strong> adicione, edite ou remova produtos do catálogo. Cada produto tem código, EAN, descrição, categoria, estoque mínimo e preço.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Configurações:</strong> ajuste integrações, dados da empresa e outras preferências da plataforma.</div></div>
+            </div>
+          </div>
+
+          <!-- MÓDULO 2·3·4 — OPERAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #00B7C3">
+            <h4 style="color:#00B7C3;margin-bottom:12px">📦 Módulo 2·3·4 — Operações (Recebimento, Inventário, Perdas)</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Visível somente após login ADM. Gerencia o estoque físico do depósito central.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Recebimento de Mercadorias:</strong> informe o fornecedor, Nº NF e bipe os produtos recebidos com o leitor de código. Clique em "Confirmar Recebimento" para dar entrada no estoque.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Inventário com Leitor:</strong> bipe item por item para contar o estoque físico. O sistema registra tudo com data e hora.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Perdas · Avarias · Vencimentos:</strong> registre baixas por avaria, vencimento ou perda. O estoque é descontado automaticamente e o evento fica documentado.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Saída de Estoque:</strong> registre saídas manuais (doação, transferência, uso interno) com quantidade, produto e motivo.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Relatórios:</strong> gere relatório de operações por período (recebimentos, inventários, perdas). Exporte em PDF.</div></div>
+            </div>
+          </div>
+
+          <!-- ESTOQUE -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #107C10">
+            <h4 style="color:#107C10;margin-bottom:12px">🏭 Estoque — Consulta e Gestão</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Consulta:</strong> pesquise qualquer produto por código, nome ou lote. Filtre por categoria, status de estoque ou vencimento. Gere PDF do inventário.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Gerenciar Estoque (ADM):</strong> ajuste manualmente quantidades, lotes e validades de qualquer produto.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Importar Planilha (ADM):</strong> importe um Excel (.xlsx) com colunas de código, descrição, lote, validade e quantidade para atualizar o estoque em massa.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Vencimentos:</strong> painel com alertas de produtos vencendo em 30, 60 e 90 dias. Tome ação antes que o produto expire.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Compras (ADM):</strong> visualize sugestões de recompra baseadas em Curva ABC e estoque mínimo.</div></div>
+            </div>
+          </div>
+
+          <!-- PDV/EVENTOS — FLUXO COMPLETO ADM -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #0078D4">
+            <h4 style="color:#0078D4;margin-bottom:6px">🎯 PDV / Eventos — Fluxo Completo (ADM / Gestor)</h4>
+            <p style="font-size:12px;color:#888;margin-bottom:14px">Siga esta ordem exata para cada evento.</p>
+            <div style="display:flex;flex-direction:column;gap:12px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
-                <div><strong style="color:#002050">Criar o Evento</strong><br><span style="font-size:12px;color:#555">Acesse a aba <strong>Eventos</strong> → clique em <em>+ Novo Evento</em>. Preencha nome, data, local e o número do pedido Mercus (referência interna). Salve para criar o evento com status <em>aberto</em>.</span></div>
+                <div><strong style="color:#002050">Criar o Evento</strong> — aba Eventos<br>
+                <span style="font-size:12px;color:#555">Clique em <em>+ Novo Evento</em>. Preencha: <b>Nome</b>, <b>Data</b>, <b>Local</b> e <b>Nº NF-e Remessa</b> (o número da nota fiscal que sairá com os produtos). Se já tiver o XML em mãos, anexe aqui e o estoque do evento será criado automaticamente.</span></div>
               </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
-                <div><strong style="color:#002050">Subir o Estoque do Evento</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Estoque do Evento</strong>, faça o upload da NF-e XML de remessa. O sistema importará automaticamente todos os itens, quantidades e lotes. Você também pode adicionar itens manualmente se necessário.</span></div>
+                <div><strong style="color:#002050">Carregar o Estoque do Evento</strong> — aba Estoque do Evento<br>
+                <span style="font-size:12px;color:#555"><b>⚠️ PASSO CRÍTICO:</b> No topo da aba, selecione o <b>Evento Destino</b> (dropdown) e informe o <b>Nº Pedido Mercus</b>. Depois escolha o método de carga:<br>
+                  • <b>📄 Importar XML</b> — arquivo XML da NF-e de remessa (mais rápido e preciso)<br>
+                  • <b>📊 Importar Excel</b> — planilha exportada do Mercus (colunas: código, descrição, lote, qtd)<br>
+                  • <b>✏️ Entrada em Lote</b> — preenchimento manual de até N linhas de uma vez<br>
+                  • <b>➕ Entrada Manual</b> — bipe produto a produto com leitor<br>
+                  O estoque é associado <em>exclusivamente</em> ao evento selecionado, não ao depósito central.</span></div>
               </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
-                <div><strong style="color:#002050">Cadastrar os Vendedores</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Vendedores</strong>, clique em <em>+ Novo Vendedor</em>. Defina nome, PIN (4–6 dígitos) e selecione o <strong>Evento de Atuação</strong>. O vendedor só enxergará o estoque do evento vinculado ao seu cadastro. Anote o PIN e entregue ao vendedor com segurança.</span></div>
+                <div><strong style="color:#002050">Cadastrar Vendedores</strong> — aba Vendedores<br>
+                <span style="font-size:12px;color:#555">Clique em <em>+ Novo Vendedor</em>. Defina <b>nome</b>, <b>PIN</b> (4–6 dígitos) e selecione o <b>Evento de Atuação</b>. O vendedor verá apenas o estoque do evento vinculado. Entregue o PIN ao vendedor com segurança — <strong>não compartilhe com terceiros</strong>.</span></div>
               </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
-                <div><strong style="color:#002050">Acompanhar as Vendas em Tempo Real</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Pedidos</strong>, visualize todos os pedidos do evento em tempo real. Filtre por status (<em>Entregue</em> / <em>A Entregar</em>) ou por vendedor. O dashboard mostra KPIs consolidados.</span></div>
+                <div><strong style="color:#002050">Acompanhar em Tempo Real</strong> — aba Pedidos<br>
+                <span style="font-size:12px;color:#555">Visualize todos os pedidos do evento. Filtre por status (Entregue / A Entregar) ou por vendedor. O dashboard exibe KPIs: total de pedidos, itens entregues, itens pendentes.</span></div>
               </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
-                <div><strong style="color:#002050">Validar o Retorno do Evento</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Retorno</strong>, o vendedor terá registrado o que está voltando. Confira fisicamente os produtos, ajuste quantidades se houver divergência (com justificativa), e clique em <em>Aprovar Retorno</em>. O estoque retornará automaticamente ao depósito central.</span></div>
+                <div><strong style="color:#002050">Conferir a Expedição</strong> — aba Expedição<br>
+                <span style="font-size:12px;color:#555">Bipe o código do produto ou do pedido para confirmar que o item foi fisicamente entregue ao cliente. Itens confirmados mudam de status para "Expedido".</span></div>
               </div>
-              <div style="display:flex;gap:12px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
                 <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</div>
-                <div><strong style="color:#002050">Fechar o Evento + Exportar para Mercus</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Relatórios</strong>, exporte o Excel com todos os pedidos. Use o botão <em>Exportar Excel (Mercus)</em> para gerar o arquivo formatado para lançamento no Mercus. Em seguida, use o <strong>Fechamento</strong> para encerrar o evento oficialmente.</span></div>
+                <div><strong style="color:#002050">Validar o Retorno</strong> — aba Retorno<br>
+                <span style="font-size:12px;color:#555">O vendedor registra as quantidades que estão voltando. Confira fisicamente, ajuste se necessário (com justificativa) e clique em <em>Aprovar Retorno</em>. O estoque retorna automaticamente ao depósito central.</span></div>
               </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">7</div>
+                <div><strong style="color:#002050">Relatórios + Exportação Mercus</strong> — aba Relatórios<br>
+                <span style="font-size:12px;color:#555">Exporte o Excel formatado para lançamento no Mercus (<em>Exportar Excel (Mercus)</em>). Visualize ranking de produtos, comparativo entre eventos e métricas de desempenho.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">8</div>
+                <div><strong style="color:#002050">Fechar o Evento</strong> — aba Fechamento<br>
+                <span style="font-size:12px;color:#555">Encerre o evento oficialmente. O status muda para <em>fechado</em> e o evento fica bloqueado para novas vendas. Dados ficam preservados para consulta futura.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#FFF0F0;padding:10px;border-radius:6px;border:1px solid #FFAAAA">
+                <div style="background:#D13438;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">🗑</div>
+                <div><strong style="color:#D13438">Apagar Evento</strong> — aba Eventos<br>
+                <span style="font-size:12px;color:#555">Visível apenas para ADM. Apaga o evento, <b>todo o seu estoque</b> e <b>todos os pedidos</b> vinculados. Ação irreversível — use apenas para eventos criados por engano.</span></div>
+              </div>
+
             </div>
           </div>
 
-          <!-- Vendedor -->
-          <div class="card" style="border-left:4px solid #107C10">
-            <h4 style="color:#107C10;margin-bottom:14px">🛒 Para o Vendedor</h4>
-            <div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
-                <div><strong style="color:#002050">Fazer Login com seu PIN</strong><br><span style="font-size:12px;color:#555">Na tela inicial do PDV, informe seu PIN pessoal (4–6 dígitos). Você será automaticamente direcionado ao seu evento de atuação — nenhuma configuração adicional é necessária.</span></div>
-              </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
-                <div><strong style="color:#002050">Buscar Produtos</strong><br><span style="font-size:12px;color:#555">Use o scanner de código de barras <strong>(📷 Código)</strong> ou busque pelo nome <strong>(🔤 Nome)</strong>. O sistema exibe <strong>todo o catálogo</strong> Mesoestetic — não apenas o que está no evento. Cada produto mostrará:<br>
-                  <span style="display:inline-block;margin-top:4px">🟢 <strong>Pronta Entrega</strong> — produto disponível no estoque do evento</span><br>
-                  <span style="display:inline-block">🟡 <strong>Sob Pedido</strong> — produto do catálogo, a ser entregue depois</span></span></div>
-              </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
-                <div><strong style="color:#002050">Montar o Carrinho</strong><br><span style="font-size:12px;color:#555">Para cada produto, defina:<br>
-                  • <strong>Natureza:</strong> Venda ou Bonificação<br>
-                  • <strong>Entrega:</strong> 🟢 Pronta Entrega (sai do estoque agora) ou 🟡 Sob Pedido (registrado para entrega futura)<br>
-                  Você pode misturar os dois tipos no mesmo pedido.</span></div>
-              </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
-                <div><strong style="color:#002050">Finalizar o Pedido</strong><br><span style="font-size:12px;color:#555">Preencha o nome do cliente (e CNPJ/CPF se disponível), adicione observações, e clique em <strong>✅ Finalizar Pedido</strong>. O sistema registrará os itens entregues e os itens a entregar em abas separadas. O estoque do evento é debitado apenas para os itens de Pronta Entrega.</span></div>
-              </div>
-              <div style="display:flex;gap:12px;margin-bottom:14px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
-                <div><strong style="color:#002050">Ver seus Pedidos</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Pedidos</strong>, visualize todos os pedidos que você registrou. Cada pedido mostra duas abas: <em>✅ Entregue</em> (o que o cliente já recebeu) e <em>📦 A Entregar</em> (o que ainda será enviado pela sede).</span></div>
-              </div>
-              <div style="display:flex;gap:12px">
-                <div style="background:#107C10;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</div>
-                <div><strong style="color:#002050">Registrar o Retorno (final do evento)</strong><br><span style="font-size:12px;color:#555">Na aba <strong>Retorno</strong>, informe a quantidade real de cada produto que está voltando para a sede. Confira o estoque físico com cuidado — essa informação será validada pelo gestor de logística antes de dar entrada no depósito central. Você é responsável pela carga do evento.</span></div>
-              </div>
+          <!-- VENDEDOR -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #107C10">
+            <h4 style="color:#107C10;margin-bottom:12px">🛒 Vendedor — Passo a Passo no PDV</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Login com PIN:</strong> acesse o menu <strong>PDV/Eventos</strong> e digite seu PIN pessoal. Você será direcionado automaticamente ao seu evento.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Buscar produto:</strong> use <em>📷 Código</em> (leitor de barras ou digitação) ou <em>🔤 Nome</em> (busca por texto). O sistema exibe:<br>
+                🟢 <strong>Pronta Entrega</strong> — produto disponível no estoque do evento<br>
+                🟡 <strong>Sob Pedido</strong> — produto do catálogo, sem estoque no evento (entregue depois)</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Montar o carrinho:</strong> para cada produto, defina <b>Natureza</b> (Venda ou Bonificação) e <b>Tipo de entrega</b> (🟢 Pronta Entrega ou 🟡 Sob Pedido). É possível misturar no mesmo pedido.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Finalizar o pedido:</strong> preencha o <b>Nome do cliente</b> e CPF/CNPJ (opcional), observações, e clique em <em>✅ Finalizar Pedido</em>. O estoque é descontado apenas para itens de Pronta Entrega.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Acompanhar pedidos:</strong> na aba <strong>Pedidos</strong> veja todos os seus pedidos com abas <em>✅ Entregue</em> e <em>📦 A Entregar</em>. Gere PDF individual de cada pedido se necessário.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">6</div><div style="font-size:12px"><strong>Registrar retorno:</strong> ao final do evento, na aba <strong>Retorno</strong>, informe as quantidades reais que estão voltando. O gestor validará e aprovará o retorno.</div></div>
             </div>
           </div>
 
-          <div style="background:#FFF8E7;border:1px solid #FFC107;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;color:#555">
-            ⚠️ <strong>Importante:</strong> Toda venda fica registrada com seu nome e horário. Em caso de dúvida durante o evento, entre em contato com o supervisor. Não compartilhe seu PIN com outras pessoas.
+          <!-- COMPARATIVO -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #8764B8">
+            <h4 style="color:#8764B8;margin-bottom:10px">📊 Comparativo de Eventos</h4>
+            <p style="font-size:12px;color:#555">Na aba <strong>Comparativo</strong>, selecione dois eventos e visualize side-by-side os produtos mais vendidos, volumes totais e desempenho de cada vendedor. Útil para planejamento de estoque em eventos futuros.</p>
+          </div>
+
+          <div style="background:#FFF8E7;border:1px solid #FFC107;border-radius:8px;padding:12px 16px;margin-top:4px;font-size:12px;color:#555">
+            ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
           </div>
         </div>
 
@@ -2267,6 +2367,7 @@ function updateHome(){
       <div><strong style="color:#002050">${x.id}</strong><span style="color:#666;margin-left:8px;font-size:12px">${x.evento?.nome||''}</span><div style="font-size:11px;color:#aaa">${x.solicitante?.nome||''}</div></div>
       <span class="status-badge ${statusClass(x.status)}">${x.status}</span>
     </div>`).join('');
+  if(admLoggedIn) updateHomePdvCard();
 }
 
 // ==============================
@@ -5392,7 +5493,7 @@ function pdvTab(tab,btn){
   document.querySelectorAll('#pdv-tab-bar button').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(tab==='pedidos')renderPedidosEvento();
-  if(tab==='estoque-evento')renderEstoqueEvento();
+  if(tab==='estoque-evento'){renderEstoqueEvento();initEstoqueEventoHeader();}
   if(tab==='expedicao')renderExpedicaoPedidos();
   if(tab==='fechamento')renderFechamentoResumo();
   if(tab==='relatorios')renderRelatorioEvento();
@@ -5413,11 +5514,14 @@ function initPdvEventos(){
         const dtFmt=(ev.data||'').split('-').reverse().join('/');
         const ativo=pdvEventoAtivo&&pdvEventoAtivo.id===ev.id;
         return `<div class="pdv-evento-card ${ativo?'ativo':''}" onclick="selecionarEvento('${ev.id}')">
-          <div>
+          <div style="flex:1">
             <strong style="color:#002050">${ev.nome}</strong>
-            <div style="font-size:12px;color:#666;margin-top:3px">📅 ${dtFmt} · 📍 ${ev.local||'—'}</div>
+            <div style="font-size:12px;color:#666;margin-top:3px">📅 ${dtFmt} · 📍 ${ev.local||'—'}${ev.nfeNum?' · NF-e: '+ev.nfeNum:''}</div>
           </div>
-          <span class="pdv-badge ${ev.status||'aberto'}">${ev.status||'aberto'}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="pdv-badge ${ev.status||'aberto'}">${ev.status||'aberto'}</span>
+            ${admLoggedIn?`<button onclick="event.stopPropagation();apagarEvento('${ev.id}','${ev.nome.replace(/'/g,"\\'")}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px;line-height:1.4">🗑 Apagar</button>`:''}
+          </div>
         </div>`;
       }).join('');
     });
@@ -5437,6 +5541,41 @@ async function selecionarEvento(id){
   toast('✅ Evento selecionado: '+pdvEventoAtivo.nome);
   // Re-render event list (highlight)
   initPdvEventos();
+}
+
+async function apagarEvento(id, nome){
+  if(!admLoggedIn){alert('Apenas ADM pode apagar eventos.');return;}
+  if(!confirm('⚠️ ATENÇÃO — Apagar evento "'+nome+'"?\n\nSerão removidos permanentemente:\n  • O evento\n  • Todo o estoque do evento\n  • Todos os pedidos do evento\n\nEsta ação NÃO pode ser desfeita.\nConfirmar?'))return;
+  try{
+    toast('⏳ Apagando evento...');
+    // 1. Delete deposito_evento (in batches of 500)
+    let estSnap=await db.collection('deposito_evento').where('eventoId','==',id).get();
+    while(!estSnap.empty){
+      const batch=db.batch();
+      estSnap.docs.forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+      estSnap=await db.collection('deposito_evento').where('eventoId','==',id).get();
+    }
+    // 2. Delete pedidos
+    let pedSnap=await db.collection('pedidos').where('eventoId','==',id).get();
+    while(!pedSnap.empty){
+      const batch=db.batch();
+      pedSnap.docs.forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+      pedSnap=await db.collection('pedidos').where('eventoId','==',id).get();
+    }
+    // 3. Delete evento
+    await db.collection('eventos').doc(id).delete();
+    // 4. Clear active if needed
+    if(pdvEventoAtivo&&pdvEventoAtivo.id===id){
+      pdvEventoAtivo=null;
+      const bar=document.getElementById('pdv-evento-selecionado-bar');
+      if(bar)bar.style.display='none';
+      const nm=document.getElementById('pdv-evento-ativo-nome');
+      if(nm)nm.textContent='';
+    }
+    toast('✅ Evento "'+nome+'" apagado com sucesso.');
+  }catch(e){alert('Erro ao apagar evento: '+e.message);}
 }
 
 function pdvShowNovoEvento(){
@@ -5881,6 +6020,62 @@ function estEventoTogglePanel(panel){
   }
 }
 
+/* ---- ESTOQUE EVENTO: seletor de evento + Mercus ---- */
+async function initEstoqueEventoHeader(){
+  const sel=document.getElementById('est-evt-sel');
+  if(!sel)return;
+  try{
+    const snap=await db.collection('eventos').orderBy('criadoEm','desc').get();
+    sel.innerHTML='<option value="">— selecione o evento —</option>'+
+      snap.docs.map(d=>{
+        const ev=d.data();
+        const dtFmt=(ev.data||'').split('-').reverse().join('/');
+        return `<option value="${d.id}">${ev.nome} · ${dtFmt} · ${ev.status||'aberto'}</option>`;
+      }).join('');
+    // Pre-select active event
+    if(pdvEventoAtivo){
+      sel.value=pdvEventoAtivo.id;
+      _updateEstEvtStatusBadge(pdvEventoAtivo);
+    }
+  }catch(e){console.error('initEstoqueEventoHeader:',e);}
+}
+
+async function estSelecionarEventoDestino(id){
+  const badge=document.getElementById('est-evt-status-badge');
+  if(!id){pdvEventoAtivo=null;if(badge)badge.textContent='';renderEstoqueEvento();return;}
+  try{
+    const snap=await db.collection('eventos').doc(id).get();
+    if(snap.exists){
+      pdvEventoAtivo={id:snap.id,...snap.data()};
+      _updateEstEvtStatusBadge(pdvEventoAtivo);
+      renderEstoqueEvento();
+      // sync active bar in Eventos tab
+      const nm=document.getElementById('pdv-evento-ativo-nome');
+      const bar=document.getElementById('pdv-evento-selecionado-bar');
+      if(nm)nm.textContent=pdvEventoAtivo.nome;
+      if(bar){bar.style.display='flex';}
+    }
+  }catch(e){alert('Erro ao selecionar evento: '+e.message);}
+}
+
+function _updateEstEvtStatusBadge(ev){
+  const badge=document.getElementById('est-evt-status-badge');
+  if(!badge)return;
+  const cor=ev.status==='fechado'?'#D13438':ev.status==='aberto'?'#107C10':'#555';
+  badge.innerHTML=`<span style="background:${cor}20;color:${cor};padding:3px 8px;border-radius:10px;font-weight:700;font-size:11px">${(ev.status||'aberto').toUpperCase()}</span>`;
+}
+
+function getEstImportEventoId(){
+  const sel=document.getElementById('est-evt-sel');
+  const id=sel?sel.value:'';
+  return id||(pdvEventoAtivo?pdvEventoAtivo.id:null);
+}
+
+function getEstImportMercusNum(){
+  const inp=document.getElementById('est-mercus-num');
+  return inp?inp.value.trim():'';
+}
+
 // D: show import confirmation
 function mostrarConfirmacaoImport(titulo, itens){
   const box=document.getElementById('import-confirmacao');
@@ -5900,7 +6095,9 @@ function mostrarConfirmacaoImport(titulo, itens){
 
 // A: import XML
 async function estImportarXML(){
-  if(!pdvEventoAtivo){alert('Selecione um evento primeiro.');return;}
+  const eventoId=getEstImportEventoId();
+  if(!eventoId){alert('Selecione o Evento Destino antes de importar.');return;}
+  const mercusNum=getEstImportMercusNum();
   const fileEl=document.getElementById('est-xml-file');
   const statusEl=document.getElementById('est-xml-status');
   if(!fileEl.files.length){alert('Selecione um arquivo XML.');return;}
@@ -5922,16 +6119,18 @@ async function estImportarXML(){
       const validade=det.querySelector('dVal')?.textContent||'';
       const qty=parseFloat(prod.querySelector('qCom')?.textContent||'0');
       if(!codigo||qty<=0)continue;
-      const docId=pdvEventoAtivo.id+'_'+codigo+(lote?'_'+lote:'');
+      const docId=eventoId+'_'+codigo+(lote?'_'+lote:'');
       const existing=await db.collection('deposito_evento').doc(docId).get();
       if(existing.exists){
         await db.collection('deposito_evento').doc(docId).update({
-          quantidade:firebase.firestore.FieldValue.increment(qty)
+          quantidade:firebase.firestore.FieldValue.increment(qty),
+          ...(mercusNum?{pedidoMercus:mercusNum}:{})
         });
       }else{
         await db.collection('deposito_evento').doc(docId).set({
-          eventoId:pdvEventoAtivo.id,codigo,descricao,lote,validade,
+          eventoId,codigo,descricao,lote,validade,
           quantidade:qty,quantidadeInicial:qty,
+          ...(mercusNum?{pedidoMercus:mercusNum}:{}),
           criadoEm:firebase.firestore.FieldValue.serverTimestamp()
         });
       }
@@ -5939,7 +6138,7 @@ async function estImportarXML(){
     }
     fileEl.value='';
     renderEstoqueEvento();
-    mostrarConfirmacaoImport('✅ XML importado com sucesso',saved);
+    mostrarConfirmacaoImport('✅ XML importado'+(mercusNum?' (Pedido: '+mercusNum+')':''),saved);
   }catch(e){statusEl.innerHTML='<span style="color:#D13438">Erro: '+e.message+'</span>';}
 }
 
@@ -5952,7 +6151,7 @@ function estExcelDrop(event){
 
 // B: import Excel (SheetJS)
 async function estImportarExcel(file){
-  if(!pdvEventoAtivo){alert('Selecione um evento primeiro.');return;}
+  if(!getEstImportEventoId()){alert('Selecione o Evento Destino antes de importar.');return;}
   const previewEl=document.getElementById('est-excel-preview');
   const btnConfirm=document.getElementById('btn-confirmar-excel');
   previewEl.innerHTML='<span style="color:#0078D4">⏳ Lendo planilha...</span>';
@@ -6001,20 +6200,25 @@ async function estImportarExcel(file){
 
 // B: confirm Excel import
 async function estConfirmarExcel(){
+  const eventoId=getEstImportEventoId();
+  if(!eventoId){alert('Selecione o Evento Destino antes de importar.');return;}
   if(!_excelPreviewData.length){alert('Nenhum dado para importar.');return;}
+  const mercusNum=getEstImportMercusNum();
   const btn=document.getElementById('btn-confirmar-excel');
   btn.disabled=true;btn.textContent='⏳ Importando...';
   try{
     for(const it of _excelPreviewData){
-      const docId=pdvEventoAtivo.id+'_'+it.codigo+(it.lote?'_'+it.lote:'');
+      const docId=eventoId+'_'+it.codigo+(it.lote?'_'+it.lote:'');
       const existing=await db.collection('deposito_evento').doc(docId).get();
       if(existing.exists){
         await db.collection('deposito_evento').doc(docId).update({
-          quantidade:firebase.firestore.FieldValue.increment(it.quantidade)
+          quantidade:firebase.firestore.FieldValue.increment(it.quantidade),
+          ...(mercusNum?{pedidoMercus:mercusNum}:{})
         });
       }else{
         await db.collection('deposito_evento').doc(docId).set({
-          eventoId:pdvEventoAtivo.id,...it,quantidadeInicial:it.quantidade,
+          eventoId,...it,quantidadeInicial:it.quantidade,
+          ...(mercusNum?{pedidoMercus:mercusNum}:{}),
           criadoEm:firebase.firestore.FieldValue.serverTimestamp()
         });
       }
@@ -6024,7 +6228,7 @@ async function estConfirmarExcel(){
     document.getElementById('est-excel-preview').innerHTML='';
     btn.style.display='none';
     renderEstoqueEvento();
-    mostrarConfirmacaoImport('✅ Excel importado com sucesso',saved);
+    mostrarConfirmacaoImport('✅ Excel importado'+(mercusNum?' (Pedido: '+mercusNum+')':''),saved);
   }catch(e){alert('Erro: '+e.message);}
   finally{btn.disabled=false;btn.textContent='✅ Confirmar Importação';}
 }
@@ -6096,7 +6300,9 @@ function loteSelecionarProduto(idx, codigo, descricao){
 
 // C: confirm batch import
 async function estConfirmarLote(){
-  if(!pdvEventoAtivo){alert('Selecione um evento primeiro.');return;}
+  const eventoId=getEstImportEventoId();
+  if(!eventoId){alert('Selecione o Evento Destino antes de adicionar.');return;}
+  const mercusNum=getEstImportMercusNum();
   const container=document.getElementById('lote-linhas');
   const rows=container.querySelectorAll('[id^="lote-row-"]');
   const saved=[];
@@ -6109,15 +6315,17 @@ async function estConfirmarLote(){
     const lote=(document.getElementById('lote-lote-'+idxStr)||{}).value||'';
     const qtd=parseFloat((document.getElementById('lote-qtd-'+idxStr)||{}).value||'0');
     if(!codigo||qtd<=0)continue;
-    const docId=pdvEventoAtivo.id+'_'+codigo+(lote?'_'+lote:'');
+    const docId=eventoId+'_'+codigo+(lote?'_'+lote:'');
     const existing=await db.collection('deposito_evento').doc(docId).get();
     if(existing.exists){
       await db.collection('deposito_evento').doc(docId).update({
-        quantidade:firebase.firestore.FieldValue.increment(qtd)
+        quantidade:firebase.firestore.FieldValue.increment(qtd),
+        ...(mercusNum?{pedidoMercus:mercusNum}:{})
       });
     }else{
       await db.collection('deposito_evento').doc(docId).set({
-        eventoId:pdvEventoAtivo.id,codigo,descricao,lote,quantidade:qtd,quantidadeInicial:qtd,
+        eventoId,codigo,descricao,lote,quantidade:qtd,quantidadeInicial:qtd,
+        ...(mercusNum?{pedidoMercus:mercusNum}:{}),
         criadoEm:firebase.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -6125,7 +6333,7 @@ async function estConfirmarLote(){
   }
   if(!saved.length){alert('Nenhuma linha válida preenchida.');return;}
   renderEstoqueEvento();
-  mostrarConfirmacaoImport('✅ Lote adicionado com sucesso',saved);
+  mostrarConfirmacaoImport('✅ Lote adicionado'+(mercusNum?' (Pedido: '+mercusNum+')':''),saved);
 }
 
 /* ---- ENTRADA MANUAL NO DEPÓSITO DO EVENTO ---- */
@@ -6749,50 +6957,44 @@ async function pdvBuscarPorNome(termo){
     if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto encontrado no catálogo.</div>';return;}
     // Cross-reference with event deposit for availability
     let eventoMap={};
-    if(pdvEventoAtivo){
-      const snapDep=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
-      snapDep.docs.forEach(d=>{const dd=d.data();eventoMap[dd.codigo+'|'+(dd.lote||'')]=d.data().quantidade||0;});
-    }
-    sug.innerHTML=matches.map(it=>{
-      const depQtd=eventoMap[it.codigo+'|'+(it.lote||'')]||0;
-      const disponivel=depQtd>0;
-      const badge=disponivel?`<span style="color:#107C10;font-weight:700;font-size:11px">🟢 ${depQtd} un</span>`:`<span style="color:#C07800;font-size:11px">🟡 Sob Pedido</span>`;
-      const safeProd=JSON.stringify({stockId:it.stockId,codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',quantidade:depQtd,barcode:it.barcode||it.ean||'',disponivel}).replace(/"/g,"'");
-      return `<div onclick="pdvSelecionarItemCatalogo(${safeProd})"
-        style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between;align-items:center"
-        onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
-        <div><strong>${it.descricao}</strong><span style="color:#666;margin-left:6px;font-size:11px">${it.codigo}</span></div>
-        ${badge}
-      </div>`;
-    }).join('');
+  if(pdvEventoAtivo){
+    const evSnap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+    evSnap.docs.forEach(d=>{
+      const dd=d.data();
+      eventoMap[dd.codigo]=(eventoMap[dd.codigo]||0)+(dd.quantidade||0);
+    });
+  }
+  sug.innerHTML=matches.map(it=>{
+    const qtdEvento=eventoMap[it.codigo]||0;
+    const disponivel=qtdEvento>0;
+    const badge=disponivel?
+      `<span style="color:#107C10;font-size:10px;font-weight:700">🟢 Pronta Entrega (${qtdEvento} un)</span>`:
+      `<span style="color:#C07800;font-size:10px">🟡 Sob Pedido</span>`;
+    const itemData={id:it.stockId||'',codigo:it.codigo||'',descricao:it.descricao||'',lote:it.lote||'',quantidade:qtdEvento,barcode:it.barcode||''};
+    return `<div onclick="pdvSelecionarItemNome(${JSON.stringify(itemData).replace(/"/g,"'")})"
+      style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;transition:.1s"
+      onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+      <strong>${it.descricao||it.codigo}</strong>
+      <span style="color:#666;margin-left:6px;font-size:11px">${it.codigo}</span>
+      ${badge}
+    </div>`;
+  }).join('');
   }catch(e){sug.innerHTML='<div style="padding:8px;color:#D13438;font-size:12px">Erro na busca.</div>';}
 }
 
-function pdvSelecionarItemCatalogo(item){
+function pdvSelecionarItemNome(item){
+  // item comes in as JS object (quotes already safe)
   const sug=document.getElementById('pdv-nome-sugestoes');
   if(sug) sug.style.display='none';
   const inp=document.getElementById('pdv-scan-input');
   if(inp) inp.value=item.descricao;
-  pdvFoundItem={id:item.stockId,codigo:item.codigo,descricao:item.descricao,lote:item.lote||'',quantidade:item.quantidade,barcode:item.barcode||''};
-  const disponivel=item.disponivel===true||item.disponivel==='true';
-  const radioEnt=document.getElementById('pdv-tipo-entregue');
-  const radioSP=document.getElementById('pdv-tipo-sob-pedido');
-  // Auto-set delivery type based on availability
-  if(disponivel&&radioEnt) radioEnt.checked=true;
-  else if(radioSP) radioSP.checked=true;
-  const badge=disponivel?'🟢 Pronta Entrega ('+item.quantidade+' un)':'🟡 Sob Pedido (sem estoque no evento)';
-  const badgeColor=disponivel?'#107C10':'#C07800';
+  pdvFoundItem=item;
   document.getElementById('pdv-found-nome').textContent=item.descricao;
-  document.getElementById('pdv-found-info').innerHTML='Cód: '+item.codigo+' | Lote: '+(item.lote||'—')+'&nbsp;&nbsp;<strong style="color:'+badgeColor+'">'+badge+'</strong>';
+  document.getElementById('pdv-found-info').textContent='Cód: '+item.codigo+' | Lote: '+(item.lote||'—')+' | Disponível: '+item.quantidade+' un';
   const loteEl=document.getElementById('pdv-lote-sel');
-  if(loteEl) loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'}</option>`;
+  if(loteEl) loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'} (${item.quantidade} un)</option>`;
   document.getElementById('pdv-qty').value=1;
   document.getElementById('pdv-found-card').style.display='block';
-}
-
-function pdvSelecionarItemNome(item){
-  // Legacy — redirect to new catalog selector
-  pdvSelecionarItemCatalogo({...item,stockId:item.id,disponivel:item.quantidade>0});
 }
 
 // Close suggestions when clicking outside
@@ -6941,9 +7143,6 @@ window.addEventListener('offline',()=>{
 // Init badge on load
 document.addEventListener('DOMContentLoaded',pdvAtualizarBadgeOffline);
 
-/* ---- FILTRO POR VENDEDOR (não-supervisor vê só os próprios) ---- */
-// Patch renderPedidosEvento to pre-filter by vendedor if not supervisor
-
 /* ---- PDF RECIBO DE PEDIDO INDIVIDUAL ---- */
 function imprimirPedidoPDF(p, docId){
   const dtFmt=(p.criadoEm||'').slice(0,16).replace('T',' ');
@@ -7013,9 +7212,6 @@ function imprimirPedidoPDF(p, docId){
   setTimeout(()=>w.print(),800);
 }
 
-/* ---- RANKING DE PRODUTOS (gráfico de barras CSS) ---- */
-// Patch renderRelatorioEvento to add ranking chart
-const _origRenderRel = renderRelatorioEvento;
 
 /* ---- COMPARATIVO ENTRE EVENTOS ---- */
 async function initComparativo(){
@@ -7112,7 +7308,6 @@ async function updateHomePdvCard(){
     }).join('');
   }catch(e){if(card)card.style.display='none';}
 }
-
 
 // Also call after admLogin
 const _checkAdmForHome = setInterval(()=>{
