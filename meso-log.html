@@ -5882,13 +5882,7 @@ async function limparEstoqueEvento(){
 
 let _excelPreviewData = []; // B: staging buffer for Excel import
 
-// Wrapper: show/hide btn-group based on active event
-const _origRenderEstoqueEvento = renderEstoqueEvento;
-async function renderEstoqueEvento(){
-  const btnGroup = document.getElementById('est-evento-btn-group');
-  if(btnGroup) btnGroup.style.display = pdvEventoAtivo ? 'flex' : 'none';
-  return _origRenderEstoqueEvento();
-}
+// renderEstoqueEvento wrapper merged below with Fase5D wrapper
 
 // Accordion: show one panel at a time
 function estEventoTogglePanel(panel){
@@ -6173,10 +6167,14 @@ function toggleEntradaManual(){
   }
 }
 
-// Reveal button for ADM/supervisor when tab opens
+// Merged wrapper: import buttons + entrada manual visibility
 const _origRenderEstoqueEvento = renderEstoqueEvento;
 async function renderEstoqueEvento(){
   const isAdmUser = pdvVendedorAtivo && (pdvVendedorAtivo.id==='adm' || pdvVendedorAtivo.perfil==='supervisor');
+  // Show/hide import button group
+  const btnGroup = document.getElementById('est-evento-btn-group');
+  if(btnGroup) btnGroup.style.display = (pdvEventoAtivo && isAdmUser) ? 'flex' : 'none';
+  // Show/hide entrada manual button
   const btnEm = document.getElementById('btn-entrada-manual');
   if(btnEm) btnEm.style.display = isAdmUser ? '' : 'none';
   return _origRenderEstoqueEvento();
