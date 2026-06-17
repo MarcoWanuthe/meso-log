@@ -5821,6 +5821,12 @@ async function confirmarEntregaPedido(id){
 
 /* ---- ESTOQUE DO EVENTO ---- */
 async function renderEstoqueEvento(){
+  // Show/hide import buttons + entrada manual based on ADM role
+  const _isAdmRender = pdvVendedorAtivo && (pdvVendedorAtivo.id==='adm' || pdvVendedorAtivo.perfil==='supervisor');
+  const _btnGroup = document.getElementById('est-evento-btn-group');
+  if(_btnGroup) _btnGroup.style.display = (pdvEventoAtivo && _isAdmRender) ? 'flex' : 'none';
+  const _btnEm = document.getElementById('btn-entrada-manual');
+  if(_btnEm) _btnEm.style.display = _isAdmRender ? '' : 'none';
   const lista=document.getElementById('pdv-estoque-evento-lista');
   if(!lista) return;
   if(!pdvEventoAtivo){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:30px">Selecione um evento.</p>';return;}
@@ -6167,18 +6173,7 @@ function toggleEntradaManual(){
   }
 }
 
-// Merged wrapper: import buttons + entrada manual visibility
-const _origRenderEstoqueEvento = renderEstoqueEvento;
-async function renderEstoqueEvento(){
-  const isAdmUser = pdvVendedorAtivo && (pdvVendedorAtivo.id==='adm' || pdvVendedorAtivo.perfil==='supervisor');
-  // Show/hide import button group
-  const btnGroup = document.getElementById('est-evento-btn-group');
-  if(btnGroup) btnGroup.style.display = (pdvEventoAtivo && isAdmUser) ? 'flex' : 'none';
-  // Show/hide entrada manual button
-  const btnEm = document.getElementById('btn-entrada-manual');
-  if(btnEm) btnEm.style.display = isAdmUser ? '' : 'none';
-  return _origRenderEstoqueEvento();
-}
+// renderEstoqueEvento wrapper logic merged into original function above
 
 async function emScanProduto(val, force=false){
   val = val.trim();
