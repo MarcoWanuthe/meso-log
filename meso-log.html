@@ -4470,52 +4470,6 @@ async function loadSaidaHistorico(){
 
 // Update relatório ops to include saídas
 const _origGerarRelatorioOps = gerarRelatorioOps;
-async function gerarRelatorioOps(){
-  const tipo=document.getElementById('rel-ops-tipo')?.value||'';
-  if(tipo==='saida'){
-    const ini=document.getElementById('rel-ops-inicio').value;
-    const fim=document.getElementById('rel-ops-fim').value;
-    const el=document.getElementById('rel-ops-resultado');
-    const btnPDF=document.getElementById('btn-ops-pdf');
-    if(!ini||!fim){alert('Selecione o período.');return;}
-    el.innerHTML='<div class="loader"><div class="spinner"></div>Carregando...</div>';
-    btnPDF.style.display='none';
-    try{
-      const snap=await db.collection('saidas').orderBy('criadoEm','desc').get();
-      const inRange=d=>d>=ini&&d<=fim;
-      const saidas=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>inRange(r.data||''));
-      const fmtDate=s=>s?s.split('-').reverse().join('/'):'—';
-      const totalQtd=saidas.reduce((s,r)=>s+Number(r.quantidade||0),0);
-      const tipoMap={};
-      saidas.forEach(r=>{if(!tipoMap[r.tipo])tipoMap[r.tipo]=0;tipoMap[r.tipo]+=Number(r.quantidade||0);});
-      el.innerHTML=`
-        <div class="card-grid" style="margin-bottom:16px">
-          <div class="stat-card blue"><h3>Saídas</h3><div class="num">${saidas.length}</div></div>
-          <div class="stat-card red"><h3>Unidades Saídas</h3><div class="num">${totalQtd}</div></div>
-          <div class="stat-card yellow"><h3>Período</h3><div style="font-size:15px;font-weight:700;color:#002050">${fmtDate(ini)}</div><div style="font-size:12px;color:#666">até ${fmtDate(fim)}</div></div>
-        </div>
-        <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">📤 Saídas no Período (${saidas.length})</h3>
-          <div style="overflow-x:auto"><table class="prod-table">
-            <thead><tr><th>Data</th><th>Tipo</th><th>Código</th><th>Descrição</th><th>Lote</th><th>Qtd</th><th>Destino</th></tr></thead>
-            <tbody>${saidas.map(r=>`<tr>
-              <td style="white-space:nowrap">${fmtDate(r.data)}</td>
-              <td><span class="op-type-badge op-saida">${r.tipo}</span></td>
-              <td><code style="font-size:11px">${r.codigo}</code></td>
-              <td style="font-size:12px">${r.descricao||'—'}</td>
-              <td style="font-size:12px">${r.lote||'—'}</td>
-              <td style="font-weight:700;color:#0078D4">${r.quantidade}</td>
-              <td style="font-size:12px;color:#666">${r.destino||'—'}</td>
-            </tr>`).join('')}
-            </tbody></table></div>
-        </div>`;
-      window.__relOpsData={ini,fim,recs:[],invs:[],perds:[],saidas,totalItensRec:0,totalItensInv:0,qtdPerdas:0};
-      btnPDF.style.display='';
-    }catch(e){el.innerHTML='<div class="card" style="color:#D13438;padding:20px">Erro: '+e.message+'</div>';}
-    return;
-  }
-  return _origGerarRelatorioOps();
-}
 
 
 
@@ -5550,6 +5504,14 @@ function importarNFeXML(file,eventoId){
 let pdvFoundItem=null;
 
 async function pdvScanProduto(val){
+  if(pdvModoBusca==='nome'){
+    clearTimeout(pdvNomeDebounce);
+    val=val.trim();
+    const sugN=document.getElementById('pdv-nome-sugestoes');
+    if(!val||val.length<2){if(sugN)sugN.style.display='none';return;}
+    pdvNomeDebounce=setTimeout(()=>pdvBuscarPorNome(val),350);
+    return;
+  }
   val=val.trim();
   if(val.length<2) return;
   const found=document.getElementById('pdv-found-card');
@@ -5723,6 +5685,14 @@ async function pdvFinalizarPedido(){
 
 /* ---- PEDIDOS ---- */
 async function renderPedidosEvento(){
+  // Lock vendedor filter for non-supervisors
+  if(pdvVendedorAtivo&&pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor'){
+    const selF=document.getElementById('pdv-filtro-vendedor');
+    if(selF){selF.value=pdvVendedorAtivo.nome;selF.disabled=true;}
+  } else {
+    const selF=document.getElementById('pdv-filtro-vendedor');
+    if(selF) selF.disabled=false;
+  }
   const lista=document.getElementById('pdv-pedidos-lista');
   if(!lista) return;
   if(!pdvEventoAtivo){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:30px">Selecione um evento.</p>';return;}
@@ -6469,6 +6439,30 @@ async function renderRelatorioEvento(){
           <span><span style="color:#107C10">${v.vendas}V</span> · <span style="color:#FF8C00">${v.boni}B</span></span>
         </div>`).join('')||'<p style="color:#aaa;font-size:13px">Sem dados.</p>';
   }catch(e){}
+  // Bar chart: top products by qty
+  try{
+    if(pdvEventoAtivo){
+      const pSnap2=await db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+      const porProd2={};
+      pSnap2.docs.forEach(d2=>(d2.data().itens||[]).forEach(it2=>{
+        const k2=it2.codigo;
+        if(!porProd2[k2]) porProd2[k2]={descricao:it2.descricao,total:0,vendas:0,boni:0};
+        porProd2[k2].total+=it2.quantidade;
+        if(it2.natureza==='venda') porProd2[k2].vendas+=it2.quantidade;
+        else porProd2[k2].boni+=it2.quantidade;
+      }));
+      const sorted2=Object.entries(porProd2).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+      if(sorted2.length){
+        const maxVal2=sorted2[0][1].total||1;
+        const relP2=document.getElementById('pdv-rel-produtos');
+        if(relP2) relP2.innerHTML=sorted2.map(([c2,v2])=>{
+          const pctV2=Math.round((v2.vendas/maxVal2)*100);
+          const pctB2=Math.round((v2.boni/maxVal2)*100);
+          return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><strong>'+c2+'</strong> <span style="color:#666;font-size:11px">'+v2.descricao.slice(0,28)+'</span></span><span style="font-weight:700">'+v2.total+'</span></div><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F0F0F0"><div style="width:'+pctV2+'%;background:#0078D4;transition:.3s"></div><div style="width:'+pctB2+'%;background:#FF8C00;transition:.3s"></div></div><div style="font-size:10px;color:#666;margin-top:2px">■Venda '+v2.vendas+' / ■Boni '+v2.boni+'</div></div>';
+        }).join('');
+      }
+    }
+  }catch(e2){}
 }
 
 function exportarRelatorioEventoPDF(){toast('Em breve: exportação PDF de evento.');}
@@ -6738,19 +6732,6 @@ function pdvModoToggle(modo){
   pdvFoundItem=null;
 }
 
-// Override pdvScanProduto to handle nome mode
-const _origPdvScan = pdvScanProduto;
-async function pdvScanProduto(val){
-  if(pdvModoBusca==='nome'){
-    clearTimeout(pdvNomeDebounce);
-    val=val.trim();
-    const sug=document.getElementById('pdv-nome-sugestoes');
-    if(!val||val.length<2){if(sug)sug.style.display='none';return;}
-    pdvNomeDebounce=setTimeout(()=>pdvBuscarPorNome(val),350);
-    return;
-  }
-  return _origPdvScan(val);
-}
 
 async function pdvBuscarPorNome(termo){
   const sug=document.getElementById('pdv-nome-sugestoes');
@@ -6962,21 +6943,6 @@ document.addEventListener('DOMContentLoaded',pdvAtualizarBadgeOffline);
 
 /* ---- FILTRO POR VENDEDOR (não-supervisor vê só os próprios) ---- */
 // Patch renderPedidosEvento to pre-filter by vendedor if not supervisor
-const _origRenderPedidos = renderPedidosEvento;
-async function renderPedidosEvento(){
-  // If non-supervisor, lock vendedor filter to self
-  if(pdvVendedorAtivo&&pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor'){
-    const sel=document.getElementById('pdv-filtro-vendedor');
-    if(sel){
-      sel.value=pdvVendedorAtivo.nome;
-      sel.disabled=true;
-    }
-  } else {
-    const sel=document.getElementById('pdv-filtro-vendedor');
-    if(sel) sel.disabled=false;
-  }
-  return _origRenderPedidos();
-}
 
 /* ---- PDF RECIBO DE PEDIDO INDIVIDUAL ---- */
 function imprimirPedidoPDF(p, docId){
@@ -7050,41 +7016,6 @@ function imprimirPedidoPDF(p, docId){
 /* ---- RANKING DE PRODUTOS (gráfico de barras CSS) ---- */
 // Patch renderRelatorioEvento to add ranking chart
 const _origRenderRel = renderRelatorioEvento;
-async function renderRelatorioEvento(){
-  await _origRenderRel();
-  // Add bar chart for top products
-  if(!pdvEventoAtivo) return;
-  try{
-    const pSnap=await db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id).get();
-    const porProd={};
-    pSnap.docs.forEach(d=>(d.data().itens||[]).forEach(it=>{
-      const k=it.codigo;
-      if(!porProd[k]) porProd[k]={descricao:it.descricao,total:0,vendas:0,boni:0};
-      porProd[k].total+=it.quantidade;
-      if(it.natureza==='venda') porProd[k].vendas+=it.quantidade;
-      else porProd[k].boni+=it.quantidade;
-    }));
-    const sorted=Object.entries(porProd).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
-    if(!sorted.length) return;
-    const maxVal=sorted[0][1].total||1;
-    const relP=document.getElementById('pdv-rel-produtos');
-    if(relP) relP.innerHTML=sorted.map(([c,v])=>{
-      const pctV=Math.round((v.vendas/maxVal)*100);
-      const pctB=Math.round((v.boni/maxVal)*100);
-      return `<div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-          <span><strong>${c}</strong> <span style="color:#666;font-size:11px">${v.descricao.slice(0,28)}</span></span>
-          <span style="font-weight:700">${v.total}</span>
-        </div>
-        <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F0F0F0">
-          <div style="width:${pctV}%;background:#0078D4;transition:.3s"></div>
-          <div style="width:${pctB}%;background:#FF8C00;transition:.3s"></div>
-        </div>
-        <div style="font-size:10px;color:#666;margin-top:2px"><span style="color:#0078D4">■</span> ${v.vendas}V <span style="color:#FF8C00;margin-left:6px">■</span> ${v.boni}B</div>
-      </div>`;
-    }).join('');
-  }catch(e){}
-}
 
 /* ---- COMPARATIVO ENTRE EVENTOS ---- */
 async function initComparativo(){
@@ -7192,4 +7123,10 @@ const _checkAdmForHome = setInterval(()=>{
 if(typeof firebase!=='undefined'&&typeof firebase.auth==='function'){
   firebase.auth().onAuthStateChanged(user=>{
     if(user){
-      const navPdv=d
+      const navPdv=document.getElementById('nav-pdv');if(navPdv)navPdv.style.display='';
+    }
+  });
+}
+</script>
+</body>
+</html>
