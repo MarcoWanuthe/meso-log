@@ -1247,7 +1247,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <div class="card">
                   <h4 style="color:#002050;margin-bottom:12px">🔍 Buscar Produto</h4>
                   <div style="display:flex;gap:6px;margin-bottom:8px">
-                    <button id="pdv-modo-codigo" onclick="pdvModoToggle('codigo')" class="btn btn-primary" style="font-size:12px;padding:5px 10px">📷 Código</button>
+                    <button id="pdv-modo-barras" onclick="pdvModoToggle('barras')" class="btn btn-primary" style="font-size:12px;padding:5px 10px">🔢 Barras</button>
+                    <button id="pdv-modo-codigo" onclick="pdvModoToggle('codigo')" class="btn btn-secondary" style="font-size:12px;padding:5px 10px">📋 Código</button>
                     <button id="pdv-modo-nome" onclick="pdvModoToggle('nome')" class="btn btn-secondary" style="font-size:12px;padding:5px 10px">🔤 Nome</button>
                   </div>
                   <div style="position:relative">
@@ -1787,7 +1788,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div id="est-alertas" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px"></div>
         <div class="card" style="margin-bottom:14px">
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <input type="text" id="est-search" placeholder="🔍 Buscar por código, descrição ou lote..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderEstoque()">
+            <input type="text" id="est-search" placeholder="🔍 Buscar por código, cód. de barras, descrição ou lote..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderEstoque()">
             <select id="est-filter-cat" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderEstoque()">
               <option value="">Todas as Categorias</option>
             </select>
@@ -1832,7 +1833,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div class="card" style="padding:0;overflow:hidden">
           <div style="padding:12px 16px;background:#F8F9FB;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
             <h3 style="font-size:13px;font-weight:700;color:#002050;margin:0">Lista para Edição</h3>
-            <input type="text" id="ger-est-search" placeholder="Filtrar..." style="padding:6px 10px;border:1px solid #d0d7de;border-radius:5px;font-size:12px;width:200px" oninput="renderGerenciarEstoque()">
+            <input type="text" id="ger-est-search" placeholder="🔍 Código, cód. barras, nome ou lote..." style="padding:6px 10px;border:1px solid #d0d7de;border-radius:5px;font-size:12px;width:260px" oninput="renderGerenciarEstoque()">
           </div>
           <div style="overflow-x:auto">
             <table class="prod-table">
@@ -3649,7 +3650,7 @@ function renderEstoque(){
   const sf = document.getElementById('est-filter-status')?.value||'';
 
   let items = allStock.filter(s=>
-    (!q || (s.codigo||'').toLowerCase().includes(q) || (s.descricao||'').toLowerCase().includes(q) || (s.lote||'').toLowerCase().includes(q)) &&
+    (!q || (s.codigo||'').toLowerCase().includes(q) || (s.descricao||'').toLowerCase().includes(q) || (s.lote||'').toLowerCase().includes(q) || (s.barcode||'').toLowerCase().includes(q)) &&
     (!cat || s.categoria===cat)
   );
   if(sf) items = items.filter(s=>{
@@ -3697,7 +3698,7 @@ function renderGerenciarEstoque(){
   const tbody = document.getElementById('ger-est-tbody');
   if(!tbody) return;
   const q = (document.getElementById('ger-est-search')?.value||'').toLowerCase();
-  const items = allStock.filter(s=>!q||(s.codigo||'').toLowerCase().includes(q)||(s.descricao||'').toLowerCase().includes(q)||(s.lote||'').toLowerCase().includes(q));
+  const items = allStock.filter(s=>!q||(s.codigo||'').toLowerCase().includes(q)||(s.descricao||'').toLowerCase().includes(q)||(s.lote||'').toLowerCase().includes(q)||(s.barcode||'').toLowerCase().includes(q));
   tbody.innerHTML = items.map(s=>`
     <tr>
       <td><code style="font-size:11px">${s.codigo||'—'}</code></td>
@@ -5654,24 +5655,35 @@ async function pdvScanProduto(val){
   val=val.trim();
   if(val.length<2) return;
   const found=document.getElementById('pdv-found-card');
+  const porBarras = pdvModoBusca==='barras';
   try{
-    // First: check event deposit (for availability badge)
+    // Check event deposit
     let depItem=null;
     if(pdvEventoAtivo){
-      const s1=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
-      if(!s1.empty) depItem={id:s1.docs[0].id,...s1.docs[0].data()};
-      else{
+      if(porBarras){
+        const s1=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
+        if(!s1.empty) depItem={id:s1.docs[0].id,...s1.docs[0].data()};
+      } else {
         const s2=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('codigo','==',val).limit(1).get();
         if(!s2.empty) depItem={id:s2.docs[0].id,...s2.docs[0].data()};
+        if(!depItem){
+          const s3=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
+          if(!s3.empty) depItem={id:s3.docs[0].id,...s3.docs[0].data()};
+        }
       }
     }
-    // Also search full catalog
+    // Search full catalog
     let catItem=null;
-    const c1=await db.collection('stock').where('barcode','==',val).limit(1).get();
-    if(!c1.empty) catItem={stockId:c1.docs[0].id,...c1.docs[0].data()};
-    else{
+    if(porBarras){
+      const c1=await db.collection('stock').where('barcode','==',val).limit(1).get();
+      if(!c1.empty) catItem={stockId:c1.docs[0].id,...c1.docs[0].data()};
+    } else {
       const c2=await db.collection('stock').where('codigo','==',val).limit(1).get();
       if(!c2.empty) catItem={stockId:c2.docs[0].id,...c2.docs[0].data()};
+      if(!catItem){
+        const c3=await db.collection('stock').where('barcode','==',val).limit(1).get();
+        if(!c3.empty) catItem={stockId:c3.docs[0].id,...c3.docs[0].data()};
+      }
     }
     if(!depItem&&!catItem){found.style.display='none';pdvFoundItem=null;toast('Produto não encontrado no catálogo.');return;}
     const disponivel=depItem&&depItem.quantidade>0;
@@ -6917,23 +6929,27 @@ async function aprovarRetorno(retornoId){
 // PDV MELHORIAS — FASE 5
 // ==============================
 
-/* ---- MODO BUSCA: código vs nome ---- */
-let pdvModoBusca = 'codigo';
+/* ---- MODO BUSCA: barras / código / nome ---- */
+let pdvModoBusca = 'barras';
 let pdvNomeDebounce = null;
 function pdvModoToggle(modo){
   pdvModoBusca = modo;
   const inp = document.getElementById('pdv-scan-input');
+  const btnB = document.getElementById('pdv-modo-barras');
   const btnC = document.getElementById('pdv-modo-codigo');
   const btnN = document.getElementById('pdv-modo-nome');
-  if(modo==='codigo'){
-    if(inp) inp.placeholder='Bipe ou digite o código/EAN...';
-    if(btnC){btnC.className='btn btn-primary';btnC.style.fontSize='12px';btnC.style.padding='5px 10px';}
-    if(btnN){btnN.className='btn btn-secondary';btnN.style.fontSize='12px';btnN.style.padding='5px 10px';}
-    document.getElementById('pdv-nome-sugestoes').style.display='none';
+  const btns = [btnB,btnC,btnN];
+  btns.forEach(b=>{if(b){b.className='btn btn-secondary';b.style.fontSize='12px';b.style.padding='5px 10px';}});
+  document.getElementById('pdv-nome-sugestoes').style.display='none';
+  if(modo==='barras'){
+    if(inp){inp.placeholder='🔢 Bipe o código de barras (EAN)...';inp.value='';inp.focus();}
+    if(btnB){btnB.className='btn btn-primary';}
+  } else if(modo==='codigo'){
+    if(inp){inp.placeholder='📋 Digite o código interno (T-XXXX)...';inp.value='';inp.focus();}
+    if(btnC){btnC.className='btn btn-primary';}
   } else {
-    if(inp){inp.placeholder='Digite parte do nome do produto...';inp.value='';inp.focus();}
-    if(btnN){btnN.className='btn btn-primary';btnN.style.fontSize='12px';btnN.style.padding='5px 10px';}
-    if(btnC){btnC.className='btn btn-secondary';btnC.style.fontSize='12px';btnC.style.padding='5px 10px';}
+    if(inp){inp.placeholder='🔤 Digite parte do nome do produto...';inp.value='';inp.focus();}
+    if(btnN){btnN.className='btn btn-primary';}
   }
   document.getElementById('pdv-found-card').style.display='none';
   pdvFoundItem=null;
