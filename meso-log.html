@@ -7768,7 +7768,7 @@ function solicAbrirExpedir(id){
     '</div>'+
     '<div class="form-group"><label style="font-size:12px;font-weight:700">Observação</label><textarea id="solic-exp-obs" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:50px" placeholder="Notas sobre o envio..."></textarea></div>'+
     '<div style="display:flex;gap:8px;margin-top:12px">'+
-    '<button class="btn btn-primary" style="background:#D83B01" onclick="solicConfirmarExpedir(''+id+'')">🚚 Confirmar Saída</button>'+
+    '<button class="btn btn-primary" style="background:#D83B01" data-expid="'+id+'" onclick="solicConfirmarExpedir(this.dataset.expid)">🚚 Confirmar Saída</button>'+
     '<button class="btn btn-outline" onclick="solicCloseModal()">Cancelar</button></div>');
 }
 
