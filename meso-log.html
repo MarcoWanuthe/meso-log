@@ -386,10 +386,46 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
     <!-- NOVA SOLICITAÇÃO -->
     <div class="page" id="page-solicitacoes">
-  <div class="tab-bar" id="solic-tab-bar">
+  <!-- SOLIC LOGIN -->
+  <div id="solic-login" style="max-width:400px;margin:40px auto">
+    <div class="card" style="text-align:center;padding:32px 28px">
+      <div style="font-size:40px;margin-bottom:8px">🔐</div>
+      <h3 style="color:#002050;margin-bottom:4px;font-size:16px">1 · Solicitação de Materiais</h3>
+      <p style="font-size:12px;color:#888;margin-bottom:20px">Área restrita — faça login para continuar</p>
+      <div class="form-group" style="text-align:left">
+        <label>Usuário</label>
+        <input type="text" id="solic-login-user" placeholder="seu usuário" style="width:100%;padding:8px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px" oninput="this.value=this.value.toLowerCase()">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label>Senha</label>
+        <input type="password" id="solic-login-pass" placeholder="••••••" style="width:100%;padding:8px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px" onkeydown="if(event.key===&apos;Enter&apos;)solicDoLogin()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="solicDoLogin()">Entrar</button>
+      <div id="solic-login-err" style="color:#D13438;font-size:12px;margin-top:8px;min-height:16px"></div>
+    </div>
+  </div>
+  <!-- SOLIC USER BAR -->
+  <div id="solic-user-bar" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 14px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="solic-user-perfil-badge" style="font-size:11px;padding:2px 10px;border-radius:12px;font-weight:700;color:#fff"></span>
+      <span id="solic-user-nome-show" style="font-size:13px;font-weight:600;color:#002050"></span>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:11px" onclick="solicLogout()">Sair →</button>
+    </div>
+  </div>
+  <!-- SOLIC ACTION MODAL -->
+  <div id="solic-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto">
+      <div id="solic-modal-content"></div>
+    </div>
+  </div>
+  <div class="tab-bar" id="solic-tab-bar" style="display:none">
     <button class="active" onclick="solicTab('nova',this)" id="stab-nova">📋 Nova Solicitação</button>
     <button onclick="solicTab('acompanhar',this)" id="stab-acompanhar">🔍 Minhas Solicitações</button>
     <button onclick="solicTab('relatorios',this)" id="stab-relatorios">📊 Relatórios</button>
+    <button onclick="solicTab('pendentes',this)" id="stab-pendentes" style="display:none">⏳ Pendentes</button>
+    <button onclick="solicTab('todas',this)" id="stab-todas" style="display:none">📋 Todas</button>
+    <button onclick="solicTab('expedir',this)" id="stab-expedir" style="display:none">🚚 Para Expedir</button>
+    <button onclick="solicTab('historico',this)" id="stab-historico" style="display:none">📦 Histórico</button>
   </div>
   <div id="sview-nova">
       <div class="steps">
@@ -549,6 +585,56 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div>
       <div id="rel-result"></div>
     </div><!-- /sview-relatorios -->
+<!-- APROVADOR: PENDENTES -->
+<div id="sview-pendentes" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;color:#002050;font-weight:700">⏳ Aguardando Aprovação</h3>
+      <button class="btn btn-outline btn-sm" onclick="renderSolicPendentes()">🔄</button>
+    </div>
+    <div id="solic-pend-loader" class="loader"><div class="spinner"></div>Carregando...</div>
+    <div id="solic-pend-list"></div>
+  </div>
+</div>
+<!-- APROVADOR: TODAS -->
+<div id="sview-todas" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;color:#002050;font-weight:700">📋 Todas as Solicitações</h3>
+      <button class="btn btn-outline btn-sm" onclick="renderSolicTodas()">🔄</button>
+    </div>
+    <div class="search-bar" style="margin-bottom:12px">
+      <input type="text" id="stodas-search" placeholder="🔍 Buscar..." oninput="renderSolicTodas()">
+      <select id="stodas-status" onchange="renderSolicTodas()">
+        <option value="">Todos os status</option>
+        <option>Aguardando Aprovação</option><option>Aprovado</option>
+        <option>Em Separação</option><option>Enviado</option>
+        <option>Entregue</option><option>Cancelado</option>
+      </select>
+    </div>
+    <div id="solic-todas-list"></div>
+  </div>
+</div>
+<!-- LOGÍSTICA: EXPEDIR -->
+<div id="sview-expedir" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;color:#002050;font-weight:700">🚚 Aprovadas — Aguardando Expedição</h3>
+      <button class="btn btn-outline btn-sm" onclick="renderSolicExpedir()">🔄</button>
+    </div>
+    <div id="solic-exp-list"></div>
+  </div>
+</div>
+<!-- LOGÍSTICA: HISTÓRICO -->
+<div id="sview-historico" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;color:#002050;font-weight:700">📦 Histórico de Expedição</h3>
+      <button class="btn btn-outline btn-sm" onclick="renderSolicHistorico()">🔄</button>
+    </div>
+    <div id="solic-hist-list"></div>
+  </div>
+</div>
 </div><!-- /page-solicitacoes -->
 <div class="page" id="page-envios">
       <!-- Tabs usuário normal -->
@@ -769,6 +855,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button class="active" onclick="admTab('solicitacoes',this)">Todas as Solicitações</button>
           <button onclick="admTab('produtos',this)">Gerenciar Produtos</button>
           <button onclick="admTab('config',this)">Configurações</button>
+          <button onclick="admTab('usuarios',this)">👥 Usuários Solic.</button>
         </div>
         <!-- SOLICITAÇÕES ADM -->
         <div id="adm-solicitacoes">
@@ -842,6 +929,55 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div style="display:flex;gap:10px;margin-top:8px">
               <button class="btn btn-success" onclick="salvarConfig()">💾 Salvar Configurações</button>
               <button class="btn btn-danger" onclick="resetFirebaseConfig()">🔄 Resetar Firebase</button>
+            </div>
+          </div>
+        </div>
+        <!-- USUÁRIOS SOLIC ADM -->
+        <div id="adm-usuarios" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:14px" id="adm-usr-form-title">➕ Novo Usuário</h3>
+            <input type="hidden" id="adm-usr-id">
+            <div class="form-row">
+              <div class="form-group"><label>Nome Completo</label><input type="text" id="adm-usr-nome" placeholder="Nome do usuário"></div>
+              <div class="form-group"><label>Usuário (login)</label><input type="text" id="adm-usr-login" placeholder="ex: mktuser1" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Senha</label>
+                <input type="text" id="adm-usr-senha" placeholder="Senha">
+                <p id="adm-usr-senha-hint" style="display:none;font-size:11px;color:#888;margin-top:2px">Deixe em branco para manter a senha atual</p>
+              </div>
+              <div class="form-group"><label>E-mail (opcional)</label><input type="email" id="adm-usr-email" placeholder="email@empresa.com"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Perfil</label>
+                <select id="adm-usr-perfil" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px;width:100%">
+                  <option value="marketing">Marketing</option>
+                  <option value="aprovador">Aprovador</option>
+                  <option value="logistica">Logística</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="adm-usr-ativo" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px;width:100%">
+                  <option value="true">Ativo</option>
+                  <option value="false">Inativo</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button class="btn btn-success" onclick="admSalvarUsuario()">💾 Salvar</button>
+              <button class="btn btn-outline" onclick="admLimparFormUsuario()">Limpar</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">Usuários Cadastrados</h3>
+            <div style="overflow-x:auto">
+              <table class="prod-table">
+                <thead><tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="adm-usuarios-lista"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2261,6 +2397,12 @@ function startListeners(){
     renderTrack();
     if(admLoggedIn) renderAdmTable();
     renderRelatorio();
+    if(solicUser){
+      if(document.getElementById('sview-pendentes')?.style.display!=='none')renderSolicPendentes();
+      if(document.getElementById('sview-todas')?.style.display!=='none')renderSolicTodas();
+      if(document.getElementById('sview-expedir')?.style.display!=='none')renderSolicExpedir();
+      if(document.getElementById('sview-historico')?.style.display!=='none')renderSolicHistorico();
+    }
   };
   const tryWithoutOrder = ()=>{
     unsubRequests = db.collection('requests')
@@ -2320,15 +2462,35 @@ function startListeners(){
 // NAVIGATION
 // ==============================
 function solicTab(tab,btn){
-  ['nova','acompanhar','relatorios'].forEach(t=>{
+  // Guard: redirect to first allowed tab if user tries an unauthorized one
+  const _roleTabMap={marketing:['nova','acompanhar','relatorios'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
+  if(solicUser&&!(_roleTabMap[solicUser.perfil]||[]).includes(tab)) tab=(_roleTabMap[solicUser.perfil]||['nova'])[0];
+  const _allTabs=['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'];
+  _allTabs.forEach(t=>{
     const v=document.getElementById('sview-'+t);
     const b=document.getElementById('stab-'+t);
     if(v) v.style.display=(t===tab?'':'none');
     if(b) b.classList.toggle('active',t===tab);
   });
-  if(tab==='nova'){resetForm();goStep1();}
-  if(tab==='acompanhar') initTrackPage();
+  if(tab==='nova'){
+    resetForm();goStep1();
+    // Pre-fill solicitante fields from logged-in Marketing user
+    if(solicUser&&solicUser.perfil==='marketing'){
+      const _n=document.getElementById('sol-nome');const _e=document.getElementById('sol-email');const _s=document.getElementById('sol-setor');
+      if(_n&&!_n.value)_n.value=solicUser.nome||'';
+      if(_e&&!_e.value)_e.value=solicUser.email||'';
+      if(_s&&!_s.value)_s.value='Marketing';
+    }
+  }
+  if(tab==='acompanhar'){
+    if(solicUser&&solicUser.email){identityEmail=solicUser.email;}
+    initTrackPage();
+  }
   if(tab==='relatorios') initRelatorio();
+  if(tab==='pendentes') renderSolicPendentes();
+  if(tab==='todas') renderSolicTodas();
+  if(tab==='expedir') renderSolicExpedir();
+  if(tab==='historico') renderSolicHistorico();
 }
 function showPage(p){
   if(p==='nova'){showPage('solicitacoes');solicTab('nova');return;}
@@ -2340,7 +2502,21 @@ function showPage(p){
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
   const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
-  if(p==='solicitacoes') solicTab('nova');
+  if(p==='solicitacoes'){
+    if(solicUser){solicSetupForRole(solicUser.perfil);}
+    else{
+      const _sl=document.getElementById('solic-login');
+      const _tb=document.getElementById('solic-tab-bar');
+      const _ub=document.getElementById('solic-user-bar');
+      if(_sl)_sl.style.display='';
+      if(_tb)_tb.style.display='none';
+      if(_ub)_ub.style.display='none';
+      ['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'].forEach(t=>{
+        const v=document.getElementById('sview-'+t);if(v)v.style.display='none';
+      });
+    }
+    return;
+  }
   if(p==='envios') initEnviosPage();
   if(p==='estoque') initEstoquePage();
   if(p==='operacoes') initOpsPage();
@@ -2860,11 +3036,12 @@ function admLogin(){
 }
 
 function admTab(tab,btn){
-  ['solicitacoes','produtos','config'].forEach(t=>document.getElementById('adm-'+t).style.display=t===tab?'':'none');
+  ['solicitacoes','produtos','config','usuarios'].forEach(t=>{const el=document.getElementById('adm-'+t);if(el)el.style.display=t===tab?'':'none';});
   document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(tab==='solicitacoes')renderAdmTable();
   if(tab==='produtos')renderAdmProds();
+  if(tab==='usuarios')renderAdmUsuarios();
 }
 
 let admAllRows=[];
@@ -7336,6 +7513,354 @@ if(typeof firebase!=='undefined'&&typeof firebase.auth==='function'){
       const navPdv=document.getElementById('nav-pdv');if(navPdv)navPdv.style.display='';
     }
   });
+}
+// ==============================
+// SOLICITAÇÕES — ROLE-BASED AUTH
+// ==============================
+let solicUser = null;
+
+async function solicDoLogin(){
+  const usuario=(document.getElementById('solic-login-user')?.value||'').trim();
+  const senha=document.getElementById('solic-login-pass')?.value||'';
+  const errEl=document.getElementById('solic-login-err');
+  errEl.textContent='';
+  if(!usuario||!senha){errEl.textContent='Preencha usuário e senha.';return;}
+  try{
+    const snap=await db.collection('usuarios_solic').where('usuario','==',usuario).where('ativo','==',true).get();
+    if(snap.empty){errEl.textContent='Usuário não encontrado ou inativo.';return;}
+    const doc=snap.docs[0];const data=doc.data();
+    if(data.senha!==senha){errEl.textContent='Senha incorreta.';return;}
+    solicUser={id:doc.id,...data};
+    solicShowPanel();
+  }catch(e){errEl.textContent='Erro: '+e.message;}
+}
+
+function solicShowPanel(){
+  const login=document.getElementById('solic-login');
+  const bar=document.getElementById('solic-user-bar');
+  const tabBar=document.getElementById('solic-tab-bar');
+  if(login)login.style.display='none';
+  if(bar)bar.style.display='';
+  if(tabBar)tabBar.style.display='';
+  const colors={marketing:'#0078D4',aprovador:'#107C10',logistica:'#D83B01'};
+  const labels={marketing:'Marketing',aprovador:'Aprovador',logistica:'Logística'};
+  const badge=document.getElementById('solic-user-perfil-badge');
+  const nomeEl=document.getElementById('solic-user-nome-show');
+  if(badge){badge.textContent=labels[solicUser.perfil]||solicUser.perfil;badge.style.background=colors[solicUser.perfil]||'#555';}
+  if(nomeEl)nomeEl.textContent=solicUser.nome||solicUser.usuario;
+  solicSetupForRole(solicUser.perfil);
+}
+
+function solicLogout(){
+  solicUser=null;
+  const login=document.getElementById('solic-login');
+  const bar=document.getElementById('solic-user-bar');
+  const tabBar=document.getElementById('solic-tab-bar');
+  if(login)login.style.display='';
+  if(bar)bar.style.display='none';
+  if(tabBar)tabBar.style.display='none';
+  ['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'].forEach(t=>{
+    const v=document.getElementById('sview-'+t);if(v)v.style.display='none';
+  });
+  const errEl=document.getElementById('solic-login-err');if(errEl)errEl.textContent='';
+  const lp=document.getElementById('solic-login-pass');if(lp)lp.value='';
+}
+
+function solicSetupForRole(perfil){
+  const show={marketing:['nova','acompanhar','relatorios'],aprovador:['pendentes','todas'],logistica:['expedir','historico']};
+  ['nova','acompanhar','relatorios','pendentes','todas','expedir','historico'].forEach(t=>{
+    const btn=document.getElementById('stab-'+t);
+    if(btn)btn.style.display=(show[perfil]||[]).includes(t)?'':'none';
+  });
+  const first=(show[perfil]||['nova'])[0];
+  solicTab(first);
+}
+
+function solicOpenModal(htmlContent){
+  document.getElementById('solic-modal-content').innerHTML=htmlContent;
+  document.getElementById('solic-modal').style.display='flex';
+}
+function solicCloseModal(){
+  document.getElementById('solic-modal').style.display='none';
+}
+
+function renderSolicPendentes(){
+  const el=document.getElementById('solic-pend-list');
+  const loader=document.getElementById('solic-pend-loader');
+  if(!el)return;
+  if(loader)loader.style.display='none';
+  const reqs=allRequests.filter(r=>r.status==='Aguardando Aprovação');
+  if(!reqs.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#aaa">Nenhuma solicitação pendente.</div>';
+    return;
+  }
+  el.innerHTML=reqs.map(r=>`
+    <div class="card" style="margin-bottom:10px;border-left:4px solid #FFC107">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="color:#002050;font-size:14px">${r.id}</strong>
+          <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
+          <div style="font-size:12px;color:#666;margin-top:4px">📅 ${formatDate(r.dataSolicitacao)} · ${r.evento?.nome||''}</div>
+          <div style="font-size:12px;color:#444;margin-top:2px">👤 ${r.solicitante?.nome||''} · ${r.solicitante?.setor||''}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">📦 ${r.produtos?.length||0} produto(s) · 🗓️ ${r.evento?.data||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+          <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
+          <button class="btn btn-sm" style="background:#107C10;color:#fff;border:none" onclick="solicAbrirAprovar('${r.id}')">✅ Aprovar</button>
+          <button class="btn btn-sm" style="background:#D13438;color:#fff;border:none" onclick="solicAbrirRejeitar('${r.id}')">❌ Rejeitar</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderSolicTodas(){
+  const el=document.getElementById('solic-todas-list');
+  if(!el)return;
+  const q=(document.getElementById('stodas-search')?.value||'').toLowerCase();
+  const sf=document.getElementById('stodas-status')?.value||'';
+  let reqs=allRequests.filter(r=>
+    (!q||r.id.toLowerCase().includes(q)||r.evento?.nome?.toLowerCase().includes(q)||r.solicitante?.nome?.toLowerCase().includes(q))&&
+    (!sf||r.status===sf)
+  );
+  if(!reqs.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#aaa">Nenhuma solicitação encontrada.</div>';
+    return;
+  }
+  el.innerHTML=reqs.map(r=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="color:#002050">${r.id}</strong>
+          <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
+          <div style="font-size:12px;color:#666;margin-top:2px">${r.evento?.nome||''} · ${r.solicitante?.nome||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
+          ${r.status==='Aguardando Aprovação'?`
+          <button class="btn btn-sm" style="background:#107C10;color:#fff;border:none" onclick="solicAbrirAprovar('${r.id}')">✅ Aprovar</button>
+          <button class="btn btn-sm" style="background:#D13438;color:#fff;border:none" onclick="solicAbrirRejeitar('${r.id}')">❌ Rejeitar</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderSolicExpedir(){
+  const el=document.getElementById('solic-exp-list');
+  if(!el)return;
+  const reqs=allRequests.filter(r=>['Aprovado','Em Separação'].includes(r.status));
+  if(!reqs.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#aaa">Nenhuma solicitação aguardando expedição.</div>';
+    return;
+  }
+  el.innerHTML=reqs.map(r=>`
+    <div class="card" style="margin-bottom:12px;border-left:4px solid #D83B01">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="color:#002050;font-size:14px">${r.id}</strong>
+          <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
+          <div style="font-size:12px;color:#666;margin-top:4px">📅 ${formatDate(r.dataSolicitacao)} · ${r.evento?.nome||''}</div>
+          <div style="font-size:12px;color:#444;margin-top:2px">👤 ${r.solicitante?.nome||''} · ${r.solicitante?.email||''}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px">📦 ${(r.produtos||[]).map(p=>p.descricao+' ('+p.qty+')').join(', ')||'—'}</div>
+          <div style="font-size:12px;color:#0078D4;margin-top:2px">📍 ${r.endereco?.rua||''}, ${r.endereco?.cidade||''} ${r.endereco?.estado||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+          <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
+          <button class="btn btn-sm" style="background:#D83B01;color:#fff;border:none" onclick="solicAbrirExpedir('${r.id}')">🚚 Confirmar Saída</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderSolicHistorico(){
+  const el=document.getElementById('solic-hist-list');
+  if(!el)return;
+  const reqs=allRequests.filter(r=>['Enviado','Entregue'].includes(r.status));
+  if(!reqs.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#aaa">Nenhum envio registrado ainda.</div>';
+    return;
+  }
+  el.innerHTML=reqs.map(r=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="color:#002050">${r.id}</strong>
+          <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
+          ${r.comAlteracoes?'<span style="font-size:11px;background:#FFF3CD;color:#856404;padding:1px 8px;border-radius:12px;margin-left:6px">⚠️ com alterações</span>':''}
+          <div style="font-size:12px;color:#666;margin-top:2px">${r.evento?.nome||''} · ${formatDate(r.dataSolicitacao)}</div>
+          ${r.codigoRastreamento?`<div style="font-size:12px;color:#0078D4;margin-top:2px">📮 ${r.codigoRastreamento}${r.transportadora?' — '+r.transportadora:''}</div>`:''}
+          ${r.expedidoPor?`<div style="font-size:11px;color:#888">Expedido por: ${r.expedidoPor}</div>`:''}
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
+      </div>
+    </div>`).join('');
+}
+
+function solicAbrirAprovar(id){
+  const r=allRequests.find(x=>x.id===id);if(!r)return;
+  solicOpenModal(`
+    <h3 style="color:#107C10;margin-bottom:12px;font-size:15px">✅ Aprovar Solicitação</h3>
+    <p style="font-size:13px;color:#444;margin-bottom:4px"><strong>${r.id}</strong> — ${r.evento?.nome||''}</p>
+    <p style="font-size:12px;color:#666;margin-bottom:12px">Solicitante: ${r.solicitante?.nome||''} · ${r.solicitante?.setor||''}</p>
+    <div style="background:#f9f9f9;border-radius:6px;padding:10px;margin-bottom:12px;font-size:12px;max-height:140px;overflow-y:auto">
+      ${(r.produtos||[]).map(p=>'<div style="padding:3px 0;border-bottom:1px solid #eee">'+p.descricao+' — <strong>'+p.qty+'</strong> '+( p.um||'')+'</div>').join('')}
+    </div>
+    <div class="form-group">
+      <label style="font-size:12px;font-weight:700">Observação interna (opcional)</label>
+      <textarea id="solic-modal-obs" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:60px" placeholder="Nota sobre a aprovação..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-success" onclick="solicConfirmarAprovar('${id}')">✅ Confirmar Aprovação</button>
+      <button class="btn btn-outline" onclick="solicCloseModal()">Cancelar</button>
+    </div>`);
+}
+
+async function solicConfirmarAprovar(id){
+  const obs=document.getElementById('solic-modal-obs')?.value||'';
+  try{
+    await db.collection('requests').doc(id).update({status:'Aprovado',obsInterna:obs,aprovadoPor:solicUser?.nome||'',aprovadoEm:new Date().toISOString()});
+    solicCloseModal();
+    toast('✅ Solicitação aprovada!');
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function solicAbrirRejeitar(id){
+  const r=allRequests.find(x=>x.id===id);if(!r)return;
+  solicOpenModal(`
+    <h3 style="color:#D13438;margin-bottom:12px;font-size:15px">❌ Rejeitar Solicitação</h3>
+    <p style="font-size:13px;color:#444;margin-bottom:14px"><strong>${r.id}</strong> — ${r.evento?.nome||''}</p>
+    <div class="form-group">
+      <label style="font-size:12px;font-weight:700">Motivo da rejeição *</label>
+      <textarea id="solic-modal-obs" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:70px" placeholder="Informe o motivo..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-danger" onclick="solicConfirmarRejeitar('${id}')">❌ Confirmar Rejeição</button>
+      <button class="btn btn-outline" onclick="solicCloseModal()">Cancelar</button>
+    </div>`);
+}
+
+async function solicConfirmarRejeitar(id){
+  const obs=document.getElementById('solic-modal-obs')?.value||'';
+  if(!obs.trim()){alert('Informe o motivo da rejeição.');return;}
+  try{
+    await db.collection('requests').doc(id).update({status:'Cancelado',obsInterna:obs,rejeitadoPor:solicUser?.nome||'',rejeitadoEm:new Date().toISOString()});
+    solicCloseModal();
+    toast('Solicitação rejeitada.');
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function solicAbrirExpedir(id){
+  const r=allRequests.find(x=>x.id===id);if(!r)return;
+  const itens=(r.produtos||[]).map(p=>
+    '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f0f0">'+
+    '<span style="flex:1;font-size:12px">'+p.descricao+'</span>'+
+    '<input type="number" id="solic-exp-qty-'+p.codigo+'" value="'+p.qty+'" min="0" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center">'+
+    '<span style="font-size:11px;color:#888;width:50px">'+(p.um||'')+'</span></div>').join('');
+  solicOpenModal(
+    '<h3 style="color:#D83B01;margin-bottom:12px;font-size:15px">🚚 Confirmar Saída — '+r.id+'</h3>'+
+    '<p style="font-size:12px;color:#666;margin-bottom:4px">Evento: '+(r.evento?.nome||'')+'</p>'+
+    '<p style="font-size:12px;color:#666;margin-bottom:12px">📍 '+(r.endereco?.rua||'')+', '+(r.endereco?.cidade||'')+' '+(r.endereco?.estado||'')+'</p>'+
+    '<div style="border:1px solid #eee;border-radius:6px;padding:10px;margin-bottom:12px">'+
+    '<p style="font-size:11px;font-weight:700;color:#D83B01;margin-bottom:6px;text-transform:uppercase">Itens (ajuste qtd se houve alterações)</p>'+
+    itens+'</div>'+
+    '<div class="form-row">'+
+    '<div class="form-group"><label style="font-size:12px;font-weight:700">Transportadora</label><input type="text" id="solic-exp-transp" placeholder="Ex: Correios, JADLOG..." style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px"></div>'+
+    '<div class="form-group"><label style="font-size:12px;font-weight:700">Código de Rastreamento</label><input type="text" id="solic-exp-track" placeholder="Ex: BR123456789BR" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px"></div>'+
+    '</div>'+
+    '<div class="form-group"><label style="font-size:12px;font-weight:700">Observação</label><textarea id="solic-exp-obs" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:50px" placeholder="Notas sobre o envio..."></textarea></div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px">'+
+    '<button class="btn btn-primary" style="background:#D83B01" onclick="solicConfirmarExpedir(''+id+'')">🚚 Confirmar Saída</button>'+
+    '<button class="btn btn-outline" onclick="solicCloseModal()">Cancelar</button></div>');
+}
+
+async function solicConfirmarExpedir(id){
+  const r=allRequests.find(x=>x.id===id);if(!r)return;
+  const transp=document.getElementById('solic-exp-transp')?.value||'';
+  const track=document.getElementById('solic-exp-track')?.value||'';
+  const obs=document.getElementById('solic-exp-obs')?.value||'';
+  const produtosEnviados=(r.produtos||[]).map(p=>({...p,qty:parseInt(document.getElementById('solic-exp-qty-'+p.codigo)?.value||p.qty)||p.qty}));
+  const comAlteracoes=produtosEnviados.some((p,i)=>p.qty!==(r.produtos[i]?.qty||p.qty));
+  try{
+    await db.collection('requests').doc(id).update({status:'Enviado',transportadora:transp,codigoRastreamento:track,obsExpedicao:obs,produtosEnviados,comAlteracoes,expedidoPor:solicUser?.nome||'',expedidoEm:new Date().toISOString()});
+    solicCloseModal();
+    toast('🚚 Saída confirmada!');
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function renderAdmUsuarios(){
+  const el=document.getElementById('adm-usuarios-lista');
+  if(!el)return;
+  el.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:auto"></div></td></tr>';
+  try{
+    const snap=await db.collection('usuarios_solic').get();
+    const users=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!users.length){el.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">Nenhum usuário cadastrado.</td></tr>';return;}
+    const colors={marketing:'#0078D4',aprovador:'#107C10',logistica:'#D83B01'};
+    const labels={marketing:'Marketing',aprovador:'Aprovador',logistica:'Logística'};
+    el.innerHTML=users.map(u=>`<tr>
+      <td><strong>${u.nome||'—'}</strong></td>
+      <td><code style="background:#f5f5f5;padding:1px 6px;border-radius:3px">${u.usuario||'—'}</code></td>
+      <td><span style="background:${colors[u.perfil]||'#666'};color:#fff;padding:2px 10px;border-radius:12px;font-size:11px">${labels[u.perfil]||u.perfil}</span></td>
+      <td><span style="color:${u.ativo!==false?'#107C10':'#D13438'};font-weight:600">${u.ativo!==false?'Ativo':'Inativo'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="admEditUsuario('${u.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:#D13438;color:#fff;border:none;margin-left:4px" onclick="admExcluirUsuario('${u.id}','${(u.nome||'').replace(/'/g,"\'")}')">🗑</button>
+      </td></tr>`).join('');
+  }catch(e){el.innerHTML=`<tr><td colspan="5" style="color:red">Erro: ${e.message}</td></tr>`;}
+}
+
+async function admSalvarUsuario(){
+  const id=document.getElementById('adm-usr-id')?.value||'';
+  const nome=(document.getElementById('adm-usr-nome')?.value||'').trim();
+  const usuario=(document.getElementById('adm-usr-login')?.value||'').trim().toLowerCase();
+  const senha=document.getElementById('adm-usr-senha')?.value||'';
+  const email=(document.getElementById('adm-usr-email')?.value||'').trim();
+  const perfil=document.getElementById('adm-usr-perfil')?.value||'marketing';
+  const ativo=document.getElementById('adm-usr-ativo')?.value!=='false';
+  if(!nome||!usuario||!perfil){alert('Preencha nome, usuário e perfil.');return;}
+  if(!id&&!senha){alert('Informe uma senha para o novo usuário.');return;}
+  try{
+    const data={nome,usuario,perfil,ativo};
+    if(email)data.email=email;
+    if(senha)data.senha=senha;
+    if(id){await db.collection('usuarios_solic').doc(id).update(data);toast('✅ Usuário atualizado!');}
+    else{await db.collection('usuarios_solic').add(data);toast('✅ Usuário criado!');}
+    admLimparFormUsuario();
+    renderAdmUsuarios();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function admLimparFormUsuario(){
+  ['adm-usr-id','adm-usr-nome','adm-usr-login','adm-usr-senha','adm-usr-email'].forEach(eid=>{const el=document.getElementById(eid);if(el)el.value='';});
+  const perf=document.getElementById('adm-usr-perfil');if(perf)perf.value='marketing';
+  const atv=document.getElementById('adm-usr-ativo');if(atv)atv.value='true';
+  const title=document.getElementById('adm-usr-form-title');if(title)title.textContent='➕ Novo Usuário';
+  const hint=document.getElementById('adm-usr-senha-hint');if(hint)hint.style.display='none';
+}
+
+function admEditUsuario(id){
+  db.collection('usuarios_solic').doc(id).get().then(doc=>{
+    if(!doc.exists)return;
+    const d=doc.data();
+    document.getElementById('adm-usr-id').value=id;
+    document.getElementById('adm-usr-nome').value=d.nome||'';
+    document.getElementById('adm-usr-login').value=d.usuario||'';
+    document.getElementById('adm-usr-senha').value='';
+    document.getElementById('adm-usr-email').value=d.email||'';
+    document.getElementById('adm-usr-perfil').value=d.perfil||'marketing';
+    document.getElementById('adm-usr-ativo').value=String(d.ativo!==false);
+    const title=document.getElementById('adm-usr-form-title');if(title)title.textContent='✏️ Editar Usuário';
+    const hint=document.getElementById('adm-usr-senha-hint');if(hint)hint.style.display='';
+    document.getElementById('adm-usr-nome')?.focus();
+  }).catch(e=>alert('Erro: '+e.message));
+}
+
+async function admExcluirUsuario(id,nome){
+  if(!confirm('Excluir usuário "'+nome+'"?'))return;
+  try{
+    await db.collection('usuarios_solic').doc(id).delete();
+    toast('🗑 Usuário removido.');
+    renderAdmUsuarios();
+  }catch(e){alert('Erro: '+e.message);}
 }
 </script>
 </body>
