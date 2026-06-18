@@ -284,46 +284,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .pulse-border{animation:pulseB 1.5s ease-in-out infinite}
 @keyframes pulseB{0%,100%{box-shadow:0 0 0 0 rgba(0,120,212,.4)}50%{box-shadow:0 0 0 8px rgba(0,120,212,0)}}
 
-/* ═══ GUIDE / AJUDA ═══ */
-.guide-hero{background:linear-gradient(135deg,#0f172a 0%,#1e40af 55%,#3b82f6 100%);border-radius:16px;padding:34px 38px;margin-bottom:22px;color:#fff}
-.guide-hero h2{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
-.guide-hero p{font-size:12.5px;opacity:.65;margin-bottom:18px}
-.guide-flow{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
-.guide-flow-step{padding:5px 14px;border-radius:20px;font-size:11.5px;font-weight:600;color:#fff;letter-spacing:.2px}
-.guide-flow-arrow{color:rgba(255,255,255,.35);font-size:13px;font-weight:300}
-.guide-module{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.07);margin-bottom:14px;overflow:hidden;transition:box-shadow .2s}
-.guide-module:hover{box-shadow:0 6px 28px rgba(0,0,0,.12)}
-.guide-module-header{padding:18px 24px;display:flex;align-items:center;gap:16px}
-.guide-module-header .mod-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:rgba(255,255,255,.18)}
-.guide-module-header h4{font-size:14.5px;font-weight:700;color:#fff;margin-bottom:3px;line-height:1.2}
-.guide-module-header p{font-size:11.5px;opacity:.75;color:#fff;line-height:1.4}
-.guide-module-body{padding:18px 24px;background:#fff}
-.guide-step{display:flex;gap:13px;margin-bottom:13px;align-items:flex-start}
-.guide-step:last-child{margin-bottom:0}
-.guide-step-num{width:26px;height:26px;min-width:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;margin-top:1px}
-.guide-step-text{font-size:13px;color:#4B5563;line-height:1.65;padding-top:3px}
-.guide-step-text strong{color:#111827}
-.guide-step-text em{font-style:italic;color:#6B7280}
-.guide-pdv-step{display:flex;gap:14px;background:#F8FAFF;border-radius:10px;padding:13px 16px;margin-bottom:10px;border:1px solid #E8EEFF}
-.guide-pdv-step:last-child{margin-bottom:0}
-.guide-pdv-step.danger{background:#FFF5F5;border-color:#FEE2E2}
-.guide-pdv-num{width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;margin-top:1px}
-.guide-pdv-content strong{color:#111827;font-size:13px}
-.guide-pdv-content span{display:block;font-size:12.5px;color:#6B7280;margin-top:3px;line-height:1.55}
-.guide-warning{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border:1px solid #FDE68A;border-radius:12px;padding:16px 20px;font-size:13px;color:#78350F;margin-top:6px;line-height:1.6}
-/* ═══ HOME ONBOARDING ═══ */
-.onboarding-section{margin-top:18px;background:#fff;border-radius:12px;border:1.5px solid #ebebeb;padding:22px 24px}
-.onboarding-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.onboarding-title{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#bbb;text-transform:uppercase}
-.onboarding-link{background:none;border:none;font-size:11px;color:#6366F1;font-weight:700;cursor:pointer;padding:0;letter-spacing:.2px}
-.onboarding-link:hover{text-decoration:underline}
-.onboarding-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.onboarding-card{border-radius:10px;padding:16px 14px;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1.5px solid transparent}
-.onboarding-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
-.oc-icon{font-size:22px;margin-bottom:8px;display:block}
-.oc-title{font-size:12px;font-weight:700;margin-bottom:4px;letter-spacing:.1px}
-.oc-desc{font-size:11px;line-height:1.5;opacity:.75}
-
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -490,89 +450,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div id="home-pdv-eventos-lista"><p style="color:#aaa;font-size:13px;margin:0">Carregando eventos...</p></div>
         </div>
       </div>
-      <!-- GUIA RÁPIDO / ONBOARDING -->
-      <div class="onboarding-section">
-        <div class="onboarding-header">
-          <span class="onboarding-title">🗺️ &nbsp;Guia Rápido da Plataforma</span>
-          <button class="onboarding-link" onclick="showPage('pdv');setTimeout(()=>{pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'))},150)">Ver guia completo →</button>
-        </div>
-        <div class="onboarding-grid">
-          <div class="onboarding-card" style="background:#F5F3FF;border-color:#C7D2FE" onclick="showPage('nova')">
-            <span class="oc-icon">📋</span>
-            <div class="oc-title" style="color:#4338CA">1 · Solicitações</div>
-            <div class="oc-desc" style="color:#6366F1">Solicite materiais para aulas e workshops. Acompanhe o status em tempo real.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FFF1F2;border-color:#FECDD3" onclick="showPage('adm')">
-            <span class="oc-icon">🔐</span>
-            <div class="oc-title" style="color:#B91C1C">ADM · Administrativo</div>
-            <div class="oc-desc" style="color:#EF4444">Aprove solicitações, gerencie produtos e configure a plataforma.</div>
-          </div>
-          <div class="onboarding-card" style="background:#F0F9FF;border-color:#BAE6FD" onclick="showPage('operacoes')">
-            <span class="oc-icon">📦</span>
-            <div class="oc-title" style="color:#0369A1">2·3·4 · Operações</div>
-            <div class="oc-desc" style="color:#0EA5E9">Receba mercadorias, faça inventário e registre perdas e avarias.</div>
-          </div>
-          <div class="onboarding-card" style="background:#F0FDF4;border-color:#BBF7D0" onclick="showPage('estoque')">
-            <span class="oc-icon">🏭</span>
-            <div class="oc-title" style="color:#065F46">Estoque · Consulta</div>
-            <div class="oc-desc" style="color:#10B981">Pesquise produtos, lotes, validades e alertas de recompra.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FFFBEB;border-color:#FDE68A" onclick="showPage('pdv')">
-            <span class="oc-icon">🎯</span>
-            <div class="oc-title" style="color:#78350F">PDV · Eventos</div>
-            <div class="oc-desc" style="color:#D97706">Crie eventos, carregue estoque, gerencie vendedores e exporte para o Mercus.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FAF5FF;border-color:#DDD6FE" onclick="showPage('pdv');setTimeout(()=>{pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'))},150)">
-            <span class="oc-icon">📖</span>
-            <div class="oc-title" style="color:#4C1D95">Ajuda · Guia Completo</div>
-            <div class="oc-desc" style="color:#8B5CF6">Leia o passo a passo detalhado de todos os módulos antes de usar.</div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- NOVA SOLICITAÇÃO->
-      <div class="onboarding-section">
-        <div class="onboarding-header">
-          <span class="onboarding-title">🗺️ &nbsp;Guia Rápido da Plataforma</span>
-          <button class="onboarding-link" onclick="showPage('pdv');setTimeout(()=>{pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'))},150)">Ver guia completo →</button>
-        </div>
-        <div class="onboarding-grid">
-          <div class="onboarding-card" style="background:#F5F3FF;border-color:#C7D2FE" onclick="showPage('nova')">
-            <span class="oc-icon">📋</span>
-            <div class="oc-title" style="color:#4338CA">1 · Solicitações</div>
-            <div class="oc-desc" style="color:#6366F1">Solicite materiais para aulas e workshops. Acompanhe o status em tempo real.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FFF1F2;border-color:#FECDD3" onclick="showPage('adm')">
-            <span class="oc-icon">🔐</span>
-            <div class="oc-title" style="color:#B91C1C">ADM · Administrativo</div>
-            <div class="oc-desc" style="color:#EF4444">Aprove solicitações, gerencie produtos e configure a plataforma.</div>
-          </div>
-          <div class="onboarding-card" style="background:#F0F9FF;border-color:#BAE6FD" onclick="showPage('operacoes')">
-            <span class="oc-icon">📦</span>
-            <div class="oc-title" style="color:#0369A1">2·3·4 · Operações</div>
-            <div class="oc-desc" style="color:#0EA5E9">Receba mercadorias, faça inventário e registre perdas e avarias.</div>
-          </div>
-          <div class="onboarding-card" style="background:#F0FDF4;border-color:#BBF7D0" onclick="showPage('estoque')">
-            <span class="oc-icon">🏭</span>
-            <div class="oc-title" style="color:#065F46">Estoque · Consulta</div>
-            <div class="oc-desc" style="color:#10B981">Pesquise produtos, lotes, validades e alertas de recompra.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FFFBEB;border-color:#FDE68A" onclick="showPage('pdv')">
-            <span class="oc-icon">🎯</span>
-            <div class="oc-title" style="color:#78350F">PDV · Eventos</div>
-            <div class="oc-desc" style="color:#D97706">Crie eventos, carregue estoque, gerencie vendedores e exporte para o Mercus.</div>
-          </div>
-          <div class="onboarding-card" style="background:#FAF5FF;border-color:#DDD6FE" onclick="showPage('pdv');setTimeout(()=>{pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'))},150)">
-            <span class="oc-icon">📖</span>
-            <div class="oc-title" style="color:#4C1D95">Ajuda · Guia Completo</div>
-            <div class="oc-desc" style="color:#8B5CF6">Leia o passo a passo detalhado de todos os módulos antes de usar.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- NOVA SOLICITAÇÃO id="page-solicitacoes">
+    <!-- NOVA SOLICITAÇÃO -->
+    <div class="page" id="page-solicitacoes">
   <!-- SOLIC LOGIN -->
   <div id="solic-login" style="max-width:400px;margin:40px auto">
     <div class="card" style="text-align:center;padding:32px 28px">
@@ -1933,103 +1814,164 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
 
         <!-- ABA AJUDA / ONBOARDING -->
-        <div id="pdv-view-ajuda" style="display:none;max-width:900px">
-          <div class="guide-hero">
-            <h2>📖 Guia Completo — MESO-LOG</h2>
-            <p>Passo a passo de todos os módulos. Leia antes de usar a plataforma.</p>
-            <div class="guide-flow">
-              <span class="guide-flow-step" style="background:rgba(99,102,241,.75)">1· Solicitações</span><span class="guide-flow-arrow">→</span>
-              <span class="guide-flow-step" style="background:rgba(239,68,68,.75)">ADM aprova</span><span class="guide-flow-arrow">→</span>
-              <span class="guide-flow-step" style="background:rgba(14,165,233,.75)">2·3·4 Operações</span><span class="guide-flow-arrow">→</span>
-              <span class="guide-flow-step" style="background:rgba(16,185,129,.75)">Estoque atualizado</span><span class="guide-flow-arrow">→</span>
-              <span class="guide-flow-step" style="background:rgba(245,158,11,.75)">PDV / Eventos</span><span class="guide-flow-arrow">→</span>
-              <span class="guide-flow-step" style="background:rgba(168,85,247,.75)">Relatórios &amp; Mercus</span>
+        <div id="pdv-view-ajuda" style="display:none;max-width:860px">
+          <h3 style="color:#002050;margin-bottom:2px">📖 Guia Completo — Plataforma MESO-LOG</h3>
+          <p style="font-size:12px;color:#888;margin-bottom:20px">Passo a passo de todos os módulos. Leia antes de usar.</p>
+
+          <!-- VISÃO GERAL DO FLUXO -->
+          <div style="background:#002050;color:#fff;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px">
+            <strong style="font-size:14px;display:block;margin-bottom:8px">🗺️ Fluxo Geral da Plataforma</strong>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px">
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">1· Solicitações</span><span>→</span>
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">ADM aprova</span><span>→</span>
+              <span style="background:#0078D4;padding:4px 10px;border-radius:12px">2·3·4 Operações</span><span>→</span>
+              <span style="background:#107C10;padding:4px 10px;border-radius:12px">Estoque atualizado</span><span>→</span>
+              <span style="background:#C07800;padding:4px 10px;border-radius:12px">PDV/Eventos</span><span>→</span>
+              <span style="background:#107C10;padding:4px 10px;border-radius:12px">Relatórios &amp; Mercus</span>
             </div>
           </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#4338CA,#818CF8)">
-              <div class="mod-icon">📋</div><div><h4>Módulo 1 — Solicitação de Materiais</h4><p>Para aulas práticas e workshops. Não requer login ADM.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#6366F1">1</div><div class="guide-step-text"><strong>Clique em "Solicitação de Materiais"</strong> no canto superior direito <em>ou</em> acesse o menu <strong>1·Solicitações</strong>.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#6366F1">2</div><div class="guide-step-text"><strong>Preencha o formulário:</strong> nome, área, evento/curso, data e os produtos desejados com quantidades.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#6366F1">3</div><div class="guide-step-text"><strong>Envie.</strong> A solicitação aparece com status <em>Aguardando Aprovação</em>. O ADM será notificado.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#6366F1">4</div><div class="guide-step-text">Acompanhe na aba <strong>1·Solicitações</strong>. Quando aprovado, o ADM atualiza para <em>Aprovado/Enviado</em>.</div></div>
-            </div>
-          </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#B91C1C,#F87171)">
-              <div class="mod-icon">🔐</div><div><h4>ADM — Painel Administrativo</h4><p>Acesse com a senha do gestor para liberar todos os módulos.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#EF4444">1</div><div class="guide-step-text"><strong>Login ADM:</strong> vá ao menu ADM → informe a senha → clique "Entrar no ADM".</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#EF4444">2</div><div class="guide-step-text"><strong>Todas as Solicitações:</strong> visualize, filtre e clique em uma para aprovar, rejeitar ou atualizar o status de envio.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#EF4444">3</div><div class="guide-step-text"><strong>Gerenciar Produtos:</strong> adicione, edite ou remova produtos do catálogo com código, EAN, categoria, estoque mínimo e preço.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#EF4444">4</div><div class="guide-step-text"><strong>Configurações:</strong> ajuste integrações, dados da empresa e preferências da plataforma.</div></div>
+
+          <!-- MÓDULO 1 — SOLICITAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #6264A7">
+            <h4 style="color:#6264A7;margin-bottom:12px">📋 Módulo 1 — Solicitação de Materiais</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Qualquer colaborador pode solicitar materiais para aulas práticas ou workshops. Não é preciso fazer login — apenas informe os dados e envie.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Clique em "Solicitação de Materiais"</strong> no canto superior direito <em>ou</em> acesse o menu <strong>1·Solicitações</strong>.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Preencha o formulário:</strong> nome, área, evento/curso, data e os produtos desejados com quantidades. Use o campo de busca por nome ou código.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Envie.</strong> A solicitação aparece com status <em>Aguardando Aprovação</em>. O ADM será notificado.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#6264A7;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px">Acompanhe o status na aba <strong>1·Solicitações</strong>. Quando aprovado, o ADM atualiza para <em>Aprovado/Enviado</em> e você receberá os materiais.</div></div>
             </div>
           </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#0369A1,#38BDF8)">
-              <div class="mod-icon">📦</div><div><h4>Módulo 2·3·4 — Operações</h4><p>Recebimento · Inventário · Perdas — visível após login ADM.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#0EA5E9">1</div><div class="guide-step-text"><strong>Recebimento de Mercadorias:</strong> informe o fornecedor, Nº NF e bipe os produtos com o leitor. Clique em "Confirmar Recebimento".</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#0EA5E9">2</div><div class="guide-step-text"><strong>Inventário com Leitor:</strong> bipe item por item para contar o estoque físico. O sistema registra com data e hora.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#0EA5E9">3</div><div class="guide-step-text"><strong>Perdas · Avarias · Vencimentos:</strong> registre baixas por avaria, vencimento ou perda. O estoque é descontado automaticamente.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#0EA5E9">4</div><div class="guide-step-text"><strong>Saída de Estoque:</strong> registre saídas manuais (doação, transferência, uso interno) com quantidade, produto e motivo.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#0EA5E9">5</div><div class="guide-step-text"><strong>Relatórios:</strong> gere relatório de operações por período. Exporte em PDF.</div></div>
-            </div>
-          </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#065F46,#34D399)">
-              <div class="mod-icon">🏭</div><div><h4>Estoque — Consulta e Gestão</h4><p>Visibilidade completa do depósito central em tempo real.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#10B981">1</div><div class="guide-step-text"><strong>Consulta:</strong> pesquise por código, nome ou lote. Filtre por categoria, status ou vencimento. Gere PDF do inventário.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#10B981">2</div><div class="guide-step-text"><strong>Gerenciar Estoque (ADM):</strong> ajuste manualmente quantidades, lotes e validades de qualquer produto.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#10B981">3</div><div class="guide-step-text"><strong>Importar Planilha (ADM):</strong> importe um Excel (.xlsx) para atualizar o estoque em massa.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#10B981">4</div><div class="guide-step-text"><strong>Vencimentos:</strong> alertas de produtos vencendo em 30, 60 e 90 dias. Tome ação antes que expire.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#10B981">5</div><div class="guide-step-text"><strong>Compras (ADM):</strong> sugestões de recompra baseadas em Curva ABC e estoque mínimo.</div></div>
+
+          <!-- ADM — APROVAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #D13438">
+            <h4 style="color:#D13438;margin-bottom:12px">🔐 ADM — Painel Administrativo</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Acesse com a senha do gestor. Fica no menu lateral <strong>ADM</strong>. Após login, novos menus (Operações, PDV/Eventos) aparecem automaticamente.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Login ADM:</strong> vá ao menu ADM → informe a senha → clique "Entrar no ADM".</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Todas as Solicitações:</strong> visualize e filtre todas as solicitações. Clique em uma para aprovar, rejeitar ou atualizar o status de envio.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Gerenciar Produtos:</strong> adicione, edite ou remova produtos do catálogo. Cada produto tem código, EAN, descrição, categoria, estoque mínimo e preço.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#D13438;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Configurações:</strong> ajuste integrações, dados da empresa e outras preferências da plataforma.</div></div>
             </div>
           </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#78350F,#FBBF24)">
-              <div class="mod-icon">🎯</div><div><h4>PDV / Eventos — Fluxo Completo</h4><p>Siga esta ordem exata para cada evento. Acesso ADM / Gestor.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">1</div><div class="guide-pdv-content"><strong>Criar o Evento</strong> — aba Eventos<br><span>Clique em <em>+ Novo Evento</em>. Preencha: Nome, Data, Local e Nº NF-e Remessa. Se já tiver o XML, anexe para criar o estoque automaticamente.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">2</div><div class="guide-pdv-content"><strong>Carregar o Estoque do Evento</strong> — aba Estoque do Evento<br><span>⚠️ PASSO CRÍTICO: Selecione o Evento Destino e informe o Nº Pedido Mercus. Métodos: 📄 XML · 📊 Excel · ✏️ Entrada em Lote · ➕ Manual.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">3</div><div class="guide-pdv-content"><strong>Cadastrar Vendedores</strong> — aba Vendedores<br><span>Clique em <em>+ Novo Vendedor</em>. Defina nome, PIN (4–6 dígitos) e selecione o Evento. Não compartilhe o PIN com terceiros.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">4</div><div class="guide-pdv-content"><strong>Acompanhar em Tempo Real</strong> — aba Pedidos<br><span>Visualize todos os pedidos. Filtre por status ou vendedor. Dashboard com KPIs em tempo real.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">5</div><div class="guide-pdv-content"><strong>Conferir a Expedição</strong> — aba Expedição<br><span>Bipe o código para confirmar entrega física. Itens confirmados mudam para "Expedido".</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">6</div><div class="guide-pdv-content"><strong>Validar o Retorno</strong> — aba Retorno<br><span>O vendedor registra as quantidades retornando. Confira, ajuste e clique em <em>Aprovar Retorno</em>. O estoque volta ao depósito central.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">7</div><div class="guide-pdv-content"><strong>Relatórios + Exportação Mercus</strong> — aba Relatórios<br><span>Exporte o Excel formatado para lançamento no Mercus. Visualize ranking de produtos e métricas.</span></div></div>
-              <div class="guide-pdv-step"><div class="guide-pdv-num" style="background:#F59E0B">8</div><div class="guide-pdv-content"><strong>Fechar o Evento</strong> — aba Fechamento<br><span>Encerre oficialmente. Status muda para <em>fechado</em> e fica bloqueado para novas vendas. Dados preservados.</span></div></div>
-              <div class="guide-pdv-step danger"><div style="background:#EF4444;color:#fff;border-radius:50%;width:30px;height:30px;min-width:30px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px">🗑</div><div class="guide-pdv-content"><strong style="color:#DC2626">Apagar Evento</strong> — aba Eventos<br><span>Visível apenas para ADM. Apaga o evento, todo o seu estoque e todos os pedidos. Ação irreversível.</span></div></div>
+
+          <!-- MÓDULO 2·3·4 — OPERAÇÕES -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #00B7C3">
+            <h4 style="color:#00B7C3;margin-bottom:12px">📦 Módulo 2·3·4 — Operações (Recebimento, Inventário, Perdas)</h4>
+            <p style="font-size:12px;color:#555;margin-bottom:12px">Visível somente após login ADM. Gerencia o estoque físico do depósito central.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Recebimento de Mercadorias:</strong> informe o fornecedor, Nº NF e bipe os produtos recebidos com o leitor de código. Clique em "Confirmar Recebimento" para dar entrada no estoque.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Inventário com Leitor:</strong> bipe item por item para contar o estoque físico. O sistema registra tudo com data e hora.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Perdas · Avarias · Vencimentos:</strong> registre baixas por avaria, vencimento ou perda. O estoque é descontado automaticamente e o evento fica documentado.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Saída de Estoque:</strong> registre saídas manuais (doação, transferência, uso interno) com quantidade, produto e motivo.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#00B7C3;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Relatórios:</strong> gere relatório de operações por período (recebimentos, inventários, perdas). Exporte em PDF.</div></div>
             </div>
           </div>
-          <div class="guide-module">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#4C1D95,#A78BFA)">
-              <div class="mod-icon">🛒</div><div><h4>Vendedor — Passo a Passo no PDV</h4><p>Acesso com PIN pessoal. Limitado ao evento vinculado.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">1</div><div class="guide-step-text"><strong>Login com PIN:</strong> acesse o menu <strong>PDV/Eventos</strong> e digite seu PIN. Você será direcionado ao seu evento automaticamente.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">2</div><div class="guide-step-text"><strong>Buscar produto:</strong> use 📷 Código ou 🔤 Nome. O sistema mostra: 🟢 <strong>Pronta Entrega</strong> (estoque no evento) ou 🟡 <strong>Sob Pedido</strong>.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">3</div><div class="guide-step-text"><strong>Montar o carrinho:</strong> defina Natureza (Venda ou Bonificação) e Tipo de entrega. É possível misturar no mesmo pedido.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">4</div><div class="guide-step-text"><strong>Finalizar o pedido:</strong> preencha o Nome do cliente e clique em <em>✅ Finalizar Pedido</em>. Estoque descontado apenas para Pronta Entrega.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">5</div><div class="guide-step-text"><strong>Acompanhar pedidos:</strong> na aba Pedidos veja suas vendas com abas ✅ Entregue e 📦 A Entregar. Gere PDF se necessário.</div></div>
-              <div class="guide-step"><div class="guide-step-num" style="background:#8B5CF6">6</div><div class="guide-step-text"><strong>Registrar retorno:</strong> ao final do evento, na aba Retorno, informe as quantidades que estão voltando.</div></div>
-            </div>
-          </div>
-          <div class="guide-module" style="margin-bottom:16px">
-            <div class="guide-module-header" style="background:linear-gradient(135deg,#581C87,#C084FC)">
-              <div class="mod-icon">📊</div><div><h4>Comparativo de Eventos</h4><p>Análise comparativa para planejamento de estoque futuro.</p></div>
-            </div>
-            <div class="guide-module-body">
-              <div class="guide-step"><div class="guide-step-num" style="background:#A855F7">1</div><div class="guide-step-text">Na aba <strong>Comparativo</strong>, selecione dois eventos e visualize side-by-side os produtos mais vendidos, volumes totais e desempenho de cada vendedor.</div></div>
+
+          <!-- ESTOQUE -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #107C10">
+            <h4 style="color:#107C10;margin-bottom:12px">🏭 Estoque — Consulta e Gestão</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Consulta:</strong> pesquise qualquer produto por código, nome ou lote. Filtre por categoria, status de estoque ou vencimento. Gere PDF do inventário.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Gerenciar Estoque (ADM):</strong> ajuste manualmente quantidades, lotes e validades de qualquer produto.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Importar Planilha (ADM):</strong> importe um Excel (.xlsx) com colunas de código, descrição, lote, validade e quantidade para atualizar o estoque em massa.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Vencimentos:</strong> painel com alertas de produtos vencendo em 30, 60 e 90 dias. Tome ação antes que o produto expire.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Compras (ADM):</strong> visualize sugestões de recompra baseadas em Curva ABC e estoque mínimo.</div></div>
             </div>
           </div>
-          <div class="guide-warning">⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.</div>
+
+          <!-- PDV/EVENTOS — FLUXO COMPLETO ADM -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #0078D4">
+            <h4 style="color:#0078D4;margin-bottom:6px">🎯 PDV / Eventos — Fluxo Completo (ADM / Gestor)</h4>
+            <p style="font-size:12px;color:#888;margin-bottom:14px">Siga esta ordem exata para cada evento.</p>
+            <div style="display:flex;flex-direction:column;gap:12px">
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+                <div><strong style="color:#002050">Criar o Evento</strong> — aba Eventos<br>
+                <span style="font-size:12px;color:#555">Clique em <em>+ Novo Evento</em>. Preencha: <b>Nome</b>, <b>Data</b>, <b>Local</b> e <b>Nº NF-e Remessa</b> (o número da nota fiscal que sairá com os produtos). Se já tiver o XML em mãos, anexe aqui e o estoque do evento será criado automaticamente.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+                <div><strong style="color:#002050">Carregar o Estoque do Evento</strong> — aba Estoque do Evento<br>
+                <span style="font-size:12px;color:#555"><b>⚠️ PASSO CRÍTICO:</b> No topo da aba, selecione o <b>Evento Destino</b> (dropdown) e informe o <b>Nº Pedido Mercus</b>. Depois escolha o método de carga:<br>
+                  • <b>📄 Importar XML</b> — arquivo XML da NF-e de remessa (mais rápido e preciso)<br>
+                  • <b>📊 Importar Excel</b> — planilha exportada do Mercus (colunas: código, descrição, lote, qtd)<br>
+                  • <b>✏️ Entrada em Lote</b> — preenchimento manual de até N linhas de uma vez<br>
+                  • <b>➕ Entrada Manual</b> — bipe produto a produto com leitor<br>
+                  O estoque é associado <em>exclusivamente</em> ao evento selecionado, não ao depósito central.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
+                <div><strong style="color:#002050">Cadastrar Vendedores</strong> — aba Vendedores<br>
+                <span style="font-size:12px;color:#555">Clique em <em>+ Novo Vendedor</em>. Defina <b>nome</b>, <b>PIN</b> (4–6 dígitos) e selecione o <b>Evento de Atuação</b>. O vendedor verá apenas o estoque do evento vinculado. Entregue o PIN ao vendedor com segurança — <strong>não compartilhe com terceiros</strong>.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
+                <div><strong style="color:#002050">Acompanhar em Tempo Real</strong> — aba Pedidos<br>
+                <span style="font-size:12px;color:#555">Visualize todos os pedidos do evento. Filtre por status (Entregue / A Entregar) ou por vendedor. O dashboard exibe KPIs: total de pedidos, itens entregues, itens pendentes.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
+                <div><strong style="color:#002050">Conferir a Expedição</strong> — aba Expedição<br>
+                <span style="font-size:12px;color:#555">Bipe o código do produto ou do pedido para confirmar que o item foi fisicamente entregue ao cliente. Itens confirmados mudam de status para "Expedido".</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</div>
+                <div><strong style="color:#002050">Validar o Retorno</strong> — aba Retorno<br>
+                <span style="font-size:12px;color:#555">O vendedor registra as quantidades que estão voltando. Confira fisicamente, ajuste se necessário (com justificativa) e clique em <em>Aprovar Retorno</em>. O estoque retorna automaticamente ao depósito central.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">7</div>
+                <div><strong style="color:#002050">Relatórios + Exportação Mercus</strong> — aba Relatórios<br>
+                <span style="font-size:12px;color:#555">Exporte o Excel formatado para lançamento no Mercus (<em>Exportar Excel (Mercus)</em>). Visualize ranking de produtos, comparativo entre eventos e métricas de desempenho.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#EBF3FB;padding:10px;border-radius:6px">
+                <div style="background:#0078D4;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">8</div>
+                <div><strong style="color:#002050">Fechar o Evento</strong> — aba Fechamento<br>
+                <span style="font-size:12px;color:#555">Encerre o evento oficialmente. O status muda para <em>fechado</em> e o evento fica bloqueado para novas vendas. Dados ficam preservados para consulta futura.</span></div>
+              </div>
+
+              <div style="display:flex;gap:10px;background:#FFF0F0;padding:10px;border-radius:6px;border:1px solid #FFAAAA">
+                <div style="background:#D13438;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">🗑</div>
+                <div><strong style="color:#D13438">Apagar Evento</strong> — aba Eventos<br>
+                <span style="font-size:12px;color:#555">Visível apenas para ADM. Apaga o evento, <b>todo o seu estoque</b> e <b>todos os pedidos</b> vinculados. Ação irreversível — use apenas para eventos criados por engano.</span></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- VENDEDOR -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #107C10">
+            <h4 style="color:#107C10;margin-bottom:12px">🛒 Vendedor — Passo a Passo no PDV</h4>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">1</div><div style="font-size:12px"><strong>Login com PIN:</strong> acesse o menu <strong>PDV/Eventos</strong> e digite seu PIN pessoal. Você será direcionado automaticamente ao seu evento.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">2</div><div style="font-size:12px"><strong>Buscar produto:</strong> use <em>📷 Código</em> (leitor de barras ou digitação) ou <em>🔤 Nome</em> (busca por texto). O sistema exibe:<br>
+                🟢 <strong>Pronta Entrega</strong> — produto disponível no estoque do evento<br>
+                🟡 <strong>Sob Pedido</strong> — produto do catálogo, sem estoque no evento (entregue depois)</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">3</div><div style="font-size:12px"><strong>Montar o carrinho:</strong> para cada produto, defina <b>Natureza</b> (Venda ou Bonificação) e <b>Tipo de entrega</b> (🟢 Pronta Entrega ou 🟡 Sob Pedido). É possível misturar no mesmo pedido.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">4</div><div style="font-size:12px"><strong>Finalizar o pedido:</strong> preencha o <b>Nome do cliente</b> e CPF/CNPJ (opcional), observações, e clique em <em>✅ Finalizar Pedido</em>. O estoque é descontado apenas para itens de Pronta Entrega.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">5</div><div style="font-size:12px"><strong>Acompanhar pedidos:</strong> na aba <strong>Pedidos</strong> veja todos os seus pedidos com abas <em>✅ Entregue</em> e <em>📦 A Entregar</em>. Gere PDF individual de cada pedido se necessário.</div></div>
+              <div style="display:flex;gap:10px"><div style="background:#107C10;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">6</div><div style="font-size:12px"><strong>Registrar retorno:</strong> ao final do evento, na aba <strong>Retorno</strong>, informe as quantidades reais que estão voltando. O gestor validará e aprovará o retorno.</div></div>
+            </div>
+          </div>
+
+          <!-- COMPARATIVO -->
+          <div class="card" style="margin-bottom:14px;border-left:4px solid #8764B8">
+            <h4 style="color:#8764B8;margin-bottom:10px">📊 Comparativo de Eventos</h4>
+            <p style="font-size:12px;color:#555">Na aba <strong>Comparativo</strong>, selecione dois eventos e visualize side-by-side os produtos mais vendidos, volumes totais e desempenho de cada vendedor. Útil para planejamento de estoque em eventos futuros.</p>
+          </div>
+
+          <div style="background:#FFF8E7;border:1px solid #FFC107;border-radius:8px;padding:12px 16px;margin-top:4px;font-size:12px;color:#555">
+            ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
+          </div>
         </div>
 
       </div><!-- /pdv-panel -->
