@@ -338,6 +338,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('adm')" id="nav-adm"><span class="icon">🔒</span><span>ADM</span></a>
     <a onclick="showPage('operacoes')" id="nav-operacoes" style="display:none"><span class="icon">🏭</span><span>Operações</span></a>
     <a onclick="showPage('pdv')" id="nav-pdv" style="display:none"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
+    <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
     <a onclick="showPage('pdv');setTimeout(()=>{pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'))},150)" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -2565,6 +2566,7 @@ function showPage(p){
   if(p==='nova'){showPage('solicitacoes');solicTab('nova');return;}
   if(p==='acompanhar'){showPage('solicitacoes');solicTab('acompanhar');return;}
   if(p==='relatorios'){showPage('solicitacoes');solicTab('relatorios');return;}
+  if(p==='ajuda'){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));document.getElementById('page-pdv').classList.add('active');const navEl=document.getElementById('nav-ajuda');if(navEl)navEl.classList.add('active');document.getElementById('topbar-title').textContent='Ajuda · Guia Completo';show('pdv-panel');hide('pdv-lock');pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'));return;}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
