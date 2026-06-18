@@ -2222,7 +2222,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     </div>
     <div class="form-group"><label>Código</label><input type="text" id="est-edit-codigo" readonly style="background:#f5f5f5"></div>
     <div class="form-group"><label>Descrição</label><input type="text" id="est-edit-descricao"></div>
-    <div class="form-group"><label>Lote</label><input type="text" id="est-edit-lote" readonly style="background:#f5f5f5"></div>
+    <div class="form-group"><label>Lote</label><input type="text" id="est-edit-lote" placeholder="Ex: 17.198"></div>
     <div class="form-group"><label>Data de Validade</label><input type="text" id="est-edit-validade" placeholder="dd/mm/aaaa ou mm/aaaa"></div>
     <div class="form-group"><label>Categoria</label><input type="text" id="est-edit-categoria"></div>
     <div class="form-group"><label>Quantidade em Estoque</label><input type="number" id="est-edit-quantidade" min="0" step="1"></div>
@@ -2594,6 +2594,7 @@ function showPage(p){
   if(p==='pdv'){
     if(pdvVendedorAtivo){show('pdv-panel');hide('pdv-lock');}
     else if(admLoggedIn){pdvVendedorAtivo={id:'adm',nome:'ADM',perfil:'supervisor'};pdvAbrirPainel();}
+    else{show('pdv-lock');hide('pdv-panel');const _tb=document.getElementById('pdv-tab-bar');if(_tb)_tb.style.display='';}
   }
 }
 
@@ -4000,6 +4001,7 @@ async function salvarEstoqueItem(){
   const id = document.getElementById('est-edit-docid').value;
   const upd = {
     descricao: document.getElementById('est-edit-descricao').value.trim(),
+    lote: document.getElementById('est-edit-lote').value.trim(),
     dataValidade: document.getElementById('est-edit-validade').value.trim(),
     categoria: document.getElementById('est-edit-categoria').value.trim(),
     quantidade: Number(document.getElementById('est-edit-quantidade').value)||0
