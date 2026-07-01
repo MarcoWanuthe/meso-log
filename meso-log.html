@@ -320,6 +320,62 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   #content{padding:12px}
   .form-group input,.form-group select{height:48px;font-size:16px}
 }
+
+<style id="vendor-mode-css">
+#vendor-mode{position:fixed;inset:0;z-index:9000;background:#f0f4ff;display:flex;flex-direction:column;font-family:system-ui,sans-serif}
+#vm-pin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#002050;padding:24px 20px}
+.vm-pin-dots{display:flex;gap:14px;margin:6px 0}
+.vm-pin-dot{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.2);transition:background .15s}
+.vm-pin-dot.filled{background:#F2C811}
+.vm-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:290px}
+.vm-key{background:rgba(255,255,255,.12);border:none;border-radius:16px;height:72px;font-size:28px;font-weight:700;color:#fff;cursor:pointer;transition:background .1s,transform .1s;display:flex;align-items:center;justify-content:center}
+.vm-key:active{background:rgba(255,255,255,.3);transform:scale(.93)}
+.vm-key.vm-empty{background:transparent;cursor:default}
+#vm-sell{display:none;flex-direction:column;flex:1;overflow:hidden}
+.vm-header{background:#002050;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.vm-header-name{font-weight:700;font-size:15px}
+.vm-header-event{font-size:11px;opacity:.65;margin-top:2px}
+#vm-products{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.vm-product-btn{background:#fff;border:2.5px solid #e0e6ff;border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;min-height:110px;transition:border-color .15s,transform .1s;box-shadow:0 2px 8px rgba(0,32,80,.07)}
+.vm-product-btn:active{border-color:#002050;transform:scale(.96)}
+.vm-product-btn.esgotado{opacity:.35;pointer-events:none}
+.vm-product-icon{font-size:34px}
+.vm-product-name{font-size:11px;font-weight:700;color:#002050;text-align:center;line-height:1.3}
+.vm-product-qty{font-size:10px;color:#888}
+#vm-cart{background:#fff;border-top:2px solid #002050;padding:10px 14px 8px;max-height:44vh;overflow-y:auto}
+.vm-cart-empty{text-align:center;color:#bbb;font-size:13px;padding:8px}
+.vm-cart-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0}
+.vm-cart-item-name{flex:1;font-size:13px;font-weight:600;color:#111}
+.vm-qty-btn{width:36px;height:36px;border-radius:9px;border:none;background:#f0f4ff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#002050}
+.vm-qty-num{min-width:28px;text-align:center;font-weight:700;font-size:16px}
+.vm-confirm-btn{width:100%;margin-top:10px;padding:16px;background:#002050;color:#fff;border:none;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;letter-spacing:.3px}
+.vm-confirm-btn:disabled{opacity:.35;cursor:default}
+.vm-confirm-btn:active{background:#003580}
+#vm-history{flex:1;overflow-y:auto;padding:12px;background:#f0f4ff;display:none}
+.vm-order-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid #e0e6ff;box-shadow:0 2px 8px rgba(0,32,80,.06)}
+.vm-order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.vm-order-num{font-weight:800;color:#002050;font-size:13px}
+.vm-order-time{font-size:11px;color:#aaa}
+.vm-order-item{font-size:12px;color:#555;padding:2px 0}
+.vm-order-actions{display:flex;gap:8px;margin-top:10px}
+.vm-btn-edit,.vm-btn-cancel{flex:1;padding:10px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer}
+.vm-btn-edit{background:#e0f0ff;color:#002050}
+.vm-btn-cancel{background:#ffe0e0;color:#c00}
+.vm-edited-badge{font-size:10px;color:#f59e0b;margin-top:4px}
+#vm-bottombar{display:flex;background:#fff;border-top:1px solid #e0e4ec;height:64px;flex-shrink:0}
+.vm-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;cursor:pointer;border-top:3px solid transparent;font-size:10px;font-weight:700;color:#888}
+.vm-nav-btn .vicon{font-size:22px}
+.vm-nav-btn.active{border-top-color:#002050;color:#002050}
+#vm-edit-modal{position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
+.vm-modal-box{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow-y:auto}
+.vm-modal-title{font-size:17px;font-weight:800;color:#002050;margin-bottom:14px}
+.vm-edit-item-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.vm-edit-item-name{flex:1;font-size:14px;font-weight:600}
+#vm-justificativa{width:100%;margin-top:12px;padding:12px;border:2px solid #e0e4ec;border-radius:10px;font-size:14px;min-height:80px;resize:none;box-sizing:border-box}
+#vm-justificativa:focus{border-color:#002050;outline:none}
+.vm-save-btn{width:100%;margin-top:12px;padding:14px;background:#002050;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer}
+.vm-cancel-btn2{width:100%;margin-top:8px;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:12px;font-size:14px;cursor:pointer}
+</style>
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -3455,7 +3511,337 @@ function gerarPDFSolicitacao(r){
     ${r.evento?.obs?`<h2>Observações</h2><div class="box" style="border-left-color:#F2C811;background:#FFFBEC">${r.evento.obs}</div>`:''}
     ${r.codigoRastreamento?`<h2>Rastreamento</h2><div style="font-size:12px">📦 ${r.codigoRastreamento}${r.transportadora?' — '+r.transportadora:''}</div>`:''}
     <footer>Gerado em ${new Date().toLocaleString('pt-BR')} · MESO-LOG · Mesoestetic Pharma Group Brasil</footer>
-  </body></html>`;
+  
+<!-- ══ VENDOR MODE OVERLAY ══ -->
+<div id="vendor-mode" style="display:none;flex-direction:column">
+
+  <!-- Tela de PIN -->
+  <div id="vm-pin">
+    <div style="font-size:62px">🛒</div>
+    <div style="font-size:26px;font-weight:800;color:#fff">MESO-LOG</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6)">Digite seu PIN para entrar</div>
+    <div class="vm-pin-dots">
+      <div class="vm-pin-dot" id="vd0"></div>
+      <div class="vm-pin-dot" id="vd1"></div>
+      <div class="vm-pin-dot" id="vd2"></div>
+      <div class="vm-pin-dot" id="vd3"></div>
+      <div class="vm-pin-dot" id="vd4"></div>
+    </div>
+    <div class="vm-keypad">
+      <button class="vm-key" onclick="vmKey('1')">1</button>
+      <button class="vm-key" onclick="vmKey('2')">2</button>
+      <button class="vm-key" onclick="vmKey('3')">3</button>
+      <button class="vm-key" onclick="vmKey('4')">4</button>
+      <button class="vm-key" onclick="vmKey('5')">5</button>
+      <button class="vm-key" onclick="vmKey('6')">6</button>
+      <button class="vm-key" onclick="vmKey('7')">7</button>
+      <button class="vm-key" onclick="vmKey('8')">8</button>
+      <button class="vm-key" onclick="vmKey('9')">9</button>
+      <button class="vm-key vm-empty"></button>
+      <button class="vm-key" onclick="vmKey('0')">0</button>
+      <button class="vm-key" onclick="vmKeyDel()" style="font-size:22px">&#x232B;</button>
+    </div>
+    <div id="vm-pin-err" style="color:#ff6b6b;font-size:14px;min-height:20px;text-align:center"></div>
+  </div>
+
+  <!-- Tela de Vendas -->
+  <div id="vm-sell">
+    <div class="vm-header">
+      <div>
+        <div class="vm-header-name" id="vm-vendor-name">Vendedor</div>
+        <div class="vm-header-event" id="vm-event-label">Carregando...</div>
+      </div>
+      <div style="font-size:24px">🛒</div>
+    </div>
+    <div id="vm-products"></div>
+    <div id="vm-cart">
+      <div id="vm-cart-items"><div class="vm-cart-empty">Toque nos produtos para adicionar</div></div>
+      <button class="vm-confirm-btn" id="vm-confirm-btn" onclick="vmConfirmarPedido()" disabled>&#x2705; CONFIRMAR PEDIDO</button>
+    </div>
+  </div>
+
+  <!-- Histórico -->
+  <div id="vm-history">
+    <div style="font-size:16px;font-weight:800;color:#002050;margin-bottom:12px">&#x1F4CB; Meus Pedidos</div>
+    <div id="vm-orders-list"></div>
+  </div>
+
+  <!-- Barra inferior -->
+  <div id="vm-bottombar">
+    <button class="vm-nav-btn active" id="vm-nav-vender" onclick="vmShowSell()"><span class="vicon">&#x1F6D2;</span>Vender</button>
+    <button class="vm-nav-btn" id="vm-nav-pedidos" onclick="vmShowHistory()"><span class="vicon">&#x1F4CB;</span>Pedidos</button>
+    <button class="vm-nav-btn" id="vm-nav-sair" onclick="vmSair()"><span class="vicon">&#x1F6AA;</span>Sair</button>
+  </div>
+</div>
+
+<!-- Modal de Edição -->
+<div id="vm-edit-modal">
+  <div class="vm-modal-box">
+    <div class="vm-modal-title">&#x270F;&#xFE0F; Editar Pedido</div>
+    <div id="vm-edit-items"></div>
+    <div style="margin-top:14px;font-size:13px;font-weight:700;color:#c00">&#x26A0;&#xFE0F; Justificativa obrigatória:</div>
+    <textarea id="vm-justificativa" placeholder="Explique o motivo da alteração..."></textarea>
+    <button class="vm-save-btn" onclick="vmSalvarEdicao()">&#x1F4BE; Salvar Alteração</button>
+    <button class="vm-cancel-btn2" onclick="document.getElementById('vm-edit-modal').style.display='none'">Cancelar</button>
+  </div>
+</div>
+
+
+<script id="vendor-mode-js">
+// ════════════════════════════════════════════════════════
+//  VENDOR MODE — Interface Simples para Vendedores Mobile
+// ════════════════════════════════════════════════════════
+var _vmPin='', _vmCart={}, _vmEditOrderId=null, _vmEditOriginal=[], _vmEditCart={};
+
+function vmEntrar(){
+  var el=document.getElementById('vendor-mode');
+  el.style.display='flex'; el.style.flexDirection='column';
+  document.body.style.overflow='hidden';
+  _vmPin=''; _vmCart={};
+  vmShowPin();
+}
+
+function vmSair(){
+  if(!confirm('Deseja sair do modo vendedor?')) return;
+  document.getElementById('vendor-mode').style.display='none';
+  document.body.style.overflow='';
+  pdvVendedorAtivo=null; _vmPin=''; _vmCart={};
+  vmResetPin();
+}
+
+// ── PIN ──────────────────────────────────────────────
+function vmShowPin(){
+  document.getElementById('vm-pin').style.display='flex';
+  document.getElementById('vm-sell').style.display='none';
+  document.getElementById('vm-history').style.display='none';
+  document.getElementById('vm-bottombar').style.display='none';
+  vmResetPin();
+}
+
+function vmKey(d){
+  if(_vmPin.length>=5) return;
+  _vmPin+=d;
+  for(var i=0;i<5;i++){var dot=document.getElementById('vd'+i);if(dot)dot.classList.toggle('filled',i<_vmPin.length);}
+  if(_vmPin.length===5) setTimeout(vmValidarPin,180);
+}
+
+function vmKeyDel(){
+  if(!_vmPin.length) return;
+  _vmPin=_vmPin.slice(0,-1);
+  for(var i=0;i<5;i++){var dot=document.getElementById('vd'+i);if(dot)dot.classList.toggle('filled',i<_vmPin.length);}
+}
+
+function vmResetPin(){
+  _vmPin='';
+  for(var i=0;i<5;i++){var dot=document.getElementById('vd'+i);if(dot)dot.classList.remove('filled');}
+  var err=document.getElementById('vm-pin-err');if(err)err.textContent='';
+}
+
+async function vmValidarPin(){
+  var err=document.getElementById('vm-pin-err');
+  try{
+    var snap=await db.collection('vendedores').where('pin','==',_vmPin).where('ativo','==',true).get();
+    if(snap.empty){
+      if(err)err.textContent='PIN inválido. Tente novamente.';
+      setTimeout(vmResetPin,1300); return;
+    }
+    var vend=snap.docs[0].data(); vend.id=snap.docs[0].id;
+    pdvVendedorAtivo=vend;
+    vmAbrirVendas();
+  }catch(e){if(err)err.textContent='Erro: '+e.message; setTimeout(vmResetPin,2000);}
+}
+
+// ── TELA DE VENDAS ───────────────────────────────────
+async function vmAbrirVendas(){
+  document.getElementById('vm-pin').style.display='none';
+  document.getElementById('vm-sell').style.display='flex';
+  document.getElementById('vm-bottombar').style.display='flex';
+  document.getElementById('vm-vendor-name').textContent='Ola, '+(pdvVendedorAtivo.nome||'Vendedor');
+  _vmCart={}; vmRenderCart();
+  vmSetNav('vm-nav-vender');
+  await vmCarregarProdutos();
+}
+
+async function vmCarregarProdutos(){
+  var grid=document.getElementById('vm-products');
+  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#888">Carregando produtos...</div>';
+  try{
+    var evSnap=await db.collection('eventos').where('status','==','ativo').limit(1).get();
+    var produtos=[], eventoNome='Nenhum evento ativo';
+    if(!evSnap.empty){
+      var ev=evSnap.docs[0]; eventoNome=ev.data().nome||'Evento ativo';
+      var esSnap=await db.collection('eventoEstoque').where('eventoId','==',ev.id).get();
+      esSnap.forEach(function(d){var item=d.data();produtos.push({id:d.id,nome:item.descricao||item.nome||'Produto',qty:Number(item.quantidade)||0,eventoId:ev.id});});
+    } else {
+      var pSnap=await db.collection('stock').get();
+      pSnap.forEach(function(d){var item=d.data();produtos.push({id:d.id,nome:item.descricao||item.nome||'Produto',qty:Number(item.quantidade)||0});});
+    }
+    document.getElementById('vm-event-label').textContent=eventoNome;
+    if(!produtos.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#aaa">Nenhum produto disponivel</div>';return;}
+    grid.innerHTML=produtos.map(function(p){
+      var icones={'creme':'💆','gel':'🧴','serum':'✨','mascara':'🎭','loção':'🌿','kit':'🎁'};
+      var icon='📦';
+      var nm=p.nome.toLowerCase();
+      for(var k in icones){if(nm.indexOf(k)>=0){icon=icones[k];break;}}
+      return '<button class="vm-product-btn'+(p.qty<=0?' esgotado':'')+'" onclick="vmAdd(''+p.id+'',''+p.nome.replace(/'/g,'')+'','+p.qty+')">'
+        +'<span class="vm-product-icon">'+icon+'</span>'
+        +'<span class="vm-product-name">'+p.nome+'</span>'
+        +'<span class="vm-product-qty">'+(p.qty<=0?'Esgotado':'Qtd: '+p.qty)+'</span>'
+        +'</button>';
+    }).join('');
+  }catch(e){grid.innerHTML='<div style="grid-column:1/-1;color:red;padding:20px">Erro: '+e.message+'</div>';}
+}
+
+function vmAdd(id,nome,qtyMax){
+  if(!_vmCart[id]) _vmCart[id]={nome:nome,qty:0,qtyMax:qtyMax};
+  if(_vmCart[id].qty>=qtyMax&&qtyMax>0){toast('Quantidade maxima atingida');return;}
+  _vmCart[id].qty++;
+  vmRenderCart();
+}
+
+function vmQty(id,delta){
+  if(!_vmCart[id]) return;
+  _vmCart[id].qty+=delta;
+  if(_vmCart[id].qty<=0) delete _vmCart[id];
+  vmRenderCart();
+}
+
+function vmRenderCart(){
+  var cont=document.getElementById('vm-cart-items');
+  var btn=document.getElementById('vm-confirm-btn');
+  var items=Object.entries(_vmCart);
+  if(!items.length){
+    cont.innerHTML='<div class="vm-cart-empty">Toque nos produtos para adicionar</div>';
+    if(btn)btn.disabled=true; return;
+  }
+  cont.innerHTML=items.map(function(e){
+    return '<div class="vm-cart-item"><span class="vm-cart-item-name">'+e[1].nome+'</span>'
+      +'<button class="vm-qty-btn" onclick="vmQty(''+e[0]+'',-1)">&#x2212;</button>'
+      +'<span class="vm-qty-num">'+e[1].qty+'</span>'
+      +'<button class="vm-qty-btn" onclick="vmQty(''+e[0]+'',1)">+</button></div>';
+  }).join('');
+  if(btn)btn.disabled=false;
+}
+
+async function vmConfirmarPedido(){
+  var items=Object.entries(_vmCart);
+  if(!items.length) return;
+  var btn=document.getElementById('vm-confirm-btn');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  try{
+    await db.collection('pedidos').add({
+      vendedorId:pdvVendedorAtivo.id,
+      vendedorNome:pdvVendedorAtivo.nome,
+      itens:items.map(function(e){return{prodId:e[0],nome:e[1].nome,quantidade:e[1].qty};}),
+      status:'pendente', tipo:'venda',
+      criadoEm:firebase.firestore.FieldValue.serverTimestamp(),
+      editado:false
+    });
+    _vmCart={}; vmRenderCart();
+    if(btn){btn.textContent='CONFIRMAR PEDIDO';btn.disabled=true;}
+    toast('Pedido enviado! Próximo cliente.');
+    await vmCarregarProdutos();
+  }catch(e){alert('Erro: '+e.message);if(btn){btn.disabled=false;btn.textContent='CONFIRMAR PEDIDO';}}
+}
+
+// ── HISTÓRICO ────────────────────────────────────────
+function vmShowSell(){
+  document.getElementById('vm-sell').style.display='flex';
+  document.getElementById('vm-history').style.display='none';
+  vmSetNav('vm-nav-vender');
+}
+
+async function vmShowHistory(){
+  document.getElementById('vm-sell').style.display='none';
+  document.getElementById('vm-history').style.display='block';
+  vmSetNav('vm-nav-pedidos');
+  var list=document.getElementById('vm-orders-list');
+  list.innerHTML='<div style="text-align:center;color:#888;padding:20px">Carregando...</div>';
+  try{
+    var snap=await db.collection('pedidos').where('vendedorId','==',pdvVendedorAtivo.id).orderBy('criadoEm','desc').limit(30).get();
+    if(snap.empty){list.innerHTML='<div style="text-align:center;color:#aaa;padding:30px">Nenhum pedido ainda</div>';return;}
+    list.innerHTML=snap.docs.map(function(doc){
+      var p=doc.data();
+      var hora=p.criadoEm?new Date(p.criadoEm.seconds*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'--:--';
+      var itens=(p.itens||[]).map(function(i){return '<div class="vm-order-item">&#x2022; '+i.nome+' x '+i.quantidade+'</div>';}).join('');
+      var editBadge=p.editado?'<div class="vm-edited-badge">Editado</div>':'';
+      var isCanceled=p.status==='cancelado';
+      var actions=isCanceled
+        ?'<div style="color:#c00;font-size:12px;font-weight:700;padding:8px 0">Cancelado</div>'
+        :'<div class="vm-order-actions">'
+          +'<button class="vm-btn-edit" onclick="vmAbrirEdicao(''+doc.id+'')">Editar</button>'
+          +'<button class="vm-btn-cancel" onclick="vmCancelar(''+doc.id+'')">Cancelar</button>'
+          +'</div>';
+      return '<div class="vm-order-card"><div class="vm-order-header"><span class="vm-order-num">Pedido #'+doc.id.slice(-4).toUpperCase()+'</span><span class="vm-order-time">'+hora+'</span></div>'+itens+editBadge+actions+'</div>';
+    }).join('');
+  }catch(e){list.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
+}
+
+// ── EDIÇÃO COM JUSTIFICATIVA ─────────────────────────
+async function vmAbrirEdicao(orderId){
+  _vmEditOrderId=orderId; _vmEditCart={};
+  var doc=await db.collection('pedidos').doc(orderId).get();
+  _vmEditOriginal=doc.data().itens||[];
+  _vmEditOriginal.forEach(function(i){_vmEditCart[i.prodId]={nome:i.nome,qty:i.quantidade};});
+  var cont=document.getElementById('vm-edit-items');
+  cont.innerHTML=Object.entries(_vmEditCart).map(function(e){
+    return '<div class="vm-edit-item-row"><span class="vm-edit-item-name">'+e[1].nome+'</span>'
+      +'<button class="vm-qty-btn" onclick="vmEditQty(''+e[0]+'',-1)">&#x2212;</button>'
+      +'<span class="vm-qty-num" id="veq-'+e[0]+'">'+e[1].qty+'</span>'
+      +'<button class="vm-qty-btn" onclick="vmEditQty(''+e[0]+'',1)">+</button></div>';
+  }).join('');
+  document.getElementById('vm-justificativa').value='';
+  document.getElementById('vm-edit-modal').style.display='flex';
+}
+
+function vmEditQty(id,delta){
+  if(!_vmEditCart[id]) return;
+  _vmEditCart[id].qty=Math.max(0,(_vmEditCart[id].qty||0)+delta);
+  var el=document.getElementById('veq-'+id);if(el)el.textContent=_vmEditCart[id].qty;
+}
+
+async function vmSalvarEdicao(){
+  var just=document.getElementById('vm-justificativa').value.trim();
+  if(!just){alert('A justificativa é obrigatória.');document.getElementById('vm-justificativa').focus();return;}
+  var novos=Object.entries(_vmEditCart).filter(function(e){return e[1].qty>0;}).map(function(e){return{prodId:e[0],nome:e[1].nome,quantidade:e[1].qty};});
+  if(!novos.length){alert('O pedido nao pode ficar sem itens. Use Cancelar para anular.');return;}
+  try{
+    await db.collection('pedidos_auditoria').add({pedidoId:_vmEditOrderId,vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,itensOriginal:_vmEditOriginal,itensNovos:novos,justificativa:just,editadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    await db.collection('pedidos').doc(_vmEditOrderId).update({itens:novos,editado:true,ultimaEdicaoEm:firebase.firestore.FieldValue.serverTimestamp(),ultimaJustificativa:just});
+    document.getElementById('vm-edit-modal').style.display='none';
+    toast('Pedido atualizado!');
+    vmShowHistory();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function vmCancelar(orderId){
+  var motivo=prompt('Motivo do cancelamento (obrigatorio):');
+  if(!motivo||!motivo.trim()){alert('Cancelamento requer justificativa.');return;}
+  try{
+    await db.collection('pedidos_auditoria').add({pedidoId:orderId,vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,acao:'cancelamento',justificativa:motivo.trim(),canceladoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    await db.collection('pedidos').doc(orderId).update({status:'cancelado',motivoCancelamento:motivo.trim()});
+    toast('Pedido cancelado.');
+    vmShowHistory();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function vmSetNav(activeId){
+  ['vm-nav-vender','vm-nav-pedidos','vm-nav-sair'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.toggle('active',id===activeId);});
+}
+
+// Hook: ao clicar em PDV no mobile sem login → abre Vendor Mode
+document.addEventListener('DOMContentLoaded',function(){
+  var navPdv=document.getElementById('nav-pdv');
+  if(navPdv){
+    navPdv.addEventListener('click',function(){
+      if(window.innerWidth<=768&&!pdvVendedorAtivo){
+        setTimeout(vmEntrar,50);
+      }
+    },true);
+  }
+});
+</script>
+</body></html>`;
   const w=window.open('','_blank','width=860,height=680');
   if(!w){toast('⚠️ Popup bloqueado. Habilite popups para este site para gerar o PDF.');return;}
   w.document.write(html);w.document.close();
