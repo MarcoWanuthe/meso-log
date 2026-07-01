@@ -1,5 +1,5 @@
-// MESO-LOG Service Worker v3.1 "Alvorada" — cache bump
-const CACHE_NAME = 'meso-log-v4';
+// MESO-LOG Service Worker v3.2 "Alvorada" — cache bump
+const CACHE_NAME = 'meso-log-v5';
 const APP_SHELL = ['/meso-log/meso-log.html','/meso-log/manifest.json'];
 
 self.addEventListener('install', evt => {
