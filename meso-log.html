@@ -296,13 +296,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
    PWA MOBILE-FIRST — PDV Otimizado
 ═══════════════════════════════════════════ */
 @media(max-width:768px){
-  #sidebar{width:100%;height:68px;flex-direction:row;position:fixed;bottom:0;top:auto;z-index:200;border-top:1px solid #E0E4EC;border-right:none;padding:0;overflow:hidden;background:#fff}
-  #sidebar .logo{display:none}
-  #nav{flex-direction:row;width:100%;height:100%}
-  #nav a{flex-direction:column;flex:1;align-items:center;justify-content:center;padding:4px 2px 2px;gap:1px;border-left:none;border-top:3px solid transparent;color:#666;min-width:0}
-  #nav a.active{border-top:3px solid #002050;background:rgba(0,32,80,.06);color:#002050}
-  #nav a .icon{font-size:20px;line-height:1.1;display:block}
-  #nav a span:not(.icon){font-size:9px;font-weight:600;display:block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58px;color:inherit;line-height:1.2}
+  #sidebar{width:100%!important;height:68px!important;min-width:unset!important;flex-direction:row!important;position:fixed!important;bottom:0!important;top:auto!important;z-index:200!important;border-top:1px solid #E0E4EC!important;border-right:none!important;padding:0!important;overflow:hidden!important;background:#fff!important}
+  #sidebar .logo{display:none!important}
+  #sidebar .sidebar-footer{display:none!important}
+  #sidebar nav,#nav{display:flex!important;flex-direction:row!important;width:100%!important;height:100%!important;padding:0!important;overflow:visible!important}
+  #sidebar nav a,#nav a{display:flex!important;flex-direction:column!important;flex:1!important;align-items:center!important;justify-content:center!important;padding:4px 2px 2px!important;gap:1px!important;border-left:none!important;border-top:3px solid transparent!important;color:#666!important;min-width:0!important;font-size:9px!important}
+  #sidebar nav a.active,#nav a.active{border-top:3px solid #002050!important;border-left:none!important;background:rgba(0,32,80,.06)!important;color:#002050!important}
+  #sidebar nav a:hover,#nav a:hover{background:rgba(0,32,80,.06)!important;color:#002050!important;border-left:none!important}
+  #sidebar nav a .icon,#nav a .icon{font-size:20px!important;line-height:1.1!important;display:block!important;width:auto!important}
+  #sidebar nav a span:not(.icon),#nav a span:not(.icon){font-size:9px!important;font-weight:600!important;display:block!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:58px!important;color:inherit!important;line-height:1.2!important}
   #main{margin-left:0!important;padding-bottom:78px}
   #topbar{padding:10px 14px}
   #topbar h2{font-size:14px}
@@ -3833,9 +3835,11 @@ function vmSetNav(activeId){
 document.addEventListener('DOMContentLoaded',function(){
   var navPdv=document.getElementById('nav-pdv');
   if(navPdv){
-    navPdv.addEventListener('click',function(){
+    navPdv.addEventListener('click',function(e){
       if(window.innerWidth<=768&&!pdvVendedorAtivo){
-        setTimeout(vmEntrar,50);
+        e.stopPropagation();
+        e.preventDefault();
+        vmEntrar();
       }
     },true);
   }
