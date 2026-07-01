@@ -2523,11 +2523,13 @@ function initFirebase(cfg){
     db = firebase.firestore();
   if(!window._persistenceStarted){
     window._persistenceStarted=true;
-    db.enablePersistence({synchronizeTabs:true}).catch(err=>{
-      if(err.code==='failed-precondition'){console.warn('[Firestore] persistência: múltiplas abas.');}
-      else if(err.code==='unimplemented'){console.warn('[Firestore] navegador sem suporte a persistência.');}
-      else{console.warn('[Firestore] persistência ignorada:',err.message);}
-    });
+    try{
+      db.enablePersistence({synchronizeTabs:true}).catch(err=>{
+        console.warn('[Firestore] persistência:',err.code||err.message);
+      });
+    }catch(e){
+      console.warn('[Firestore] enablePersistence sync error:',e.message);
+    }
   }
     // Seed products if first time
     seedProducts();
