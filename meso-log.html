@@ -382,7 +382,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <hr style="border-color:#003080;margin:8px 12px">
     <a onclick="showPage('adm')" id="nav-adm"><span class="icon">🔒</span><span>ADM</span></a>
     <a onclick="showPage('operacoes')" id="nav-operacoes" style="display:none"><span class="icon">🏭</span><span>Operações</span></a>
-    <a onclick="showPage('pdv')" id="nav-pdv" style="display:none"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
+    <a onclick="showPage('pdv')" id="nav-pdv"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -5934,6 +5934,10 @@ async function pdvPinConfirm(){
     pdvAbrirPainel();return;
   }
   try{
+    // Garante autenticação Firebase para acesso ao Firestore
+    if(!firebase.auth().currentUser){
+      await firebase.auth().signInAnonymously();
+    }
     const snap=await db.collection('vendedores').where('ativo','==',true).get();
     const match=snap.docs.find(d=>d.data().pin===pdvPinBuffer);
     if(!match){
@@ -7832,9 +7836,7 @@ const _checkAdmForHome = setInterval(()=>{
 // Patch: hook into Firebase auth observer to reveal PDV nav
 if(typeof firebase!=='undefined'&&typeof firebase.auth==='function'){
   firebase.auth().onAuthStateChanged(user=>{
-    if(user){
-      const navPdv=document.getElementById('nav-pdv');if(navPdv)navPdv.style.display='';
-    }
+    const navPdv=document.getElementById('nav-pdv');if(navPdv)navPdv.style.display='';
   });
 }
 // ==============================
