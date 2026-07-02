@@ -1,44 +1,43 @@
-// MESO-LOG Service Worker v3.2 "Alvorada" — cache bump
-const CACHE_NAME = 'meso-log-v5';
-const APP_SHELL = ['/meso-log/meso-log.html','/meso-log/manifest.json'];
+// MESO-LOG Service Worker v6 — cache busted 2026-07-02
+const CACHE_NAME = 'meso-log-v6';
+const ASSETS = [
+  '/meso-log/meso-log.html',
+  '/meso-log/manifest.json'
+];
 
-self.addEventListener('install', evt => {
-  self.skipWaiting();
-  evt.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL).catch(e=>console.warn('[SW] cache err:',e))));
-});
-
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())
+// Instala e pré-cacheia os assets
+self.addEventListener('install', event => {
+  self.skipWaiting(); // força ativação imediata sem esperar fechar abas
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
 });
 
-self.addEventListener('fetch', evt => {
-  const url = new URL(evt.request.url);
-  if(evt.request.method!=='GET') return;
-  if(url.hostname.includes('firebaseio.com')||url.hostname.includes('googleapis.com')||
-     url.hostname.includes('emailjs.com')||url.hostname.includes('cdn.jsdelivr.net')||
-     url.hostname.includes('gstatic.com')) return;
-  evt.respondWith(
-    caches.match(evt.request).then(cached=>{
-      if(cached) return cached;
-      return fetch(evt.request).then(res=>{
-        if(res&&res.status===200&&res.type==='basic'){
-          const clone=res.clone();
-          caches.open(CACHE_NAME).then(c=>c.put(evt.request,clone));
+// Ativa e apaga todos os caches antigos
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    ).then(() => self.clients.claim()) // assume controle imediato de todas as abas
+  );
+});
+
+// Serve do cache com fallback para rede
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      // Sempre busca versão atualizada em background (stale-while-revalidate)
+      const fetchPromise = fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-        return res;
-      }).catch(()=>{ if(evt.request.mode==='navigate') return caches.match('/meso-log/meso-log.html'); });
+        return response;
+      }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
-});
-
-self.addEventListener('sync', evt => {
-  if(evt.tag==='meso-sync'){
-    evt.waitUntil(self.clients.matchAll().then(cs=>cs.forEach(c=>c.postMessage({type:'SYNC_READY'}))));
-  }
-});
-
-self.addEventListener('message', evt => {
-  if(evt.data&&evt.data.type==='SKIP_WAITING') self.skipWaiting();
 });
