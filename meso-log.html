@@ -4307,7 +4307,13 @@ async function importarEstoqueFile(file){
       rows = lines.slice(1).map(l=>{
         const cols=l.split(',');
         return{codigo:(cols[iCod]??'').trim(), lote:normLote(cols[iLot]), quantidade:Number(cols[iQty])||0};
-      }).filter(r=>r.codigo);
+      }).filter(r=>{
+          if(!r.codigo) return false;
+          const cod = r.codigo.trim();
+          if(cod.length < 3) return false;
+          if(!/[A-Za-z]/.test(cod) || !/[0-9]/.test(cod)) return false;
+          return true;
+        });
     } else {
       const ab = await file.arrayBuffer();
       const wb = XLSX.read(ab);
@@ -4354,7 +4360,16 @@ async function importarEstoqueFile(file){
             descricao: kDesc ? (r[kDesc]??'').toString().trim() : '',
             dataValidade: kVal ? (r[kVal]??'').toString().trim() : ''
           };
-        }).filter(r=>r.codigo);
+        }).filter(r=>{
+          // Ignora linhas vazias, separadores e linhas de organização
+          // Aceita apenas códigos com formato válido (ex: T-PAGE0011, T-DAWS0005)
+          if(!r.codigo) return false;
+          const cod = r.codigo.trim();
+          if(cod.length < 3) return false;
+          // Deve conter pelo menos uma letra e um número
+          if(!/[A-Za-z]/.test(cod) || !/[0-9]/.test(cod)) return false;
+          return true;
+        });
       }
     }
     if(!rows.length){res.innerHTML='<div style="color:red">❌ Nenhum item válido encontrado no arquivo.</div>';return;}
