@@ -7630,7 +7630,8 @@ function solicitarCancelamentoPedido(id, numero){
     </div>
     <p id="cancel-pin-err" style="color:#D13438;font-size:12px;text-align:center;min-height:16px"></p>
   `;
-  showModal();
+  document.getElementById('modal-det').classList.add('open');
+  _cancelPinBuf='';
 }
 
 let _cancelPinBuf='';
