@@ -4264,14 +4264,26 @@ async function adicionarNovoEstoque(){
 }
 
 function exportarModeloEstoque(){
-  const header = 'Código,Lote,Quantidade';
-  const rows = allStock.slice(0,5).map(s=>`${s.codigo},${s.lote},${Number(s.quantidade)||0}`);
-  const csv = [header,...rows].join('\n');
-  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url;a.download='modelo-contagem-estoque.csv';a.click();
-  URL.revokeObjectURL(url);
+  // Gera XLSX com dados atuais do estoque pré-preenchidos
+  const headers = ['Código','Produto','Lote','Data de Vencimento','Quantidade'];
+  const dataRows = allStock.map(s=>[
+    s.codigo||'',
+    s.descricao||'',
+    s.lote||'',
+    s.dataValidade||'',
+    Number(s.quantidade)||0
+  ]);
+  // Se não há estoque, adiciona linha de exemplo
+  if(!dataRows.length){
+    dataRows.push(['T-EXEMPLO001','Produto Exemplo','LOTE001','2026-12-31',0]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+  // Largura das colunas
+  ws['!cols'] = [{wch:16},{wch:40},{wch:12},{wch:18},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contagem');
+  XLSX.writeFile(wb, 'contagem-estoque-meso-log.xlsx');
+  toast('📥 Template baixado com '+allStock.length+' item(ns)!');
 }
 
 async function importarEstoqueFile(file){
@@ -4329,9 +4341,19 @@ async function importarEstoqueFile(file){
           const lotSoNumeros = raw.slice(0,20).map(r2=>r2[kLot]).filter(v=>v!=null).every(v=>typeof v==='number'||!isNaN(Number(v)));
           if(qtyTemString && lotSoNumeros){ const tmp=kLot; kLot=kQty; kQty=tmp; }
         }
+        // Detectar coluna Produto/Descricao
+        let kDesc = keys.find(k=>norm(k).includes('produto')||norm(k).includes('descri')||norm(k).includes('nome'));
+        // Detectar coluna Data de Vencimento
+        let kVal = keys.find(k=>norm(k).includes('venc')||norm(k).includes('valid')||norm(k).includes('dval'));
         rows = raw.map(r=>{
           // usa ?? para não tratar 0 (zero) como falsy
-          return {codigo:(r[kCod]??'').toString().trim(), lote:normLote(r[kLot]??''), quantidade:Number(r[kQty])||0};
+          return {
+            codigo:(r[kCod]??'').toString().trim(),
+            lote:normLote(r[kLot]??''),
+            quantidade:Number(r[kQty])||0,
+            descricao: kDesc ? (r[kDesc]??'').toString().trim() : '',
+            dataValidade: kVal ? (r[kVal]??'').toString().trim() : ''
+          };
         }).filter(r=>r.codigo);
       }
     }
@@ -4341,29 +4363,59 @@ async function importarEstoqueFile(file){
 }
 
 async function processarImportacaoEstoque(rows, resEl){
-  let ok=0, errs=[];
-  // Usa set+merge para funcionar mesmo sem seed prévio; preserva descricao/categoria/dataValidade
+  let ok=0, removed=0, errs=[];
+  const importKeys = new Set(rows.map(r=>cleanDocId(r.codigo, r.lote)));
+
+  // 1. Atualizar/criar todos os itens da planilha
   const promises = rows.map(async r=>{
     try{
       const docId = cleanDocId(r.codigo, r.lote);
-      // Tenta buscar doc existente para preservar campos
       const snap = await db.collection('stock').doc(docId).get();
+      const update = {quantidade: Number(r.quantidade)||0};
+      if(r.descricao) update.descricao = r.descricao;
+      if(r.dataValidade) update.dataValidade = r.dataValidade;
       if(snap.exists){
-        await db.collection('stock').doc(docId).update({quantidade: Number(r.quantidade)||0});
+        await db.collection('stock').doc(docId).update(update);
       } else {
-        // Doc não existe (lote novo ou formato diferente) — cria com campos básicos
         await db.collection('stock').doc(docId).set({
           codigo:r.codigo, lote:r.lote,
           quantidade:Number(r.quantidade)||0,
-          descricao:'', categoria:'', dataValidade:''
+          descricao:r.descricao||'', categoria:'',
+          dataValidade:r.dataValidade||''
         },{merge:true});
       }
       ok++;
     }catch(e){errs.push(r.codigo+'/'+r.lote);}
   });
   await Promise.all(promises);
-  if(resEl) resEl.innerHTML=`<div style="color:${ok>0?'#107C10':'#D13438'}">✅ ${ok} item(ns) atualizados!${errs.length?` <br><span style="color:#D13438;font-size:11px">⚠️ ${errs.length} erros: ${errs.slice(0,5).join(', ')}</span>`:''}</div>`;
-  if(ok>0) toast('✅ Importação concluída: '+ok+' item(ns)!');
+
+  // 2. Reconciliação: remover lotes que NÃO estão na planilha
+  try{
+    const allSnap = await db.collection('stock').get();
+    const toDelete = allSnap.docs.filter(d=>!importKeys.has(d.id));
+    if(toDelete.length>0){
+      const confirmDel = confirm(
+        `⚠️ RECONCILIAÇÃO DE INVENTÁRIO\n\n`+
+        `A planilha tem ${rows.length} item(ns).\n`+
+        `Foram encontrados ${toDelete.length} lote(s) no estoque que NÃO estão na planilha.\n\n`+
+        `Esses lotes serão REMOVIDOS do sistema (não foram contados).\n\n`+
+        `Deseja remover os ${toDelete.length} lote(s) ausentes?`
+      );
+      if(confirmDel){
+        const batch = db.batch();
+        toDelete.forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+        removed = toDelete.length;
+      }
+    }
+  }catch(e){errs.push('reconciliação:'+e.message);}
+
+  if(resEl) resEl.innerHTML=`<div style="color:${ok>0?'#107C10':'#D13438'}">
+    ✅ <strong>${ok}</strong> item(ns) atualizados!
+    ${removed>0?`<br>🗑️ <strong>${removed}</strong> lote(s) removidos (não contados).`:''}
+    ${errs.length?`<br><span style="color:#D13438;font-size:11px">⚠️ ${errs.length} erros: ${errs.slice(0,5).join(', ')}</span>`:''}
+  </div>`;
+  if(ok>0) toast('✅ Importação concluída: '+ok+' atualizados'+(removed?' | '+removed+' removidos':'')+'!');
 }
 
 async function limparEReseed(){
