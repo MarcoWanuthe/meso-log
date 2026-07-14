@@ -1,160 +1,55 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Deploy MESO-LOG → GitHub Pages</title>
-<style>
-  body{font-family:'Segoe UI',Arial,sans-serif;background:#001830;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-  .card{background:#002050;border-radius:12px;padding:40px;max-width:540px;width:100%;box-shadow:0 8px 32px #0006}
-  h1{color:#F2C811;margin:0 0 6px;font-size:22px}
-  p{color:#8ab4d4;margin:0 0 28px;font-size:14px}
-  label{display:block;font-size:12px;color:#8ab4d4;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-  input[type=text],input[type=file]{width:100%;box-sizing:border-box;padding:10px 14px;border-radius:7px;border:1.5px solid #003080;background:#001428;color:#fff;font-size:14px;margin-bottom:20px}
-  input[type=text]:focus{border-color:#F2C811;outline:none}
-  button{width:100%;padding:13px;background:#F2C811;color:#001830;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
-  button:hover{background:#ffd700}
-  button:disabled{background:#555;color:#999;cursor:not-allowed}
-  #status{margin-top:20px;padding:14px;border-radius:8px;font-size:13px;display:none}
-  .ok{background:#0a3a1a;border:1px solid #1a7a3a;color:#4ade80}
-  .err{background:#3a0a0a;border:1px solid #7a1a1a;color:#f87171}
-  .info{background:#0a1a3a;border:1px solid #1a3a7a;color:#93c5fd}
-  a.link{color:#F2C811;text-decoration:none;font-size:12px}
-  a.link:hover{text-decoration:underline}
-  .step{background:#001428;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#93c5fd;border-left:3px solid #003080}
-  .step b{color:#F2C811}
-</style>
-</head>
-<body>
-<div class="card">
-  <h1>🚀 Deploy MESO-LOG</h1>
-  <p>Publica o arquivo local no GitHub Pages (marcowanuthe/meso-log)</p>
+# MESO-LOG Deploy Script
+# Duplo-clique com botao direito → "Executar com PowerShell"
 
-  <div class="step">
-    <b>Passo 1:</b> Gere um token em
-    <a class="link" href="https://github.com/settings/tokens/new?scopes=repo&description=meso-log-deploy" target="_blank">
-      github.com/settings/tokens/new
-    </a><br>
-    Marque o escopo <b>repo</b> e clique em "Generate token".
-  </div>
+$TOKEN = Read-Host "Cole seu token GitHub (ghp_...)"
+$FILE  = Join-Path $PSScriptRoot "meso-log.html"
+$REPO  = "marcowanuthe/meso-log"
+$PATH  = "meso-log.html"
 
-  <label>Token do GitHub (ghp_...)</label>
-  <input type="text" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
-
-  <label>Arquivo meso-log.html (da pasta Downloads)</label>
-  <input type="file" id="file" accept=".html">
-
-  <button id="btn" onclick="deployNow()">📤 Fazer Deploy Agora</button>
-
-  <div id="status"></div>
-</div>
-
-<script>
-async function deployNow(){
-  const token = document.getElementById('token').value.trim();
-  const fileInput = document.getElementById('file');
-  const statusEl = document.getElementById('status');
-  const btn = document.getElementById('btn');
-
-  if(!token || !token.startsWith('ghp_')){
-    show('err','❌ Token inválido. Deve começar com ghp_');
-    return;
-  }
-  if(!fileInput.files[0]){
-    show('err','❌ Selecione o arquivo meso-log.html');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Enviando...';
-  show('info','🔍 Verificando repositório...');
-
-  try {
-    // Step 1: Get current file SHA
-    const infoResp = await fetch(
-      'https://api.github.com/repos/marcowanuthe/meso-log/contents/meso-log.html',
-      {headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}}
-    );
-
-    let sha = null;
-    if(infoResp.ok){
-      const info = await infoResp.json();
-      sha = info.sha;
-      show('info','📄 SHA atual: ' + sha.substring(0,10) + '... Codificando arquivo...');
-    } else if(infoResp.status === 404){
-      show('info','📄 Arquivo não existe ainda. Criando...');
-    } else {
-      const err = await infoResp.json();
-      throw new Error('GitHub API: ' + (err.message || infoResp.status));
-    }
-
-    // Step 2: Read file as base64
-    const fileContent = await readFileAsBase64(fileInput.files[0]);
-    show('info','📦 Arquivo codificado (' + Math.round(fileContent.length/1024) + ' KB). Enviando para GitHub...');
-
-    // Step 3: PUT to GitHub
-    const body = {
-      message: 'fix: corrigir SyntaxError perdFoundItem + deploy versão correta',
-      content: fileContent,
-      branch: 'main'
-    };
-    if(sha) body.sha = sha;
-
-    const putResp = await fetch(
-      'https://api.github.com/repos/marcowanuthe/meso-log/contents/meso-log.html',
-      {
-        method: 'PUT',
-        headers:{
-          Authorization:'token '+token,
-          Accept:'application/vnd.github.v3+json',
-          'Content-Type':'application/json'
-        },
-        body: JSON.stringify(body)
-      }
-    );
-
-    if(putResp.ok){
-      const result = await putResp.json();
-      show('ok',
-        '✅ Deploy concluído com sucesso!<br><br>' +
-        'Commit: <b>' + result.commit.sha.substring(0,10) + '</b><br>' +
-        'Aguarde ~1 minuto e acesse:<br>' +
-        '<a class="link" href="https://marcowanuthe.github.io/meso-log/meso-log.html" target="_blank" style="font-size:13px">marcowanuthe.github.io/meso-log/meso-log.html</a>'
-      );
-      btn.textContent = '✅ Deploy feito!';
-    } else {
-      const err = await putResp.json();
-      throw new Error('PUT falhou: ' + (err.message || putResp.status));
-    }
-
-  } catch(e){
-    show('err','❌ Erro: ' + e.message);
-    btn.disabled = false;
-    btn.textContent = '📤 Fazer Deploy Agora';
-  }
+if (-not (Test-Path $FILE)) {
+    Write-Host "ERRO: meso-log.html nao encontrado em $PSScriptRoot" -ForegroundColor Red
+    pause; exit 1
 }
 
-function readFileAsBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      // Remove data URL prefix to get pure base64
-      const b64 = btoa(
-        new Uint8Array(e.target.result)
-          .reduce((data, byte) => data + String.fromCharCode(byte), '')
-      );
-      resolve(b64);
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
+Write-Host "Lendo arquivo..." -ForegroundColor Cyan
+$bytes  = [System.IO.File]::ReadAllBytes($FILE)
+$b64    = [Convert]::ToBase64String($bytes)
+$size   = [math]::Round($bytes.Length/1024)
+Write-Host "Arquivo: $size KB" -ForegroundColor Cyan
+
+Write-Host "Buscando SHA atual no GitHub..." -ForegroundColor Cyan
+$headers = @{ Authorization = "token $TOKEN"; Accept = "application/vnd.github.v3+json" }
+try {
+    $info = Invoke-RestMethod "https://api.github.com/repos/$REPO/contents/$PATH" -Headers $headers
+    $sha = $info.sha
+    Write-Host "SHA atual: $($sha.Substring(0,10))..." -ForegroundColor Cyan
+} catch {
+    $sha = $null
+    Write-Host "Arquivo nao existe ainda, criando novo." -ForegroundColor Yellow
 }
 
-function show(type, msg){
-  const el = document.getElementById('status');
-  el.className = type;
-  el.innerHTML = msg;
-  el.style.display = 'block';
+Write-Host "Enviando para GitHub Pages..." -ForegroundColor Cyan
+$body = @{
+    message = "fix: deploy meso-log correto via script"
+    content = $b64
+    branch  = "main"
 }
-</script>
-</body>
-</html>
+if ($sha) { $body.sha = $sha }
+
+try {
+    $result = Invoke-RestMethod "https://api.github.com/repos/$REPO/contents/$PATH" `
+        -Method PUT -Headers $headers `
+        -Body ($body | ConvertTo-Json -Depth 5) `
+        -ContentType "application/json"
+
+    Write-Host ""
+    Write-Host "✅ DEPLOY CONCLUIDO!" -ForegroundColor Green
+    Write-Host "Commit: $($result.commit.sha.Substring(0,10))" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Aguarde ~1 minuto e acesse:" -ForegroundColor White
+    Write-Host "https://marcowanuthe.github.io/meso-log/meso-log.html" -ForegroundColor Yellow
+} catch {
+    Write-Host "ERRO no deploy: $_" -ForegroundColor Red
+}
+
+pause
