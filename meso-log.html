@@ -4087,6 +4087,8 @@ function calcValidade(val){
   // MM/YYYY
   const m2 = val.match(/^(\d{2})\/(\d{4})$/);
   if(m2) d = new Date(+m2[2], +m2[1]-1, 1);
+  // M/D/YY (legacy Firestore format, e.g. 5/1/29)
+  if(!d||isNaN(d)){const m3=val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);if(m3){const yr=+m3[3];d=new Date(yr+(yr<50?2000:1900),+m3[1]-1,+m3[2]);}}
   if(!d||isNaN(d)) return {status:'s-sem-val',label:'S/Val.'};
   const now = new Date();
   const diff = (d-now)/(1000*60*60*24);
@@ -4832,6 +4834,8 @@ function diasParaVencer(val){
   // MM/YYYY
   const m2=val.match(/^(\d{2})\/(\d{4})$/);
   if(m2) d=new Date(+m2[2],+m2[1]-1,1);
+  // M/D/YY (legacy Firestore format, e.g. 5/1/29)
+  if(!d||isNaN(d)){const m3=val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);if(m3){const yr=+m3[3];d=new Date(yr+(yr<50?2000:1900),+m3[1]-1,+m3[2]);}}
   if(!d||isNaN(d)) return null;
   return (d-new Date())/(1000*60*60*24);
 }
