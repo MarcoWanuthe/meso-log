@@ -251,13 +251,19 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .venc-30 .venc-header{background:#FFCDD2}
 .venc-60 .venc-header{background:#FFE0B2}
 .venc-90 .venc-header{background:#FFF9C4}
-.venc-ok .venc-header{background:#E8F5E9}
+.venc-120 .venc-header{background:#E8F5E9}
+.venc-180 .venc-header{background:#E0F2F1}
+.venc-365 .venc-header{background:#E3F2FD}
+.venc-ok .venc-header{background:#F3F3F3}
 .venc-tag{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;color:#fff}
 .venc-vencido .venc-tag{background:#B71C1C}
 .venc-30 .venc-tag{background:#C62828}
 .venc-60 .venc-tag{background:#E65100}
 .venc-90 .venc-tag{background:#F57F17}
-.venc-ok .venc-tag{background:#2E7D32}
+.venc-120 .venc-tag{background:#2E7D32}
+.venc-180 .venc-tag{background:#00695C}
+.venc-365 .venc-tag{background:#1565C0}
+.venc-ok .venc-tag{background:#757575}
 /* ABC CURVE */
 .abc-a{background:#FFEBEE;color:#B71C1C;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
 .abc-b{background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
@@ -4747,7 +4753,7 @@ function renderVencimentos(){
   const items=allStock.filter(s=>!catFilt||s.categoria===catFilt);
 
   // Classify
-  const vencido=[], d30=[], d60=[], d90=[], ok=[], semVal=[];
+  const vencido=[], d30=[], d60=[], d90=[], d120=[], d180=[], d365=[], ok=[], semVal=[];
   items.forEach(s=>{
     const dias=diasParaVencer(s.dataValidade||'');
     if(dias===null){semVal.push(s);return;}
@@ -4755,17 +4761,23 @@ function renderVencimentos(){
     else if(dias<=30) d30.push({...s,dias});
     else if(dias<=60) d60.push({...s,dias});
     else if(dias<=90) d90.push({...s,dias});
+    else if(dias<=120) d120.push({...s,dias});
+    else if(dias<=180) d180.push({...s,dias});
+    else if(dias<=365) d365.push({...s,dias});
     else ok.push({...s,dias});
   });
 
   // KPIs
-  const valorRisco=(vencido.concat(d30,d60,d90)).reduce((s,i)=>s+(Number(i.precoCusto)||0)*(Number(i.quantidade)||0),0);
+  const valorRisco=(vencido.concat(d30,d60,d90,d120,d180,d365)).reduce((s,i)=>s+(Number(i.precoCusto)||0)*(Number(i.quantidade)||0),0);
   const kpiEl=document.getElementById('venc-kpis');
   if(kpiEl) kpiEl.innerHTML=`
     <div class="stat-card red"><h3>Vencidos</h3><div class="num">${vencido.length}</div></div>
     <div class="stat-card red"><h3>≤ 30 dias</h3><div class="num">${d30.length}</div></div>
     <div class="stat-card yellow"><h3>31–60 dias</h3><div class="num">${d60.length}</div></div>
-    <div class="stat-card yellow"><h3>61–90 dias</h3><div class="num">${d90.length}</div></div>`;
+    <div class="stat-card yellow"><h3>61–90 dias</h3><div class="num">${d90.length}</div></div>
+    <div class="stat-card green"><h3>91–120 dias</h3><div class="num">${d120.length}</div></div>
+    <div class="stat-card green"><h3>121–180 dias</h3><div class="num">${d180.length}</div></div>
+    <div class="stat-card blue"><h3>181–365 dias</h3><div class="num">${d365.length}</div></div>`;
   const rEl=document.getElementById('venc-total-risco');
   if(rEl) rEl.textContent='💰 Valor em risco: R$ '+valorRisco.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -4794,11 +4806,14 @@ function renderVencimentos(){
     {cls:'venc-30',tag:'≤ 30 dias',arr:d30},
     {cls:'venc-60',tag:'31–60 dias',arr:d60},
     {cls:'venc-90',tag:'61–90 dias',arr:d90},
+    {cls:'venc-120',tag:'91–120 dias',arr:d120},
+    {cls:'venc-180',tag:'121–180 dias',arr:d180},
+    {cls:'venc-365',tag:'181–365 dias',arr:d365},
   ].filter(g=>g.arr.length>0);
 
   const grpEl=document.getElementById('venc-groups');
   if(!grpEl) return;
-  if(!groups.length){grpEl.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Nenhum produto vencido ou vencendo nos próximos 90 dias. ✅</div>';return;}
+  if(!groups.length){grpEl.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Nenhum produto vencido ou vencendo nos próximos 365 dias. ✅</div>';return;}
   grpEl.innerHTML=groups.map(g=>`
     <div class="card venc-group ${g.cls}" style="margin-bottom:16px">
       <div class="venc-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'\': \'none\'">
@@ -4811,13 +4826,13 @@ function renderVencimentos(){
       </div>
       <div>${buildTable(g.arr)}</div>
     </div>`).join('');
-  window.__vencData={vencido,d30,d60,d90};
+  window.__vencData={vencido,d30,d60,d90,d120,d180,d365};
 }
 
 function exportarVencimentosPDF(){
   const d=window.__vencData;
   if(!d){renderVencimentos();}
-  const all=[...d.vencido,...d.d30,...d.d60,...d.d90].sort((a,b)=>a.dias-b.dias);
+  const all=[...d.vencido,...d.d30,...d.d60,...d.d90,...(d.d120||[]),...(d.d180||[]),...(d.d365||[])].sort((a,b)=>a.dias-b.dias);
   const now=new Date().toLocaleString('pt-BR');
   const fmtDias=dias=>dias<0?Math.abs(Math.round(dias))+'d vencido':'vence em '+Math.round(dias)+'d';
   const rows=all.map(s=>`<tr><td>${s.codigo}</td><td>${s.descricao}</td><td>${s.lote||'—'}</td><td style="font-weight:700">${s.dataValidade||'—'}</td><td>${fmtDias(s.dias)}</td><td style="text-align:center">${s.quantidade||0}</td></tr>`).join('');
