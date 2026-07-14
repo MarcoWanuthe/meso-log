@@ -4078,8 +4078,13 @@ function getCategoriaByCodigo(c){
 function calcValidade(val){
   if(!val||val.trim()===''||val==='S/Val.') return {status:'s-sem-val',label:'S/Val.'};
   let d;
+  // ISO YYYY-MM-DD (Firestore format)
+  const iso = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) d = new Date(+iso[1], +iso[2]-1, +iso[3]);
+  // DD/MM/YYYY
   const m1 = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if(m1) d = new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // MM/YYYY
   const m2 = val.match(/^(\d{2})\/(\d{4})$/);
   if(m2) d = new Date(+m2[2], +m2[1]-1, 1);
   if(!d||isNaN(d)) return {status:'s-sem-val',label:'S/Val.'};
@@ -4818,8 +4823,13 @@ function admLogout(){
 function diasParaVencer(val){
   if(!val||val.trim()===''||val==='S/Val.') return null;
   let d;
+  // ISO YYYY-MM-DD (Firestore format)
+  const iso=val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) d=new Date(+iso[1],+iso[2]-1,+iso[3]);
+  // DD/MM/YYYY
   const m1=val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if(m1) d=new Date(+m1[3],+m1[2]-1,+m1[1]);
+  // MM/YYYY
   const m2=val.match(/^(\d{2})\/(\d{4})$/);
   if(m2) d=new Date(+m2[2],+m2[1]-1,1);
   if(!d||isNaN(d)) return null;
@@ -5490,7 +5500,7 @@ function initOpsModule(){
   loadOpsStats();
   loadRecHistorico();
   loadInvHistorico();
-  loadPerdHistorico();
+  if(typeof loadPerdHistorico==='function') loadPerdHistorico();
 }
 
 async function loadOpsStats(){
@@ -5518,7 +5528,7 @@ function opsTab(tab,btn){
   btn.classList.add('active');
   if(tab==='inventario'){invVerificarRascunho();renderHistoricoInventarios();if(invSessao)setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);}
   if(tab==='recebimento') setTimeout(()=>{const el=document.getElementById('rec-scan-input');if(el)el.focus();},100);
-  if(tab==='perdas') setTimeout(()=>{const el=document.getElementById('perd-scan-input');if(el)el.focus();},100);
+  if(tab==='perdas'){setTimeout(()=>{const el=document.getElementById('perd-scan-input');if(el)el.focus();},100);if(typeof loadPerdHistorico==='function')loadPerdHistorico();}
   if(tab==='relatorios') initRelatorioOps();
   if(tab==='saida'){loadSaidaHistorico();setTimeout(()=>{const el=document.getElementById('saida-scan-input');if(el)el.focus();},100);}
 }
@@ -5627,6 +5637,125 @@ async function salvarRecebimento(){
     loadOpsStats();
   }catch(e){alert('Erro ao salvar recebimento: '+e.message);}
   finally{btn.disabled=false;btn.textContent='💾 Confirmar Recebimento';}
+}
+
+// ==============================
+// MÓDULO PERDAS / AVARIAS / VENCIMENTOS
+// ==============================
+let perdFoundItem = null;
+
+function handlePerdScan(val){
+  const found = buscarPorBarcode(val);
+  const card = document.getElementById('perd-found-card');
+  if(found){
+    perdFoundItem = found;
+    document.getElementById('perd-found-title').innerHTML =
+      '<span style="color:#B71C1C">'+found.codigo+'</span> · '+found.descricao;
+    document.getElementById('perd-found-lote').value = found.lote||'';
+    document.getElementById('perd-found-validade').value = found.dataValidade||'';
+    document.getElementById('perd-found-qty').value = '';
+    document.getElementById('perd-found-codigo').value = found.codigo;
+    document.getElementById('perd-found-descricao').value = found.descricao;
+    card.style.display = '';
+    setTimeout(()=>{const q=document.getElementById('perd-found-qty');if(q)q.focus();},100);
+    toast('✅ Produto encontrado: '+found.descricao);
+  } else {
+    card.style.display = 'none';
+    perdFoundItem = null;
+    toast('⚠️ Produto não encontrado: '+val);
+  }
+}
+
+async function salvarPerda(){
+  const tipo = document.getElementById('perd-tipo')?.value||'Perda';
+  const data = document.getElementById('perd-data')?.value||new Date().toISOString().slice(0,10);
+  const codigo = document.getElementById('perd-found-codigo')?.value.trim()||'';
+  const descricao = document.getElementById('perd-found-descricao')?.value.trim()||'';
+  const lote = document.getElementById('perd-found-lote')?.value.trim()||'';
+  const validade = document.getElementById('perd-found-validade')?.value.trim()||'';
+  const quantidade = Number(document.getElementById('perd-found-qty')?.value)||0;
+  const motivo = document.getElementById('perd-motivo')?.value.trim()||'';
+  const baixarEstoque = document.getElementById('perd-baixar-estoque')?.checked;
+
+  if(!codigo){alert('Escaneie ou selecione um produto primeiro.');return;}
+  if(!quantidade||quantidade<=0){alert('Informe a quantidade afetada.');return;}
+  if(!motivo){alert('Descreva o motivo da ocorrência.');return;}
+
+  const btn = document.querySelector('#ops-perdas .btn-danger');
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  try{
+    const perdaDoc = {
+      tipo, data, codigo, descricao, lote, dataValidade:validade,
+      quantidade, motivo,
+      responsavel: admLoggedIn ? (auth.currentUser?.email||'ADM') : 'ADM',
+      criadoEm: new Date().toISOString()
+    };
+    await db.collection('perdas').add(perdaDoc);
+
+    // Baixar estoque se selecionado e produto identificado
+    if(baixarEstoque && codigo && quantidade>0){
+      const docId = cleanDocId(codigo, lote);
+      const ref = db.collection('stock').doc(docId);
+      const snap = await ref.get();
+      if(snap.exists){
+        const atual = Number(snap.data().quantidade)||0;
+        const novo = Math.max(0, atual - quantidade);
+        await ref.update({quantidade: novo});
+      }
+    }
+
+    // Limpar formulário
+    document.getElementById('perd-found-card').style.display='none';
+    perdFoundItem = null;
+    document.getElementById('perd-found-codigo').value='';
+    document.getElementById('perd-found-descricao').value='';
+    document.getElementById('perd-found-lote').value='';
+    document.getElementById('perd-found-validade').value='';
+    document.getElementById('perd-found-qty').value='';
+    document.getElementById('perd-motivo').value='';
+    const inp = document.getElementById('perd-scan-input');
+    if(inp){inp.value='';inp.focus();}
+
+    toast('✅ Ocorrência registrada com sucesso!');
+    loadPerdHistorico();
+    loadOpsStats();
+    if(typeof loadEstoque==='function') loadEstoque();
+  }catch(e){
+    alert('Erro ao salvar ocorrência: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📋 Registrar Ocorrência';}
+  }
+}
+
+async function loadPerdHistorico(){
+  const el = document.getElementById('perd-historico');
+  if(!el) return;
+  el.innerHTML='<div class="loader"><div class="spinner"></div>Carregando...</div>';
+  try{
+    const snap = await db.collection('perdas').orderBy('criadoEm','desc').limit(30).get()
+      .catch(()=>db.collection('perdas').get());
+    if(snap.empty){
+      el.innerHTML='<p style="color:#aaa;text-align:center;padding:16px;font-size:13px">Nenhuma ocorrência registrada.</p>';
+      return;
+    }
+    const tc={'Perda':'#B71C1C','Avaria':'#E65100','Vencimento':'#6A1B9A'};
+    el.innerHTML=snap.docs.map(d=>{
+      const r={id:d.id,...d.data()};
+      const dt=(r.data||r.criadoEm||'').slice(0,10).split('-').reverse().join('/');
+      const cor=tc[r.tipo]||'#555';
+      return `<div style="border-bottom:1px solid #F0F0F0;padding:8px 0;font-size:12px;cursor:pointer"
+        onclick="verDetalhesPerda('${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;color:${cor}">${r.tipo||'—'}</span>
+          <span style="color:#999;font-size:11px">${dt}</span>
+        </div>
+        <div style="color:#333;margin-top:2px"><strong>${r.codigo}</strong> · ${r.descricao||'—'}</div>
+        <div style="color:#666;margin-top:2px">Qtd: ${r.quantidade} · Lote: ${r.lote||'—'}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<p style="color:#D13438;font-size:12px">Erro ao carregar histórico.</p>';
+  }
 }
 
 function verDetalhesPerda(id){
@@ -6773,9 +6902,9 @@ async function estImportarExcel(file){
   previewEl.innerHTML='<span style="color:#0078D4">⏳ Lendo planilha...</span>';
   try{
     const buf=await file.arrayBuffer();
-    const wb=XLSX.read(buf,{type:'array'});
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
     const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    const rows=XLSX.utils.sheet_to_json(ws,{raw:false,dateNF:'DD/MM/YYYY',defval:''});
     if(!rows.length){previewEl.innerHTML='<span style="color:#D13438">Planilha vazia.</span>';return;}
     // Flexible column detection
     const headers=Object.keys(rows[0]).map(h=>h.toString().toLowerCase().trim());
@@ -6799,7 +6928,7 @@ async function estImportarExcel(file){
       codigo:String(r[colCodigo]).trim(),
       descricao:colDescricao?String(r[colDescricao]).trim():'',
       lote:colLote?String(r[colLote]).trim():'',
-      validade:colValidade?String(r[colValidade]).trim():'',
+      validade:colValidade?normDateImport(r[colValidade]):'',
       quantidade:parseFloat(r[colQtd])||0
     }));
     if(!_excelPreviewData.length){previewEl.innerHTML='<span style="color:#D13438">Nenhuma linha válida encontrada.</span>';return;}
@@ -8219,108 +8348,4 @@ function solicAbrirExpedir(id){
     '<button class="btn btn-outline" onclick="solicCloseModal()">Cancelar</button></div>');
 }
 
-async function solicConfirmarExpedir(id){
-  const r=allRequests.find(x=>x.id===id);if(!r)return;
-  const transp=document.getElementById('solic-exp-transp')?.value||'';
-  const track=document.getElementById('solic-exp-track')?.value||'';
-  const obs=document.getElementById('solic-exp-obs')?.value||'';
-  const produtosEnviados=(r.produtos||[]).map(p=>({...p,qty:parseInt(document.getElementById('solic-exp-qty-'+p.codigo)?.value||p.qty)||p.qty}));
-  const comAlteracoes=produtosEnviados.some((p,i)=>p.qty!==(r.produtos[i]?.qty||p.qty));
-  try{
-    const _snapE = await db.collection('requests').doc(id).get();
-    const _dE = _snapE.data()||{};
-    await db.collection('requests').doc(id).update({status:'Enviado',transportadora:transp,codigoRastreamento:track,obsExpedicao:obs,produtosEnviados,comAlteracoes,expedidoPor:solicUser?.nome||'',expedidoEm:new Date().toISOString()});
-    sendSolicEmail('enviada',{
-      to_email: _dE.solicitante?.email||'',
-      to_name:  _dE.solicitante?.nome||'',
-      id_solic: id,
-      evento:   _dE.evento?.nome||'',
-      transportadora: transp||'',
-      rastreamento:   track||'',
-      obs_expedicao:  obs||'',
-      expedido_por:   solicUser?.nome||''
-    });
-    solicCloseModal();
-    toast('🚚 Saída confirmada!');
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-async function renderAdmUsuarios(){
-  const el=document.getElementById('adm-usuarios-lista');
-  if(!el)return;
-  el.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:auto"></div></td></tr>';
-  try{
-    const snap=await db.collection('usuarios_solic').get();
-    const users=snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(!users.length){el.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">Nenhum usuário cadastrado.</td></tr>';return;}
-    const colors={marketing:'#0078D4',aprovador:'#107C10',logistica:'#D83B01'};
-    const labels={marketing:'Marketing',aprovador:'Aprovador',logistica:'Logística'};
-    el.innerHTML=users.map(u=>`<tr>
-      <td><strong>${u.nome||'—'}</strong></td>
-      <td><code style="background:#f5f5f5;padding:1px 6px;border-radius:3px">${u.usuario||'—'}</code></td>
-      <td><span style="background:${colors[u.perfil]||'#666'};color:#fff;padding:2px 10px;border-radius:12px;font-size:11px">${labels[u.perfil]||u.perfil}</span></td>
-      <td><span style="color:${u.ativo!==false?'#107C10':'#D13438'};font-weight:600">${u.ativo!==false?'Ativo':'Inativo'}</span></td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-outline btn-sm" onclick="admEditUsuario('${u.id}')">✏️ Editar</button>
-        <button class="btn btn-sm" style="background:#D13438;color:#fff;border:none;margin-left:4px" onclick="admExcluirUsuario('${u.id}','${(u.nome||'').replace(/'/g,"\'")}')">🗑</button>
-      </td></tr>`).join('');
-  }catch(e){el.innerHTML=`<tr><td colspan="5" style="color:red">Erro: ${e.message}</td></tr>`;}
-}
-
-async function admSalvarUsuario(){
-  const id=document.getElementById('adm-usr-id')?.value||'';
-  const nome=(document.getElementById('adm-usr-nome')?.value||'').trim();
-  const usuario=(document.getElementById('adm-usr-login')?.value||'').trim().toLowerCase();
-  const senha=document.getElementById('adm-usr-senha')?.value||'';
-  const email=(document.getElementById('adm-usr-email')?.value||'').trim();
-  const perfil=document.getElementById('adm-usr-perfil')?.value||'marketing';
-  const ativo=document.getElementById('adm-usr-ativo')?.value!=='false';
-  if(!nome||!usuario||!perfil){alert('Preencha nome, usuário e perfil.');return;}
-  if(!id&&!senha){alert('Informe uma senha para o novo usuário.');return;}
-  try{
-    const data={nome,usuario,perfil,ativo};
-    if(email)data.email=email;
-    if(senha)data.senha=senha;
-    if(id){await db.collection('usuarios_solic').doc(id).update(data);toast('✅ Usuário atualizado!');}
-    else{await db.collection('usuarios_solic').add(data);toast('✅ Usuário criado!');}
-    admLimparFormUsuario();
-    renderAdmUsuarios();
-  }catch(e){alert('Erro: '+e.message);}
-}
-
-function admLimparFormUsuario(){
-  ['adm-usr-id','adm-usr-nome','adm-usr-login','adm-usr-senha','adm-usr-email'].forEach(eid=>{const el=document.getElementById(eid);if(el)el.value='';});
-  const perf=document.getElementById('adm-usr-perfil');if(perf)perf.value='marketing';
-  const atv=document.getElementById('adm-usr-ativo');if(atv)atv.value='true';
-  const title=document.getElementById('adm-usr-form-title');if(title)title.textContent='➕ Novo Usuário';
-  const hint=document.getElementById('adm-usr-senha-hint');if(hint)hint.style.display='none';
-}
-
-function admEditUsuario(id){
-  db.collection('usuarios_solic').doc(id).get().then(doc=>{
-    if(!doc.exists)return;
-    const d=doc.data();
-    document.getElementById('adm-usr-id').value=id;
-    document.getElementById('adm-usr-nome').value=d.nome||'';
-    document.getElementById('adm-usr-login').value=d.usuario||'';
-    document.getElementById('adm-usr-senha').value='';
-    document.getElementById('adm-usr-email').value=d.email||'';
-    document.getElementById('adm-usr-perfil').value=d.perfil||'marketing';
-    document.getElementById('adm-usr-ativo').value=String(d.ativo!==false);
-    const title=document.getElementById('adm-usr-form-title');if(title)title.textContent='✏️ Editar Usuário';
-    const hint=document.getElementById('adm-usr-senha-hint');if(hint)hint.style.display='';
-    document.getElementById('adm-usr-nome')?.focus();
-  }).catch(e=>alert('Erro: '+e.message));
-}
-
-async function admExcluirUsuario(id,nome){
-  if(!confirm('Excluir usuário "'+nome+'"?'))return;
-  try{
-    await db.collection('usuarios_solic').doc(id).delete();
-    toast('🗑 Usuário removido.');
-    renderAdmUsuarios();
-  }catch(e){alert('Erro: '+e.message);}
-}
-</script>
-</body>
-</html>
+async funct
