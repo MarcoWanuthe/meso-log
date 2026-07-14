@@ -4811,6 +4811,8 @@ function admLoginWithAuth(email, password, fallbackFn){
 }
 
 function admLogout(){
+  [unsubRequests,unsubProducts,unsubShipments,unsubCarriers,unsubStock].forEach(fn=>{if(typeof fn==='function')fn();});
+  unsubRequests=unsubProducts=unsubShipments=unsubCarriers=unsubStock=null;
   admLoggedIn=false;
   if(typeof firebase.auth==='function') firebase.auth().signOut().catch(()=>{});
   ['etab-est-adm','etab-est-importar','etab-est-compras','etab-adm','etab-transp','etab-rel'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
@@ -6270,6 +6272,7 @@ async function selecionarEvento(id){
   const snap=await db.collection('eventos').doc(id).get();
   if(!snap.exists) return;
   pdvEventoAtivo={id:snap.id,...snap.data()};
+  pdvCarrinho=[];
   // Update bar
   const bar=document.getElementById('pdv-evento-selecionado-bar');
   const nm=document.getElementById('pdv-evento-ativo-nome');
@@ -6304,6 +6307,12 @@ async function apagarEvento(id, nome){
       pedSnap=await db.collection('pedidos_evento').where('eventoId','==',id).get();
     }
     // 3. Delete evento
+    // Apagar retornos_evento vinculados
+    let retSnap=await db.collection('retornos_evento').where('eventoId','==',id).get();
+    if(!retSnap.empty){const rb=db.batch();retSnap.docs.forEach(d=>rb.delete(d.ref));await rb.commit();}
+    // Apagar ajustes_evento vinculados
+    let ajSnap=await db.collection('ajustes_evento').where('eventoId','==',id).get();
+    if(!ajSnap.empty){const ab=db.batch();ajSnap.docs.forEach(d=>ab.delete(d.ref));await ab.commit();}
     await db.collection('eventos').doc(id).delete();
     // 4. Clear active if needed
     if(pdvEventoAtivo&&pdvEventoAtivo.id===id){
@@ -6342,7 +6351,7 @@ async function salvarEvento(){
     ['pev-nome','pev-local','pev-nfe-num'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     // Parse NF-e XML if uploaded
     const xmlFile=document.getElementById('pev-nfe-xml').files[0];
-    if(xmlFile) importarNFeXML(xmlFile,ref.id);
+    if(xmlFile) await importarNFeXML(xmlFile,ref.id);
   }catch(e){errEl.textContent='Erro: '+e.message;}
 }
 
@@ -6361,7 +6370,9 @@ function importarNFeXML(file,eventoId){
         const cEAN=item.querySelector('cEAN')?.textContent||'';
         const qCom=parseFloat(item.querySelector('qCom')?.textContent||'0');
         const lote=item.querySelector('nLote')?.textContent||'';
-        const validade=item.querySelector('dFab,dVal')?.textContent||'';
+        const _dValEl=item.querySelector('dVal')||item.querySelector('dFab')||item.getElementsByTagNameNS('*','dVal')[0]||item.getElementsByTagNameNS('*','dFab')[0];
+        const _rawVal=_dValEl?_dValEl.textContent:'';
+        const validade=_rawVal.match(/^(\d{4})-(\d{2})$/) ? _rawVal.replace(/^(\d{4})-(\d{2})$/,'$2/$1') : _rawVal;
         if(!cProd||!qCom) continue;
         const docId=cleanDocId(cProd,lote);
         await db.collection('deposito_evento').doc(eventoId+'_'+docId).set({
@@ -6402,7 +6413,8 @@ async function pdvScanProduto(val){
         const s1=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
         if(!s1.empty) depItem={id:s1.docs[0].id,...s1.docs[0].data()};
       } else {
-        const s2=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('codigo','==',val).limit(1).get();
+        const valNorm=val.trim().toUpperCase();
+        const s2=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('codigo','==',valNorm).limit(1).get();
         if(!s2.empty) depItem={id:s2.docs[0].id,...s2.docs[0].data()};
         if(!depItem){
           const s3=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).where('barcode','==',val).limit(1).get();
@@ -6528,8 +6540,8 @@ async function pdvFinalizarPedido(){
   if(!pdvEventoAtivo){toast('Selecione um evento primeiro.');return;}
   const cliente=document.getElementById('pdv-cliente-nome').value.trim();
   const doc=document.getElementById('pdv-cliente-doc').value.trim();
-  const entrega=document.getElementById('pdv-entrega-tipo').value;
-  const obs=document.getElementById('pdv-obs').value.trim();
+  const entregaGeral=document.getElementById('pdv-entrega-tipo')?.value||'entregue';
+  const obs=document.getElementById('pdv-obs')?.value.trim()||'';
   const btn=event.target;btn.disabled=true;btn.textContent='⏳ Salvando...';
   const itensAll=JSON.parse(JSON.stringify(pdvCarrinho));
   const itensEntregues=itensAll.filter(it=>(it.tipoEntrega||'entregue')==='entregue');
@@ -6537,7 +6549,7 @@ async function pdvFinalizarPedido(){
   const pedido={
     eventoId:pdvEventoAtivo.id,eventoNome:pdvEventoAtivo.nome,
     vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,
-    cliente,doc,obs,
+    cliente,doc,obs,entregaGeral,
     itens:itensAll,
     itensEntregues,
     itensAEntregar,
@@ -6550,11 +6562,9 @@ async function pdvFinalizarPedido(){
   try{
     // Debit event deposit ONLY for entregues
     for(const it of itensEntregues){
-      const snap=await db.collection('deposito_evento').doc(it.id).get();
-      if(snap.exists){
-        const nova=Math.max(0,(Number(snap.data().quantidade)||0)-it.quantidade);
-        await db.collection('deposito_evento').doc(it.id).update({quantidade:nova});
-      }
+      await db.collection('deposito_evento').doc(it.id).update({
+        quantidade: firebase.firestore.FieldValue.increment(-it.quantidade)
+      });
     }
     await db.collection('pedidos_evento').add(pedido);
     // Clear cart
@@ -7328,6 +7338,7 @@ async function renderFechamentoResumo(){
 
 async function confirmarFechamentoEvento(){
   if(!pdvEventoAtivo){toast('Selecione um evento.');return;}
+  if(!pdvVendedorAtivo||(pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor')){toast('Apenas supervisor ou ADM pode fechar eventos.');return;}
   const destino=document.querySelector('input[name="destino-retorno"]:checked')?.value||'sede';
   if(!confirm('Confirmar FECHAMENTO do evento "'+pdvEventoAtivo.nome+'"?\n\nEstoque remanescente → '+(destino==='cml'?'CML — Centro Médico Logístico':'Sede')+'.\n\nEsta ação não pode ser desfeita.')) return;
   try{
@@ -7629,6 +7640,7 @@ async function renderRetornoHistorico(){
 }
 
 async function aprovarRetorno(retornoId){
+  if(!pdvVendedorAtivo||(pdvVendedorAtivo.id!=='adm'&&pdvVendedorAtivo.perfil!=='supervisor')){toast('Sem permissão.');return;}
   const r=(await db.collection('retornos_evento').doc(retornoId).get()).data();
   const motivo=document.getElementById('mot-'+retornoId)?.value.trim()||'';
   // Collect adjusted quantities
