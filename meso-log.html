@@ -2757,7 +2757,10 @@ function startListeners(){
     .onSnapshot(snap=>{
       allStock = snap.docs.map(d=>({id:d.id,...d.data()}));
       allStock.sort((a,b)=>(a.categoria||'').localeCompare(b.categoria||'')||(a.descricao||'').localeCompare(b.descricao||''));
-      if(document.getElementById('page-estoque')?.classList.contains('active')) renderEstoque();
+      if(document.getElementById('page-estoque')?.classList.contains('active')){
+        renderEstoque();
+        if(document.getElementById('eview-vencimentos')?.style.display!=='none') renderVencimentos();
+      }
     }, err=>console.warn('stock listener:', err));
 }
 
@@ -4766,7 +4769,7 @@ function renderVencimentos(){
     else if(dias<=120) d120.push({...s,dias});
     else if(dias<=180) d180.push({...s,dias});
     else if(dias<=365) d365.push({...s,dias});
-    else ok.push({...s,dias});
+    else ok.push({...s,dias}); // > 365 dias
   });
 
   // KPIs
@@ -4785,7 +4788,8 @@ function renderVencimentos(){
 
   const fmtDias=dias=>{
     if(dias<0) return `<span style="color:#B71C1C;font-weight:700">${Math.abs(Math.round(dias))}d vencido</span>`;
-    return `<span style="color:#E65100;font-weight:700">vence em ${Math.round(dias)}d</span>`;
+    if(dias<=365) return `<span style="color:#E65100;font-weight:700">vence em ${Math.round(dias)}d</span>`;
+    return `<span style="color:#1565C0;font-weight:700">vence em ${Math.round(dias)}d</span>`;
   };
   const buildTable=(arr)=>{
     if(!arr.length) return '<p style="color:#aaa;text-align:center;padding:16px;font-size:13px">Nenhum produto nesta faixa.</p>';
@@ -4811,6 +4815,7 @@ function renderVencimentos(){
     {cls:'venc-120',tag:'91–120 dias',arr:d120},
     {cls:'venc-180',tag:'121–180 dias',arr:d180},
     {cls:'venc-365',tag:'181–365 dias',arr:d365},
+    {cls:'venc-ok',tag:'> 365 dias',arr:ok},
   ].filter(g=>g.arr.length>0);
 
   const grpEl=document.getElementById('venc-groups');
@@ -4828,7 +4833,7 @@ function renderVencimentos(){
       </div>
       <div>${buildTable(g.arr)}</div>
     </div>`).join('');
-  window.__vencData={vencido,d30,d60,d90,d120,d180,d365};
+  window.__vencData={vencido,d30,d60,d90,d120,d180,d365,ok};
 }
 
 function exportarVencimentosPDF(){
