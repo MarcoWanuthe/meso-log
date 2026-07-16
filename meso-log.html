@@ -2220,6 +2220,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <button id="etab-est-importar" style="display:none" onclick="estoqueTab('importar',this)">📥 Importar Planilha</button>
         <button id="etab-est-venc" onclick="estoqueTab('vencimentos',this)">⚠️ Vencimentos</button>
         <button id="etab-est-compras" style="display:none" onclick="estoqueTab('compras',this)">🛒 Compras</button>
+        <button id="etab-est-hist" onclick="estoqueTab('historico',this)">📋 Histórico de Lotes</button>
       </div>
       <!-- TAB CONSULTA -->
       <div id="eview-consulta">
@@ -2270,8 +2271,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <div style="padding:12px 16px;background:#F8F9FB;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-            <h3 style="font-size:13px;font-weight:700;color:#002050;margin:0">Lista para Edição</h3>
+          <div style="padding:12px 16px;background:#F8F9FB;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <h3 style="font-size:13px;font-weight:700;color:#002050;margin:0">Lista para Edição</h3>
+              <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;font-size:12px" onclick="arquivarLotesZerados()">📦 Arquivar Lotes com Qtd 0</button>
+            </div>
             <input type="text" id="ger-est-search" placeholder="🔍 Código, cód. barras, nome ou lote..." style="padding:6px 10px;border:1px solid #d0d7de;border-radius:5px;font-size:12px;width:260px" oninput="renderGerenciarEstoque()">
           </div>
           <div style="overflow-x:auto">
@@ -2395,6 +2399,33 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
       </div>
 
+      <!-- TAB HISTÓRICO DE LOTES -->
+      <div id="eview-historico" style="display:none">
+        <div class="card" style="margin-bottom:14px;padding:14px 18px;background:linear-gradient(135deg,#002050,#004494);color:#fff">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:15px;font-weight:700">📋 Histórico de Lotes Arquivados</div>
+              <div style="font-size:12px;opacity:.85;margin-top:2px">Lotes com quantidade zero removidos do estoque ativo — rastreabilidade preservada</div>
+            </div>
+            <span id="hist-total-badge" style="margin-left:auto;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:12px;font-size:13px;font-weight:700"></span>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px;padding:12px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="hist-search" placeholder="🔍 Código, descrição, lote ou categoria..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderHistoricoLotes()">
+          <select id="hist-filter-cat" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderHistoricoLotes()">
+            <option value="">Todas as Categorias</option>
+          </select>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="overflow-x:auto">
+            <table class="prod-table">
+              <thead><tr><th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Categoria</th><th style="text-align:center">Prazo</th><th>Arquivado em</th><th>Motivo</th></tr></thead>
+              <tbody id="hist-tbody"><tr><td colspan="8" style="text-align:center;color:#aaa;padding:32px">Nenhum lote arquivado ainda.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       </div>
     </div>
   </div>
@@ -2501,6 +2532,8 @@ let unsubCarriers = null;
 let enviosIdentityEmail = localStorage.getItem('ml_envios_identity')||'';
 let allStock = [];
 let unsubStock = null;
+let allHistoricoLotes = [];
+let unsubHistorico = null;
 
 const PRODUCTS_DEFAULT = [
   {codigo:'T-PACX0007',descricao:'X prof 011 Cafeina 20x2ml',grupo:'X Prof',tipoUnidade:'fracionado',lote:'17.198'},
@@ -2772,6 +2805,21 @@ function startListeners(){
         if(document.getElementById('eview-vencimentos')?.style.display!=='none') renderVencimentos();
       }
     }, err=>console.warn('stock listener:', err));
+
+  // Histórico de Lotes — live
+  if(unsubHistorico) unsubHistorico();
+  unsubHistorico = db.collection('historicoLotes')
+    .orderBy('archivedAt','desc')
+    .onSnapshot(snap=>{
+      allHistoricoLotes = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
+    }, err=>{
+      db.collection('historicoLotes').onSnapshot(snap2=>{
+        allHistoricoLotes = snap2.docs.map(d=>({id:d.id,...d.data()}));
+        allHistoricoLotes.sort((a,b)=>(b.archivedAt||'').localeCompare(a.archivedAt||''));
+        if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
+      });
+    });
 }
 
 // ==============================
@@ -4136,7 +4184,7 @@ function initEstoquePage(){
 }
 
 function estoqueTab(tab, btn){
-  ['consulta','gerenciar','importar','vencimentos','compras','kardex'].forEach(t=>{const el=document.getElementById('eview-'+t);if(el)el.style.display=t===tab?'':'none';});
+  ['consulta','gerenciar','importar','vencimentos','compras','kardex','historico'].forEach(t=>{const el=document.getElementById('eview-'+t);if(el)el.style.display=t===tab?'':'none';});
   document.querySelectorAll('#estoque-tab-bar button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(tab==='consulta') renderEstoque();
@@ -4152,6 +4200,7 @@ function estoqueTab(tab, btn){
   }
   if(tab==='compras') renderCompras();
   if(tab==='kardex') initKardex();
+  if(tab==='historico') renderHistoricoLotes();
 }
 
 function renderAlertasEstoque(){
@@ -4519,12 +4568,18 @@ async function buscarKardex(){
   btnPDF.style.display='none';
 
   try{
-    // Find matching stock entries
-    const matches=allStock.filter(s=>
+    // Find matching stock entries (ativo + histórico arquivado)
+    const stockMatches=allStock.filter(s=>
       s.codigo===q || s.lote===q ||
       (s.codigo||'').toLowerCase().includes(q.toLowerCase()) ||
       (s.descricao||'').toLowerCase().includes(q.toLowerCase())
     );
+    const histMatches=allHistoricoLotes.filter(h2=>
+      h2.codigo===q || h2.lote===q ||
+      (h2.codigo||'').toLowerCase().includes(q.toLowerCase()) ||
+      (h2.descricao||'').toLowerCase().includes(q.toLowerCase())
+    );
+    const matches=[...stockMatches,...histMatches];
 
     if(!matches.length){
       el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Nenhum produto encontrado com "'+q+'"</div>';
@@ -4769,6 +4824,61 @@ function diasParaVencer(val){
   if(m3) d=new Date(+m3[1],+m3[2]-1,+m3[3]);
   if(!d||isNaN(d)) return null;
   return (d-new Date())/(1000*60*60*24);
+}
+
+// ─── ARQUIVAR LOTES ZERADOS ────────────────────────────────────────────────
+async function arquivarLotesZerados(){
+  if(!admLoggedIn){toast('Ação disponível apenas para ADM.');return;}
+  const zeros = allStock.filter(s=>Number(s.quantidade||0)===0);
+  if(!zeros.length){toast('Nenhum item com quantidade zero encontrado.');return;}
+  const ok = confirm('📦 Arquivar '+zeros.length+' lote(s) com quantidade zero?\n\nEles serão removidos do estoque ativo mas ficarão salvos no Histórico de Lotes com rastreabilidade completa.');
+  if(!ok) return;
+  const now = new Date().toISOString();
+  const batch = db.batch();
+  zeros.forEach(s=>{
+    const histRef = db.collection('historicoLotes').doc();
+    batch.set(histRef,{...s,archivedAt:now,motivo:'Quantidade zerada — arquivado manualmente',stockId:s.id});
+    const stockRef = db.collection('stock').doc(s.id);
+    batch.delete(stockRef);
+  });
+  try{
+    await batch.commit();
+    toast('✅ '+zeros.length+' lote(s) arquivado(s) com sucesso.');
+    estoqueTab('historico', document.getElementById('etab-est-hist'));
+  } catch(e){
+    console.error(e);
+    toast('Erro ao arquivar: '+e.message);
+  }
+}
+
+// ─── RENDERIZAR HISTÓRICO DE LOTES ────────────────────────────────────────
+function renderHistoricoLotes(){
+  const tbody = document.getElementById('hist-tbody');
+  const badge = document.getElementById('hist-total-badge');
+  if(!tbody) return;
+  const q = (document.getElementById('hist-search')?.value||'').toLowerCase();
+  const cat = document.getElementById('hist-filter-cat')?.value||'';
+  const catSel = document.getElementById('hist-filter-cat');
+  if(catSel){
+    const cats = [...new Set(allHistoricoLotes.map(h=>h.categoria||'').filter(Boolean))].sort();
+    const prev = catSel.value;
+    catSel.innerHTML='<option value="">Todas as Categorias</option>'+cats.map(c=>'<option value="'+c+'"'+(c===prev?' selected':'')+'>'+c+'</option>').join('');
+  }
+  let items = allHistoricoLotes;
+  if(q) items = items.filter(h=>(h.codigo||'').toLowerCase().includes(q)||(h.descricao||'').toLowerCase().includes(q)||(h.lote||'').toLowerCase().includes(q)||(h.categoria||'').toLowerCase().includes(q));
+  if(cat) items = items.filter(h=>(h.categoria||'')===cat);
+  if(badge) badge.textContent = allHistoricoLotes.length + ' lote(s) arquivado(s)';
+  if(!items.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:32px">'+(allHistoricoLotes.length?'Nenhum resultado para o filtro.':'Nenhum lote arquivado ainda.')+'</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(h=>{
+    const prazo = diasParaVencer(h.dataValidade||'');
+    const pCss = prazo===null?'color:#aaa':prazo<0?'color:#B71C1C;font-weight:700':prazo<=30?'color:#B71C1C;font-weight:600':prazo<=90?'color:#E65100;font-weight:600':'color:#1565C0';
+    const pCel = prazo===null?'—':prazo<0?(Math.abs(Math.round(prazo))+'d vencido'):(Math.round(prazo)+'d');
+    const archDate = h.archivedAt?h.archivedAt.slice(0,10):'—';
+    return '<tr><td style="font-size:12px;font-family:monospace">'+(h.codigo||'—')+'</td><td style="font-size:12px">'+(h.descricao||'—')+'</td><td style="font-size:12px">'+(h.lote||'—')+'</td><td style="font-size:12px">'+(h.dataValidade||'S/Val.')+'</td><td style="font-size:12px">'+(h.categoria||'—')+'</td><td style="font-size:12px;text-align:center;'+pCss+'">'+pCel+'</td><td style="font-size:11px;color:#666">'+archDate+'</td><td style="font-size:11px;color:#888;max-width:180px">'+(h.motivo||'—')+'</td></tr>';
+  }).join('');
 }
 
 function setVencDayFilter(n){
