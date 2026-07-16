@@ -2247,11 +2247,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <table class="prod-table" id="est-table">
               <thead>
                 <tr>
-                  <th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Status Val.</th><th style="text-align:center">Qtd</th><th>Estoque</th>
+                  <th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Status Val.</th><th style="text-align:center">Prazo</th><th style="text-align:center">Qtd</th><th>Estoque</th>
                 </tr>
               </thead>
               <tbody id="est-tbody">
-                <tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa">Carregando estoque...</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">Carregando estoque...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2331,6 +2331,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- TAB VENCIMENTOS -->
       <div id="eview-vencimentos" style="display:none">
         <div class="card-grid" id="venc-kpis" style="margin-bottom:16px"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600;color:#444">Vence em?</span>
+          <button id="vdf-0" class="btn btn-sm" style="background:#002050;color:#fff" onclick="setVencDayFilter(0)">Todos</button>
+          <button id="vdf-30" class="btn btn-sm" onclick="setVencDayFilter(30)">30 dias</button>
+          <button id="vdf-60" class="btn btn-sm" onclick="setVencDayFilter(60)">60 dias</button>
+          <button id="vdf-90" class="btn btn-sm" onclick="setVencDayFilter(90)">90 dias</button>
+          <button id="vdf-120" class="btn btn-sm" onclick="setVencDayFilter(120)">120 dias</button>
+          <button id="vdf-365" class="btn btn-sm" onclick="setVencDayFilter(365)">365 dias</button>
+        </div>
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
           <select id="venc-cat-filter" style="padding:8px 12px;border:1px solid #D0D7E2;border-radius:5px;font-size:13px" onchange="renderVencimentos()">
             <option value="">Todas as Categorias</option>
@@ -4192,7 +4201,7 @@ function renderEstoque(){
     return true;
   });
   if(!items.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa">Nenhum item encontrado.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa">Nenhum item encontrado.</td></tr>';
     return;
   }
   const catsPresent = CAT_ORDER.filter(c=>items.some(s=>s.categoria===c));
@@ -4201,10 +4210,13 @@ function renderEstoque(){
   [...catsPresent,...catsOther].forEach(cat=>{
     const group = items.filter(s=>s.categoria===cat);
     if(!group.length) return;
-    html += `<tr class="estoque-group-row"><td colspan="7">${cat} &mdash; ${group.length} item${group.length>1?'s':''}</td></tr>`;
+    html += `<tr class="estoque-group-row"><td colspan="8">${cat} &mdash; ${group.length} item${group.length>1?'s':''}</td></tr>`;
     group.forEach(s=>{
       const qty = Number(s.quantidade)||0;
       const val = calcValidade(s.dataValidade||'');
+      const prazo=diasParaVencer(s.dataValidade||'');
+      const prazoCss=prazo===null?'color:#aaa':prazo<0?'color:#B71C1C;font-weight:700':prazo<=30?'color:#B71C1C;font-weight:600':prazo<=90?'color:#E65100;font-weight:600':'color:#1565C0;font-weight:600';
+      const prazoCel=prazo===null?'—':prazo<0?(Math.abs(Math.round(prazo))+'d vencido'):(Math.round(prazo)+'d');
       let stockLabel, stockCss;
       if(qty===0){stockLabel='Sem Estoque';stockCss='s-sem-estoque';}
       else if(qty<=3){stockLabel='Baixo';stockCss='s-estoque-baixo';}
@@ -4215,6 +4227,7 @@ function renderEstoque(){
         <td style="font-size:12px">${s.lote||'—'}</td>
         <td style="font-size:12px;${val.status==='s-vencido'?'color:#B71C1C;font-weight:600':val.status==='s-vencendo'?'color:#F57F17':''}">${s.dataValidade||'—'}</td>
         <td><span class="${val.status}">${val.label}</span></td>
+        <td style="font-size:12px;text-align:center;${prazoCss}">${prazoCel}</td>
         <td style="font-size:15px;font-weight:700;text-align:center">${qty}</td>
         <td><span class="${stockCss}">${stockLabel}${qty>0&&qty<=3?' ('+qty+')':''}</span></td>
       </tr>`;
@@ -4757,6 +4770,14 @@ function diasParaVencer(val){
   return (d-new Date())/(1000*60*60*24);
 }
 
+function setVencDayFilter(n){
+  window.__vencDayFilter=n;
+  [0,30,60,90,120,365].forEach(function(v){
+    var b=document.getElementById('vdf-'+v);
+    if(b){b.style.background=v===n?'#002050':'';b.style.color=v===n?'#fff':'';}
+  });
+  renderVencimentos();
+}
 function renderVencimentos(){
   // Populate category filter
   const sel=document.getElementById('venc-cat-filter');
@@ -4817,16 +4838,17 @@ function renderVencimentos(){
       </tbody></table></div>`;
   };
 
+  const dayFilter=window.__vencDayFilter||0;
   const groups=[
-    {cls:'venc-vencido',tag:'VENCIDO',arr:vencido},
-    {cls:'venc-30',tag:'≤ 30 dias',arr:d30},
-    {cls:'venc-60',tag:'31–60 dias',arr:d60},
-    {cls:'venc-90',tag:'61–90 dias',arr:d90},
-    {cls:'venc-120',tag:'91–120 dias',arr:d120},
-    {cls:'venc-180',tag:'121–180 dias',arr:d180},
-    {cls:'venc-365',tag:'181–365 dias',arr:d365},
-    {cls:'venc-ok',tag:'> 365 dias',arr:ok},
-  ].filter(g=>g.arr.length>0);
+    {cls:'venc-vencido',tag:'VENCIDO',          arr:vencido,md:-1},
+    {cls:'venc-30',     tag:'≤ 30 dias',        arr:d30,    md:30},
+    {cls:'venc-60',     tag:'31–60 dias',       arr:d60,    md:60},
+    {cls:'venc-90',     tag:'61–90 dias',       arr:d90,    md:90},
+    {cls:'venc-120',    tag:'91–120 dias',      arr:d120,   md:120},
+    {cls:'venc-180',    tag:'121–180 dias',     arr:d180,   md:180},
+    {cls:'venc-365',    tag:'181–365 dias',     arr:d365,   md:365},
+    {cls:'venc-ok',     tag:'> 365 dias',       arr:ok,     md:99999},
+  ].filter(g=>g.arr.length>0&&(dayFilter===0||g.md===-1||g.md<=dayFilter));
 
   const grpEl=document.getElementById('venc-groups');
   if(!grpEl) return;
