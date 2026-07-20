@@ -2053,6 +2053,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <span class="guide-flow-step" style="background:rgba(245,158,11,.75)">PDV / Eventos</span>
               <span class="guide-flow-arrow">→</span>
               <span class="guide-flow-step" style="background:rgba(168,85,247,.75)">Relatórios &amp; Mercus</span>
+              <span class="guide-flow-arrow">→</span>
+              <span class="guide-flow-step" style="background:rgba(13,148,136,.75)">🧾 Faturamento</span>
             </div>
           </div>
 
@@ -2210,6 +2212,105 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <div class="guide-warning">
             ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
+          </div>
+
+          <!-- FATURAMENTO & EXPEDIÇÃO -->
+          <div class="guide-module" style="margin-top:24px">
+            <div class="guide-module-header" style="background:linear-gradient(135deg,#0F766E,#2DD4BF)">
+              <div class="mod-icon">🧾</div>
+              <div>
+                <h4>Faturamento &amp; Expedição</h4>
+                <p>Gestão completa de pedidos do Mercus — faturamento, expedição e fechamento.</p>
+              </div>
+            </div>
+            <div class="guide-module-body">
+
+              <!-- Quem acessa -->
+              <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#134E4A">
+                <strong>Quem acessa:</strong> Faturistas (login com usuário + senha de 5 dígitos) e ADM (acesso total, incluindo gerenciamento de faturistas e empresas).
+              </div>
+
+              <!-- LOGIN -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">1</div>
+                <div class="guide-step-text">
+                  <strong>Login de Faturista:</strong> acesse o menu <strong>🧾 Faturamento</strong>. Se não estiver logado como ADM, aparecerá a tela de login. Informe seu <em>usuário</em> (ex: <code>joao.silva</code>) e a <em>senha de 5 dígitos</em> vinculada ao seu CPF. Pressione Enter ou clique em Entrar.
+                </div>
+              </div>
+
+              <!-- ABA FILA -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">2</div>
+                <div class="guide-step-text">
+                  <strong>📋 Fila — Visão geral dos pedidos:</strong> lista todos os pedidos de faturamento em tempo real. Use a barra de busca (Nº Mercus, MESO-LOG, cliente) e o filtro de status para localizar rapidamente um pedido. Os status disponíveis são:<br>
+                  <span style="display:inline-block;margin-top:6px">⚪ <strong>Pendente</strong> → 🔵 <strong>Em Análise</strong> → 🟡 <strong>Em Separação</strong> → 🟠 <strong>Aguard. NF</strong> → 🟣 <strong>Em Expedição</strong> → ✅ <strong>Expedido</strong> → 🔴 <strong>Cancelado</strong></span>
+                </div>
+              </div>
+
+              <!-- ABA NOVO PEDIDO -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">3</div>
+                <div class="guide-step-text">
+                  <strong>➕ Novo Pedido — Criar um pedido de faturamento:</strong><br>
+                  <ol style="margin:8px 0 0 18px;font-size:13px;line-height:1.7">
+                    <li><strong>Importar PDF do Mercus (opcional mas recomendado):</strong> clique em <em>📂 Selecionar PDF do Mercus</em> e escolha o PDF do pedido. O sistema extrai automaticamente o Nº Mercus, empresa, cliente, CNPJ, endereço, condição de pagamento e os itens (código, descrição, quantidade, preço).</li>
+                    <li><strong>Preencher os dados do cabeçalho:</strong> informe Nº Pedido Mercus, Nº ERP (pedido_erp), selecione a Empresa de Faturamento (JPG, MESOESTETIC ou outra cadastrada), o Tipo de Entrega (📬 Envio/Transportadora, 🎪 Evento ou 🏪 Retirada em Loja) e a Condição de Pagamento (ex: 30/60/90).</li>
+                    <li><strong>Dados do Cliente:</strong> Razão Social, CNPJ, endereço, cidade/estado e vendedor responsável.</li>
+                    <li><strong>Tabela de Itens:</strong> revise os itens importados pelo PDF ou adicione manualmente clicando em <em>+ Adicionar Item</em>. Cada linha tem código, descrição, quantidade e preço unitário. Clique na lixeira para remover.</li>
+                    <li><strong>Observações:</strong> campo livre para instruções especiais de entrega, prazo ou qualquer nota relevante.</li>
+                    <li>Clique em <strong>✅ Criar Pedido</strong>. O pedido aparece imediatamente na Fila com status <em>Pendente</em>.</li>
+                  </ol>
+                </div>
+              </div>
+
+              <!-- ABA EXPEDIÇÃO -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">4</div>
+                <div class="guide-step-text">
+                  <strong>📦 Expedição — Confirmar saída física:</strong> lista os pedidos prontos para expedição (status <em>Em Expedição</em> ou <em>Aguard. NF</em>). Para cada pedido, confirme a saída física dos volumes e registre o número da NF e transportadora quando disponíveis. Atualize o status para <strong>Expedido</strong> ao concluir.
+                </div>
+              </div>
+
+              <!-- ABA FECHAMENTO -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">5</div>
+                <div class="guide-step-text">
+                  <strong>✅ Fechamento — Encerrar pedidos:</strong> pedidos expedidos aparecem aqui para fechamento formal. Confirme que tudo foi entregue, registre observações finais e finalize. O pedido fica arquivado e não pode mais ser editado.
+                </div>
+              </div>
+
+              <!-- ABAS ADM: FATURISTAS E EMPRESAS -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">6</div>
+                <div class="guide-step-text">
+                  <strong>👥 Faturistas (apenas ADM):</strong> cadastre, edite ou remova faturistas. Cada faturista tem: <em>Nome</em>, <em>Sobrenome</em> e <em>CPF</em> — a senha de 5 dígitos é gerada automaticamente a partir dos primeiros 5 dígitos do CPF. O login (usuário) é <code>nome.sobrenome</code> em minúsculas. Exemplo: CPF <code>12345678900</code> → senha <code>12345</code>, login <code>joao.silva</code>.
+                </div>
+              </div>
+
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">7</div>
+                <div class="guide-step-text">
+                  <strong>🏢 Empresas (apenas ADM):</strong> gerencie as empresas de faturamento (ex: JPG - Filial RJ, MESOESTETIC SP). Cada empresa tem <em>Nome</em> e <em>Sigla</em>. As empresas aparecerão no seletor ao criar pedidos. Também é possível restaurar as empresas padrão clicando em <em>🔄 Restaurar Padrão</em>.
+                </div>
+              </div>
+
+              <!-- FLUXO RECOMENDADO -->
+              <div style="background:#F0FDFA;border-left:4px solid #0D9488;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:8px;font-size:13px;color:#134E4A">
+                <strong>Fluxo recomendado por pedido:</strong><br>
+                <span style="display:block;margin-top:6px;line-height:2">
+                  📥 Recebe PDF Mercus → ➕ <strong>Novo Pedido</strong> (importa PDF) → revisa dados → cria pedido →
+                  📋 <strong>Fila</strong> (acompanha progresso, atualiza status) →
+                  📦 <strong>Expedição</strong> (confirma saída física + NF) →
+                  ✅ <strong>Fechamento</strong> (encerra formalmente)
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- AVISO FINAL GERAL -->
+          <div class="guide-warning" style="margin-top:16px;border-color:#0D9488;color:#134E4A;background:#F0FDFA">
+            🧾 <strong>Faturamento:</strong> senhas de faturistas são geradas pelos primeiros 5 dígitos do CPF. Nunca compartilhe. Em caso de perda, o ADM pode recriar o cadastro. Pedidos cancelados ficam registrados para auditoria.
           </div>
         </div>
 
