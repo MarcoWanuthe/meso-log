@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MESO-LOG v2.2 2026-07-15 FIX-VENC-CACHE -->
+<!-- MESO-LOG AURORA v4.0 2026-07-20 | Auditoria completa + Faturamento & Expedição -->
 <html lang="pt-BR">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -2325,6 +2325,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <button id="etab-est-importar" style="display:none" onclick="estoqueTab('importar',this)">📥 Importar Planilha</button>
         <button id="etab-est-venc" onclick="estoqueTab('vencimentos',this)">⚠️ Vencimentos</button>
         <button id="etab-est-compras" style="display:none" onclick="estoqueTab('compras',this)">🛒 Compras</button>
+        <button id="etab-est-kardex" onclick="estoqueTab('kardex',this)">🔗 Rastreabilidade</button>
         <button id="etab-est-hist" onclick="estoqueTab('historico',this)">📋 Histórico de Lotes</button>
       </div>
       <!-- TAB CONSULTA -->
@@ -6079,6 +6080,120 @@ function verDetalhesPerda(id){
     `;
     showModal();
   });
+}
+
+// ==============================
+// MÓDULO PERDAS / AVARIAS / VENCIMENTOS
+// ==============================
+
+function handlePerdScan(val){
+  val = val.trim();
+  if(!val) return;
+  const inp = document.getElementById('perd-scan-input');
+  if(inp) inp.value = '';
+  const found = buscarPorBarcode(val);
+  const card = document.getElementById('perd-found-card');
+  if(found){
+    perdFoundItem = found;
+    document.getElementById('perd-found-codigo').value = found.codigo;
+    document.getElementById('perd-found-descricao').value = found.descricao;
+    document.getElementById('perd-found-title').textContent = found.descricao;
+    // Preencher lote + validade do item encontrado (FEFO: primeiro a vencer)
+    const lotes = allStock.filter(s => s.codigo === found.codigo && s.quantidade > 0);
+    lotes.sort((a,b) => {
+      const da = diasParaVencer(a.dataValidade||'');
+      const db2 = diasParaVencer(b.dataValidade||'');
+      if(da===null && db2===null) return 0;
+      if(da===null) return 1;
+      if(db2===null) return -1;
+      return da - db2;
+    });
+    const melhor = lotes[0] || found;
+    const loteEl = document.getElementById('perd-found-lote');
+    const valEl = document.getElementById('perd-found-validade');
+    if(loteEl) loteEl.value = melhor.lote || '';
+    if(valEl) valEl.value = melhor.dataValidade ? melhor.dataValidade.split('-').reverse().join('/') : (melhor.dataValidade||'');
+    document.getElementById('perd-found-qty').value = '1';
+    card.style.display = '';
+    setTimeout(()=>{ const q=document.getElementById('perd-found-qty'); if(q) q.focus(); },100);
+    toast('✅ '+found.descricao+' — Lote: '+(melhor.lote||'—'));
+  } else {
+    if(card) card.style.display = 'none';
+    perdFoundItem = null;
+    toast('⚠️ Produto não encontrado: '+val);
+  }
+}
+
+async function salvarPerda(){
+  const codigo = document.getElementById('perd-found-codigo').value;
+  const descricao = document.getElementById('perd-found-descricao').value;
+  if(!codigo){ alert('Escaneie um produto primeiro.'); return; }
+  const tipo = document.getElementById('perd-tipo').value;
+  const data = document.getElementById('perd-data').value || new Date().toISOString().split('T')[0];
+  const lote = document.getElementById('perd-found-lote').value.trim();
+  const validade = document.getElementById('perd-found-validade').value.trim();
+  const qty = Number(document.getElementById('perd-found-qty').value) || 0;
+  const motivo = document.getElementById('perd-motivo').value.trim();
+  const baixarEstoque = document.getElementById('perd-baixar-estoque').checked;
+  if(!tipo){ alert('Selecione o tipo de ocorrência.'); return; }
+  if(!qty || qty <= 0){ alert('Informe uma quantidade válida.'); return; }
+  if(!motivo){ alert('Informe o motivo da ocorrência.'); return; }
+  const btn = document.querySelector('#ops-perdas .btn-danger');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+  try{
+    const userEmail = (typeof firebase!=='undefined' && firebase.auth && firebase.auth().currentUser)
+      ? firebase.auth().currentUser.email : 'ADM';
+    await db.collection('perdas').add({
+      tipo, codigo, descricao, lote, dataValidade: validade, quantidade: qty,
+      motivo, data, responsavel: userEmail, criadoEm: new Date().toISOString()
+    });
+    if(baixarEstoque && lote){
+      const docId = cleanDocId(codigo, lote);
+      const snap = await db.collection('stock').doc(docId).get();
+      if(snap.exists){
+        const nova = Math.max(0, (Number(snap.data().quantidade)||0) - qty);
+        await db.collection('stock').doc(docId).update({ quantidade: nova });
+      }
+    }
+    // Limpar formulário
+    document.getElementById('perd-found-card').style.display = 'none';
+    document.getElementById('perd-motivo').value = '';
+    document.getElementById('perd-found-qty').value = '1';
+    perdFoundItem = null;
+    toast('✅ Ocorrência registrada! '+qty+'x '+descricao+' ('+tipo+')');
+    loadPerdHistorico();
+    loadOpsStats();
+    setTimeout(()=>{ const el=document.getElementById('perd-scan-input'); if(el) el.focus(); },100);
+  } catch(e){ alert('Erro ao salvar: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📋 Registrar Ocorrência'; } }
+}
+
+async function loadPerdHistorico(){
+  const el = document.getElementById('perd-historico');
+  if(!el) return;
+  try{
+    const snap = await db.collection('perdas').orderBy('criadoEm','desc').limit(20).get();
+    if(snap.empty){
+      el.innerHTML = '<p style="color:#aaa;font-size:12px;text-align:center;padding:20px">Nenhuma ocorrência registrada.</p>';
+      return;
+    }
+    const tc = { 'Perda':'op-perda', 'Avaria':'op-avaria', 'Vencimento':'op-vencimento' };
+    el.innerHTML = snap.docs.map(d=>{
+      const r = d.data();
+      const dt = (r.data||r.criadoEm?.slice(0,10)||'—').split('-').reverse().join('/');
+      return `<div class="carrier-card" style="margin-bottom:6px;cursor:pointer" onclick="verDetalhesPerda('${d.id}')">
+        <div>
+          <h4>${r.codigo} — ${r.descricao||'—'}</h4>
+          <p>${dt} · Qtd: <strong>${r.quantidade}</strong>${r.lote?' · Lote: '+r.lote:''}</p>
+          <p style="color:#666;font-size:11px">${r.motivo||'—'}</p>
+        </div>
+        <span class="op-type-badge ${tc[r.tipo]||'op-perda'}">${r.tipo||'Perda'}</span>
+      </div>`;
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<p style="color:#D13438;font-size:12px;text-align:center;padding:20px">Erro ao carregar histórico.</p>';
+    console.warn('loadPerdHistorico:', e);
+  }
 }
 
 // ==============================
