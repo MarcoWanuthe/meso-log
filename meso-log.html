@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<!-- MESO-LOG v2.2 2026-07-16 -->
+<!-- MESO-LOG v2.2 2026-07-15 FIX-VENC-CACHE -->
 <html lang="pt-BR">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
@@ -400,6 +403,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('adm')" id="nav-adm"><span class="icon">🔒</span><span>ADM</span></a>
     <a onclick="showPage('operacoes')" id="nav-operacoes" style="display:none"><span class="icon">🏭</span><span>Operações</span></a>
     <a onclick="showPage('pdv')" id="nav-pdv" style="display:none"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
+    <a onclick="showPage('faturamento')" id="nav-faturamento"><span class="icon">🧾</span><span>Faturamento</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -2399,6 +2403,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
       </div>
 
+      </div>
+
       <!-- TAB HISTÓRICO DE LOTES -->
       <div id="eview-historico" style="display:none">
         <div class="card" style="margin-bottom:14px;padding:14px 18px;background:linear-gradient(135deg,#002050,#004494);color:#fff">
@@ -2426,8 +2432,174 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
       </div>
 
-      </div>
     </div>
+
+    <!-- PAGE FATURAMENTO & EXPEDIÇÃO -->
+    <div class="page" id="page-faturamento">
+
+      <!-- LOGIN PANEL (faturistas não-ADM) -->
+      <div id="fat-login-panel" style="display:none;max-width:400px;margin:40px auto">
+        <div class="card" style="text-align:center;padding:36px 32px">
+          <div style="font-size:40px;margin-bottom:10px">🧾</div>
+          <h2 style="color:#002050;margin-bottom:4px;font-size:20px">Faturamento</h2>
+          <p style="color:#666;font-size:13px;margin-bottom:22px">Acesso restrito ao time de faturamento</p>
+          <div class="form-group" style="text-align:left;margin-bottom:12px">
+            <label style="font-size:12px;font-weight:700;color:#333">Usuário</label>
+            <input type="text" id="fat-login-user" placeholder="joao.silva" style="width:100%;padding:10px 12px;border:1.5px solid #d0d7de;border-radius:6px;font-size:14px;box-sizing:border-box;margin-top:4px">
+          </div>
+          <div class="form-group" style="text-align:left;margin-bottom:20px">
+            <label style="font-size:12px;font-weight:700;color:#333">Senha (5 últimos dígitos do CPF)</label>
+            <input type="password" id="fat-login-senha" placeholder="•••••" maxlength="5" style="width:100%;padding:10px 12px;border:1.5px solid #d0d7de;border-radius:6px;font-size:18px;letter-spacing:6px;text-align:center;box-sizing:border-box;margin-top:4px" onkeydown="if(event.key==='Enter')fatLogin()">
+          </div>
+          <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="fatLogin()">Entrar</button>
+          <div id="fat-login-erro" style="color:#D13438;font-size:12px;margin-top:10px;display:none"></div>
+          <div style="margin-top:16px;font-size:11px;color:#aaa">ADM tem acesso automático via painel ADM</div>
+        </div>
+      </div>
+
+      <!-- MAIN PANEL -->
+      <div id="fat-main-panel" style="display:none">
+
+        <!-- User bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#002050;color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px">🧾</span>
+            <div>
+              <div style="font-size:11px;opacity:.7">Faturamento &amp; Expedição — Logado como</div>
+              <div id="fat-user-nome" style="font-weight:700;font-size:13px"></div>
+            </div>
+          </div>
+          <button id="fat-logout-btn" onclick="fatLogout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 12px;border-radius:5px;font-size:12px;cursor:pointer;display:none">Sair</button>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="tab-bar" id="fat-tab-bar" style="flex-wrap:wrap;margin-bottom:16px">
+          <button class="active" onclick="fatTab('fila',this)" id="fat-btn-fila">📋 Fila</button>
+          <button onclick="fatTab('novo',this)" id="fat-btn-novo">➕ Novo Pedido</button>
+          <button onclick="fatTab('expedicao',this)" id="fat-btn-expedicao">📦 Expedição</button>
+          <button onclick="fatTab('fechamento',this)" id="fat-btn-fechamento">✅ Fechamento</button>
+          <button onclick="fatTab('faturistas',this)" id="fat-btn-faturistas" style="display:none">👥 Faturistas</button>
+          <button onclick="fatTab('empresas',this)" id="fat-btn-empresas" style="display:none">🏢 Empresas</button>
+        </div>
+
+        <!-- TAB FILA -->
+        <div id="fview-fila">
+          <div class="card" style="padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="fat-fila-search" placeholder="🔍 Nº Mercus, MESO-LOG, cliente..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderFilaPedidos()">
+            <select id="fat-fila-status" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderFilaPedidos()">
+              <option value="">Todos os Status</option>
+              <option value="pendente">⏳ Pendente</option>
+              <option value="aguardando_expedicao">🔔 Ag. Expedição</option>
+              <option value="em_separacao">🔄 Em Separação</option>
+              <option value="pre_separado">📋 Pré-Separado</option>
+              <option value="faturado">💼 Faturado</option>
+              <option value="fechado">✅ Fechado</option>
+            </select>
+          </div>
+          <div id="fat-fila-lista"></div>
+        </div>
+
+        <!-- TAB NOVO PEDIDO -->
+        <div id="fview-novo" style="display:none">
+          <div class="card" style="margin-bottom:12px;padding:12px 16px">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:10px">📄 Importar via PDF Mercus</h3>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <input type="file" id="fat-pdf-input" accept=".pdf" style="display:none" onchange="parseMercusPDF(this.files[0])">
+              <button class="btn btn-primary" onclick="document.getElementById('fat-pdf-input').click()">📂 Selecionar PDF do Mercus</button>
+              <span id="fat-pdf-status" style="font-size:12px;color:#555"></span>
+            </div>
+          </div>
+          <div class="card" style="padding:18px">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:14px">📝 Dados do Pedido</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nº Pedido Mercus *</label><input type="text" id="fat-num-mercus" placeholder="40603" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nº ERP (pedido_erp)</label><input type="text" id="fat-num-erp" placeholder="3536" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Empresa de Faturamento *</label><select id="fat-empresa-sel" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px"><option value="">Selecionar...</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Tipo de Entrega *</label><select id="fat-tipo-entrega" onchange="fatTipoEntregaChange()" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px"><option value="">Selecionar...</option><option value="envio">📬 Envio / Transportadora</option><option value="evento">🎪 Evento (no sistema)</option><option value="loja">🏪 Retirada em Loja</option></select></div>
+              <div class="form-group" style="margin:0" id="fat-evento-field"><label style="font-size:11px;font-weight:700;color:#555">Evento Vinculado</label><select id="fat-evento-sel" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px"><option value="">Selecionar Evento...</option></select></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Cond. Pagamento</label><input type="text" id="fat-cond-pag" placeholder="30/60/90" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+            </div>
+            <div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin:14px 0 8px;border-top:1px solid #eee;padding-top:10px">Dados do Cliente</div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:10px">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Razão Social *</label><input type="text" id="fat-cli-nome" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">CNPJ</label><input type="text" id="fat-cli-cnpj" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Endereço</label><input type="text" id="fat-cli-end" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Cidade / Estado</label><input type="text" id="fat-cli-cidade" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Vendedor</label><input type="text" id="fat-vendedor" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+            </div>
+            <div class="form-group" style="margin:0 0 14px"><label style="font-size:11px;font-weight:700;color:#555">Informações Adicionais / Observações</label><textarea id="fat-obs" style="width:100%;min-height:50px;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px" placeholder="Observações do pedido..."></textarea></div>
+            <div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin:0 0 8px;border-top:1px solid #eee;padding-top:10px">Itens do Pedido</div>
+            <div style="overflow-x:auto;margin-bottom:10px">
+              <table class="prod-table" id="fat-itens-table">
+                <thead><tr><th style="width:32px">#</th><th>Código</th><th>Produto</th><th style="text-align:center;width:70px">Qtde</th><th style="width:50px">Unid.</th><th style="text-align:right;width:100px">Preço Líq.</th><th style="width:36px"></th></tr></thead>
+                <tbody id="fat-itens-tbody"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Importe um PDF ou adicione itens manualmente.</td></tr></tbody>
+              </table>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+              <button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="fatAdicionarItem()">+ Adicionar Item</button>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline" onclick="fatLimparForm()">🗑️ Limpar</button>
+                <button class="btn btn-success" style="padding:10px 20px" onclick="criarPedidoFat()">💾 Criar Pedido</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB EXPEDIÇÃO -->
+        <div id="fview-expedicao" style="display:none">
+          <div id="fat-exp-content">
+            <div class="card" style="padding:32px;text-align:center;color:#aaa"><div style="font-size:36px;margin-bottom:10px">📦</div>Selecione um pedido na Fila para iniciar a expedição.</div>
+          </div>
+        </div>
+
+        <!-- TAB FECHAMENTO -->
+        <div id="fview-fechamento" style="display:none">
+          <div id="fat-fech-content">
+            <div class="card" style="padding:32px;text-align:center;color:#aaa"><div style="font-size:36px;margin-bottom:10px">✅</div>Selecione um pedido Pré-Separado para iniciar o fechamento.</div>
+          </div>
+        </div>
+
+        <!-- TAB FATURISTAS (ADM only) -->
+        <div id="fview-faturistas" style="display:none">
+          <div class="card" style="margin-bottom:12px;padding:14px 18px">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">➕ Cadastrar Faturista</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nome</label><input type="text" id="fat-new-nome" placeholder="João" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Sobrenome</label><input type="text" id="fat-new-sobrenome" placeholder="Silva" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">CPF (somente dígitos)</label><input type="text" id="fat-new-cpf" placeholder="00000000000" maxlength="11" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <button class="btn btn-success" onclick="salvarFaturista()" style="height:36px;white-space:nowrap">➕ Cadastrar</button>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#888">Login: <strong>nome.sobrenome</strong> em minúsculas · Senha: <strong>últimos 5 dígitos do CPF</strong></div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="prod-table"><thead><tr><th>Usuário</th><th>Nome Completo</th><th>CPF</th><th>Status</th><th>Ação</th></tr></thead>
+            <tbody id="fat-faturistas-tbody"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- TAB EMPRESAS (ADM only) -->
+        <div id="fview-empresas" style="display:none">
+          <div class="card" style="margin-bottom:12px;padding:14px 18px">
+            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">🏢 Adicionar Empresa</h3>
+            <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end">
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nome da Empresa</label><input type="text" id="fat-new-emp-nome" placeholder="JPG - Filial RJ" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Sigla</label><input type="text" id="fat-new-emp-sigla" placeholder="JPG RJ" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <button class="btn btn-success" onclick="salvarEmpresa()" style="height:36px">➕ Adicionar</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <table class="prod-table"><thead><tr><th>Empresa</th><th>Sigla</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="fat-empresas-tbody"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px">Carregando empresas...</td></tr></tbody></table>
+          </div>
+        </div>
+
+      </div><!-- end fat-main-panel -->
+    </div><!-- end page-faturamento -->
+
   </div>
 </div>
 
@@ -2534,6 +2706,27 @@ let allStock = [];
 let unsubStock = null;
 let allHistoricoLotes = [];
 let unsubHistorico = null;
+
+// === FATURAMENTO GLOBALS ===
+let allFaturistas = [];
+let allEmpresas = [];
+let allPedidosFat = [];
+let unsubFaturistas = null;
+let unsubEmpresas = null;
+let unsubPedidosFat = null;
+let fatUser = null;
+let fatItens = [];
+let fatPedidoExp = null;
+let fatFechId = null;
+let fatBipItems = [];
+
+const FAT_EMPRESAS_SEED = [
+  {nome:'JPG - Filial SP', sigla:'JPG SP', bloqueada:false, ativa:true},
+  {nome:'JPG - Filial BSB', sigla:'JPG BSB', bloqueada:false, ativa:true},
+  {nome:'JPG - Filial SP MG', sigla:'JPG SP MG', bloqueada:false, ativa:true},
+  {nome:'JPG - Filial PR', sigla:'JPG PR', bloqueada:false, ativa:true},
+  {nome:'JPG - Asa Sul', sigla:'JPG ASA SUL', bloqueada:false, ativa:true},
+];
 
 const PRODUCTS_DEFAULT = [
   {codigo:'T-PACX0007',descricao:'X prof 011 Cafeina 20x2ml',grupo:'X Prof',tipoUnidade:'fracionado',lote:'17.198'},
@@ -2814,12 +3007,46 @@ function startListeners(){
       allHistoricoLotes = snap.docs.map(d=>({id:d.id,...d.data()}));
       if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
     }, err=>{
+      // fallback sem ordenação se índice não existir
       db.collection('historicoLotes').onSnapshot(snap2=>{
         allHistoricoLotes = snap2.docs.map(d=>({id:d.id,...d.data()}));
         allHistoricoLotes.sort((a,b)=>(b.archivedAt||'').localeCompare(a.archivedAt||''));
         if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
       });
     });
+
+  // === FAT LISTENERS ===
+  if(unsubFaturistas) unsubFaturistas();
+  unsubFaturistas = db.collection('faturistas').onSnapshot(snap=>{
+    allFaturistas = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('fview-faturistas')?.style.display!=='none') renderFaturistas();
+  }, err=>console.warn('faturistas:', err));
+
+  if(unsubEmpresas) unsubEmpresas();
+  unsubEmpresas = db.collection('empresas').onSnapshot(snap=>{
+    if(snap.empty && admLoggedIn){
+      const batch = db.batch();
+      FAT_EMPRESAS_SEED.forEach(e=>{
+        batch.set(db.collection('empresas').doc(), {...e, criadoEm: new Date().toISOString()});
+      });
+      batch.commit().catch(e=>console.warn(e));
+      return;
+    }
+    allEmpresas = snap.docs.map(d=>({id:d.id,...d.data()}));
+    fatPopulateEmpresaSelect();
+    if(document.getElementById('fview-empresas')?.style.display!=='none') renderEmpresas();
+  }, err=>console.warn('empresas:', err));
+
+  if(unsubPedidosFat) unsubPedidosFat();
+  unsubPedidosFat = db.collection('pedidosFaturamento').orderBy('criadoEm','desc').onSnapshot(snap=>{
+    allPedidosFat = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('fview-fila')?.style.display!=='none') renderFilaPedidos();
+  }, err=>{
+    db.collection('pedidosFaturamento').onSnapshot(snap2=>{
+      allPedidosFat = snap2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
+      if(document.getElementById('fview-fila')?.style.display!=='none') renderFilaPedidos();
+    });
+  });
 }
 
 // ==============================
@@ -2874,7 +3101,7 @@ function showPage(p){
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
@@ -2894,6 +3121,7 @@ function showPage(p){
   if(p==='envios') initEnviosPage();
   if(p==='estoque') initEstoquePage();
   if(p==='operacoes') initOpsPage();
+  if(p==='faturamento') initFaturamentoPage();
   if(p==='adm'&&!admLoggedIn){document.getElementById('adm-lock').style.display='';document.getElementById('adm-panel').style.display='none';}
   if(p==='pdv'){
     if(pdvVendedorAtivo){show('pdv-panel');hide('pdv-lock');}
@@ -4190,12 +4418,18 @@ function estoqueTab(tab, btn){
   if(tab==='consulta') renderEstoque();
   if(tab==='gerenciar') renderGerenciarEstoque();
   if(tab==='vencimentos'){
-    if(allStock.length>0){renderVencimentos();}
-    else{
+    if(allStock.length>0){
+      renderVencimentos();
+    } else {
+      // Firebase ainda carregando — mostrar loading e retentar
       const vg=document.getElementById('venc-groups');
-      if(vg)vg.innerHTML='<div style="padding:32px;text-align:center;color:#888">Aguardando dados do estoque...</div>';
-      const _p=setInterval(()=>{if(allStock.length>0){clearInterval(_p);renderVencimentos();}},300);
-      setTimeout(()=>clearInterval(_p),15000);
+      if(vg) vg.innerHTML='<div style="padding:32px;text-align:center;color:#888;font-size:15px">⏳ Carregando estoque...</div>';
+      const vk=document.getElementById('venc-kpis'); if(vk) vk.innerHTML='';
+      const vr=document.getElementById('venc-total-risco'); if(vr) vr.innerHTML='';
+      const _poll=setInterval(()=>{
+        if(allStock.length>0){clearInterval(_poll);renderVencimentos();}
+      },300);
+      setTimeout(()=>clearInterval(_poll),15000);
     }
   }
   if(tab==='compras') renderCompras();
@@ -4574,12 +4808,12 @@ async function buscarKardex(){
       (s.codigo||'').toLowerCase().includes(q.toLowerCase()) ||
       (s.descricao||'').toLowerCase().includes(q.toLowerCase())
     );
-    const histMatches=allHistoricoLotes.filter(h2=>
-      h2.codigo===q || h2.lote===q ||
-      (h2.codigo||'').toLowerCase().includes(q.toLowerCase()) ||
-      (h2.descricao||'').toLowerCase().includes(q.toLowerCase())
+    const histMatches=allHistoricoLotes.filter(h=>
+      h.codigo===q || h.lote===q ||
+      (h.codigo||'').toLowerCase().includes(q.toLowerCase()) ||
+      (h.descricao||'').toLowerCase().includes(q.toLowerCase())
     );
-    const matches=[...stockMatches,...histMatches];
+    const matches=[...stockMatches, ...histMatches];
 
     if(!matches.length){
       el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Nenhum produto encontrado com "'+q+'"</div>';
@@ -4831,19 +5065,24 @@ async function arquivarLotesZerados(){
   if(!admLoggedIn){toast('Ação disponível apenas para ADM.');return;}
   const zeros = allStock.filter(s=>Number(s.quantidade||0)===0);
   if(!zeros.length){toast('Nenhum item com quantidade zero encontrado.');return;}
-  const ok = confirm('📦 Arquivar '+zeros.length+' lote(s) com quantidade zero?\n\nEles serão removidos do estoque ativo mas ficarão salvos no Histórico de Lotes com rastreabilidade completa.');
+  const ok = confirm(`📦 Arquivar ${zeros.length} lote(s) com quantidade zero?\n\nEles serão removidos do estoque ativo mas ficarão salvos no Histórico de Lotes com rastreabilidade completa.`);
   if(!ok) return;
   const now = new Date().toISOString();
   const batch = db.batch();
   zeros.forEach(s=>{
     const histRef = db.collection('historicoLotes').doc();
-    batch.set(histRef,{...s,archivedAt:now,motivo:'Quantidade zerada — arquivado manualmente',stockId:s.id});
+    batch.set(histRef,{
+      ...s,
+      archivedAt: now,
+      motivo: 'Quantidade zerada — arquivado manualmente',
+      stockId: s.id
+    });
     const stockRef = db.collection('stock').doc(s.id);
     batch.delete(stockRef);
   });
   try{
     await batch.commit();
-    toast('✅ '+zeros.length+' lote(s) arquivado(s) com sucesso.');
+    toast(`✅ ${zeros.length} lote(s) arquivado(s) com sucesso.`);
     estoqueTab('historico', document.getElementById('etab-est-hist'));
   } catch(e){
     console.error(e);
@@ -4856,28 +5095,44 @@ function renderHistoricoLotes(){
   const tbody = document.getElementById('hist-tbody');
   const badge = document.getElementById('hist-total-badge');
   if(!tbody) return;
+
   const q = (document.getElementById('hist-search')?.value||'').toLowerCase();
   const cat = document.getElementById('hist-filter-cat')?.value||'';
+
+  // populate categoria select
   const catSel = document.getElementById('hist-filter-cat');
   if(catSel){
     const cats = [...new Set(allHistoricoLotes.map(h=>h.categoria||'').filter(Boolean))].sort();
     const prev = catSel.value;
-    catSel.innerHTML='<option value="">Todas as Categorias</option>'+cats.map(c=>'<option value="'+c+'"'+(c===prev?' selected':'')+'>'+c+'</option>').join('');
+    catSel.innerHTML='<option value="">Todas as Categorias</option>'+cats.map(c=>`<option value="${c}"${c===prev?' selected':''}>${c}</option>`).join('');
   }
+
   let items = allHistoricoLotes;
   if(q) items = items.filter(h=>(h.codigo||'').toLowerCase().includes(q)||(h.descricao||'').toLowerCase().includes(q)||(h.lote||'').toLowerCase().includes(q)||(h.categoria||'').toLowerCase().includes(q));
   if(cat) items = items.filter(h=>(h.categoria||'')===cat);
+
   if(badge) badge.textContent = allHistoricoLotes.length + ' lote(s) arquivado(s)';
+
   if(!items.length){
     tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:32px">'+(allHistoricoLotes.length?'Nenhum resultado para o filtro.':'Nenhum lote arquivado ainda.')+'</td></tr>';
     return;
   }
+
   tbody.innerHTML = items.map(h=>{
     const prazo = diasParaVencer(h.dataValidade||'');
     const pCss = prazo===null?'color:#aaa':prazo<0?'color:#B71C1C;font-weight:700':prazo<=30?'color:#B71C1C;font-weight:600':prazo<=90?'color:#E65100;font-weight:600':'color:#1565C0';
     const pCel = prazo===null?'—':prazo<0?(Math.abs(Math.round(prazo))+'d vencido'):(Math.round(prazo)+'d');
     const archDate = h.archivedAt?h.archivedAt.slice(0,10):'—';
-    return '<tr><td style="font-size:12px;font-family:monospace">'+(h.codigo||'—')+'</td><td style="font-size:12px">'+(h.descricao||'—')+'</td><td style="font-size:12px">'+(h.lote||'—')+'</td><td style="font-size:12px">'+(h.dataValidade||'S/Val.')+'</td><td style="font-size:12px">'+(h.categoria||'—')+'</td><td style="font-size:12px;text-align:center;'+pCss+'">'+pCel+'</td><td style="font-size:11px;color:#666">'+archDate+'</td><td style="font-size:11px;color:#888;max-width:180px">'+(h.motivo||'—')+'</td></tr>';
+    return `<tr>
+      <td style="font-size:12px;font-family:monospace">${h.codigo||'—'}</td>
+      <td style="font-size:12px">${h.descricao||'—'}</td>
+      <td style="font-size:12px">${h.lote||'—'}</td>
+      <td style="font-size:12px">${h.dataValidade||'S/Val.'}</td>
+      <td style="font-size:12px">${h.categoria||'—'}</td>
+      <td style="font-size:12px;text-align:center;${pCss}">${pCel}</td>
+      <td style="font-size:11px;color:#666">${archDate}</td>
+      <td style="font-size:11px;color:#888;max-width:180px">${h.motivo||'—'}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -8392,6 +8647,914 @@ async function admExcluirUsuario(id,nome){
     toast('🗑 Usuário removido.');
     renderAdmUsuarios();
   }catch(e){alert('Erro: '+e.message);}
+}
+
+// ============================
+// FATURAMENTO & EXPEDIÇÃO
+// ============================
+
+const FAT_STATUS_BADGE = {
+  pendente:           {bg:'#FFF3E0',color:'#E65100',  label:'⏳ Pendente'},
+  aguardando_expedicao:{bg:'#E3F2FD',color:'#1565C0',label:'🔔 Ag. Expedição'},
+  em_separacao:       {bg:'#E8EAF6',color:'#283593',  label:'🔄 Em Separação'},
+  pre_separado:       {bg:'#F3E5F5',color:'#6A1B9A',  label:'📋 Pré-Separado'},
+  faturado:           {bg:'#E8F5E9',color:'#1B5E20',  label:'💼 Faturado'},
+  fechado:            {bg:'#F5F5F5',color:'#424242',  label:'✅ Fechado'},
+};
+
+// ─── PAGE INIT ────────────────────────────────────────────────────────────────
+function initFaturamentoPage(){
+  const savedUser = (() => { try{ return JSON.parse(localStorage.getItem('ml_fat_user')||'null'); }catch(e){return null;} })();
+  if(savedUser) fatUser = savedUser;
+
+  if(admLoggedIn){
+    fatEnterMain('ADM');
+  } else if(fatUser){
+    fatEnterMain(fatUser.nome + ' ' + fatUser.sobrenome);
+  } else {
+    document.getElementById('fat-login-panel').style.display = '';
+    document.getElementById('fat-main-panel').style.display = 'none';
+  }
+}
+
+function fatEnterMain(nomeDisplay){
+  document.getElementById('fat-login-panel').style.display = 'none';
+  document.getElementById('fat-main-panel').style.display = '';
+  document.getElementById('fat-user-nome').textContent = nomeDisplay;
+  const logoutBtn = document.getElementById('fat-logout-btn');
+  if(logoutBtn) logoutBtn.style.display = admLoggedIn ? 'none' : '';
+  // ADM-only tabs
+  const isAdm = admLoggedIn;
+  const bFat = document.getElementById('fat-btn-faturistas');
+  const bEmp = document.getElementById('fat-btn-empresas');
+  if(bFat) bFat.style.display = isAdm ? '' : 'none';
+  if(bEmp) bEmp.style.display = isAdm ? '' : 'none';
+  fatTab('fila', document.getElementById('fat-btn-fila'));
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function fatLogin(){
+  const userInput = (document.getElementById('fat-login-user')?.value || '').trim().toLowerCase();
+  const senhaInput = (document.getElementById('fat-login-senha')?.value || '').trim();
+  const erroEl = document.getElementById('fat-login-erro');
+  erroEl.style.display = 'none';
+
+  const found = allFaturistas.find(f => f.username === userInput && f.senha === senhaInput && f.ativo !== false);
+  if(!found){
+    erroEl.textContent = 'Usuário ou senha incorretos.';
+    erroEl.style.display = '';
+    return;
+  }
+  fatUser = found;
+  try{ localStorage.setItem('ml_fat_user', JSON.stringify(found)); }catch(e){}
+  fatEnterMain(found.nome + ' ' + found.sobrenome);
+}
+
+function fatLogout(){
+  fatUser = null;
+  try{ localStorage.removeItem('ml_fat_user'); }catch(e){}
+  document.getElementById('fat-login-panel').style.display = '';
+  document.getElementById('fat-main-panel').style.display = 'none';
+  const u = document.getElementById('fat-login-user'); if(u) u.value = '';
+  const s = document.getElementById('fat-login-senha'); if(s) s.value = '';
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function fatTab(tab, btn){
+  ['fila','novo','expedicao','fechamento','faturistas','empresas'].forEach(t=>{
+    const el = document.getElementById('fview-'+t);
+    if(el) el.style.display = (t === tab ? '' : 'none');
+  });
+  document.querySelectorAll('#fat-tab-bar button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(tab === 'fila')       renderFilaPedidos();
+  if(tab === 'novo')       fatIniciarNovo();
+  if(tab === 'faturistas') renderFaturistas();
+  if(tab === 'empresas')   renderEmpresas();
+}
+
+// ─── FILA ─────────────────────────────────────────────────────────────────────
+function renderFilaPedidos(){
+  const container = document.getElementById('fat-fila-lista');
+  if(!container) return;
+  const q = (document.getElementById('fat-fila-search')?.value || '').toLowerCase();
+  const statusFil = document.getElementById('fat-fila-status')?.value || '';
+
+  let pedidos = allPedidosFat;
+  if(q) pedidos = pedidos.filter(p =>
+    (p.numeroPedidoMercus||'').includes(q) ||
+    (p.numeroPedidoMesoLog||'').toLowerCase().includes(q) ||
+    (p.clienteNome||'').toLowerCase().includes(q)
+  );
+  if(statusFil) pedidos = pedidos.filter(p => p.status === statusFil);
+
+  if(!pedidos.length){
+    container.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:#aaa">Nenhum pedido encontrado.</div>';
+    return;
+  }
+
+  container.innerHTML = pedidos.map(p => {
+    const s = FAT_STATUS_BADGE[p.status] || {bg:'#f5f5f5',color:'#666',label:p.status};
+    const nItens = (p.itens||[]).length;
+    const canExp  = ['pendente','aguardando_expedicao','em_separacao'].includes(p.status);
+    const canFech = p.status === 'pre_separado';
+    const canRePrint = p.status === 'pre_separado' || p.status === 'faturado';
+    return `<div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">Mercus: #${p.numeroPedidoMercus||'—'} · ERP: ${p.pedidoErp||'—'} · ${p.empresaSigla||'—'}</div>
+          <div style="font-size:13px;color:#333;margin-top:4px;font-weight:600">${p.clienteNome||'—'}</div>
+          <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
+          <div style="font-size:10px;color:#aaa">${(p.criadoEm||'').slice(0,10)} · ${p.faturistaNome||'ADM'}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
+            ${canExp  ? `<button class="btn btn-sm btn-primary" onclick="abrirExpedicao('${p.id}')">📦 Expedir</button>` : ''}
+            ${canFech ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
+            ${canRePrint ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
+            <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── NOVO PEDIDO ──────────────────────────────────────────────────────────────
+function fatIniciarNovo(){
+  fatPopulateEmpresaSelect();
+  fatPopulateEventoSelect();
+  renderFatItensTable();
+}
+
+function fatPopulateEmpresaSelect(){
+  const sel = document.getElementById('fat-empresa-sel');
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Selecionar empresa...</option>' +
+    allEmpresas.filter(e => e.ativa !== false && !e.bloqueada)
+      .map(e => `<option value="${e.id}">${e.nome} (${e.sigla})</option>`).join('');
+  if(prev) sel.value = prev;
+}
+
+function fatPopulateEventoSelect(){
+  const sel = document.getElementById('fat-evento-sel');
+  if(!sel) return;
+  const evs = (typeof allEvents !== 'undefined' ? allEvents : []);
+  sel.innerHTML = '<option value="">Selecionar evento...</option>' +
+    evs.filter(e => e.status !== 'fechado')
+      .map(e => `<option value="${e.id}">${e.nome||e.id}</option>`).join('');
+}
+
+function fatTipoEntregaChange(){
+  const tipo = document.getElementById('fat-tipo-entrega')?.value;
+  const evField = document.getElementById('fat-evento-field');
+  if(evField) evField.style.display = (tipo === 'evento' ? '' : 'none');
+}
+
+function renderFatItensTable(){
+  const tbody = document.getElementById('fat-itens-tbody');
+  if(!tbody) return;
+  if(!fatItens.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Nenhum item. Importe um PDF ou adicione manualmente.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = fatItens.map((it,i) => `<tr>
+    <td style="font-size:11px;color:#888">${i+1}</td>
+    <td><input type="text" value="${it.codigo||''}" style="width:120px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;font-family:monospace" onchange="fatItens[${i}].codigo=this.value"></td>
+    <td><input type="text" value="${it.descricao||''}" style="width:200px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px" onchange="fatItens[${i}].descricao=this.value"></td>
+    <td style="text-align:center"><input type="number" value="${it.quantidade||1}" min="1" style="width:55px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].quantidade=Number(this.value)"></td>
+    <td><input type="text" value="${it.unidade||'cx'}" style="width:40px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].unidade=this.value"></td>
+    <td style="text-align:right"><input type="number" value="${it.precoLiquido||0}" step="0.01" style="width:85px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:right" onchange="fatItens[${i}].precoLiquido=Number(this.value)"></td>
+    <td><button onclick="fatItens.splice(${i},1);renderFatItensTable()" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1">×</button></td>
+  </tr>`).join('');
+}
+
+function fatAdicionarItem(){
+  fatItens.push({seq: fatItens.length+1, codigo:'', descricao:'', quantidade:1, unidade:'cx', precoLiquido:0});
+  renderFatItensTable();
+}
+
+function fatLimparForm(){
+  if(!confirm('Limpar todos os dados do formulário?')) return;
+  fatItens = [];
+  ['fat-num-mercus','fat-num-erp','fat-cli-nome','fat-cli-cnpj','fat-cli-end','fat-cli-cidade','fat-vendedor','fat-obs','fat-cond-pag'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  const es = document.getElementById('fat-empresa-sel'); if(es) es.value = '';
+  const et = document.getElementById('fat-tipo-entrega'); if(et) et.value = '';
+  const ev = document.getElementById('fat-evento-field'); if(ev) ev.style.display = 'none';
+  document.getElementById('fat-pdf-status').textContent = '';
+  renderFatItensTable();
+}
+
+// ─── PDF PARSER ───────────────────────────────────────────────────────────────
+async function parseMercusPDF(file){
+  const statusEl = document.getElementById('fat-pdf-status');
+  if(!file) return;
+  statusEl.textContent = '⏳ Lendo PDF...';
+  try{
+    if(!window.pdfjsLib){
+      await new Promise((res, rej)=>{
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
+        s.onload = ()=>{
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+          res();
+        };
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    const ab = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({data: ab}).promise;
+    let fullText = '';
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      fullText += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    const parsed = parseMercusText(fullText);
+    preencherFormMercus(parsed);
+    statusEl.textContent = `✅ Pedido #${parsed.numeroPedidoMercus||'?'} importado — ${(parsed.itens||[]).length} item(s).`;
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = '❌ Erro ao ler PDF: ' + e.message;
+  }
+  // Reset file input so same file can be re-selected
+  const inp = document.getElementById('fat-pdf-input');
+  if(inp) inp.value = '';
+}
+
+function parseMercusText(text){
+  const result = {itens:[]};
+  // Nº Pedido Mercus
+  const mPed = text.match(/Pedido\s*N[ºo°°]\s*(\d+)/i);
+  if(mPed) result.numeroPedidoMercus = mPed[1];
+  // pedido_erp
+  const mErp = text.match(/pedido[_\s]erp[:\s]+(\d+)/i);
+  if(mErp) result.pedidoErp = mErp[1];
+  // (não preencher) — código da empresa
+  const mEmp = text.match(/\(n[ãa]o\s+preencher\)[:\s]+([^\n\r]+)/i);
+  if(mEmp) result.naoPreencherRaw = mEmp[1].trim();
+  // CNPJ
+  const mCnpj = text.match(/(\d{2}[\.\s]\d{3}[\.\s]\d{3}[\/\s]\d{4}[-\s]\d{2})/);
+  if(mCnpj) result.clienteCNPJ = mCnpj[1].replace(/\s/g,'');
+  // Nome do cliente (entre "Cliente" e "CNPJ" or "Endereço")
+  const mCli = text.match(/Cliente\s*:?\s*(.+?)(?=CNPJ|Endere)/is);
+  if(mCli) result.clienteNome = mCli[1].replace(/\s+/g,' ').trim();
+  // Endereço
+  const mEnd = text.match(/Endere[çc]o\s*:?\s*(.+?)(?=Bairro|CEP|Cidade)/is);
+  if(mEnd) result.clienteEndereco = mEnd[1].replace(/\s+/g,' ').trim();
+  // Cidade / Estado
+  const mCid = text.match(/Cidade\s*:?\s*(\S[^/\n]+?)\s+Estado\s*:?\s*(\w+)/is);
+  if(mCid) result.clienteCidade = mCid[1].trim() + ' / ' + mCid[2].trim();
+  // Vendedor
+  const mVend = text.match(/Vendedor\s*:?\s*(.+?)(?=Tipo de pedido|Condi[çc]|Data|$)/is);
+  if(mVend) result.vendedor = mVend[1].replace(/\s+/g,' ').trim().slice(0,60);
+  // Condição de pagamento
+  const mCond = text.match(/Condi[çc][aã]o de Pagamento\s*:?\s*(.+?)(?=Data|Total|$)/is);
+  if(mCond) result.condicaoPagamento = mCond[1].replace(/\s+/g,' ').trim().slice(0,80);
+  // Informações adicionais
+  const mObs = text.match(/Informa[çc][õo]es Adicionais\s*:?\s*(.+?)(?=$)/is);
+  if(mObs) result.observacoes = mObs[1].replace(/\s+/g,' ').trim().slice(0,400);
+
+  // Items: seq + Código (T-XXXXX) + nome + qtde + unidade + preço líquido
+  // Try multiple patterns to handle different PDF layouts
+  const itemRegex = /\b(\d{1,3})\s+(T-[A-Z0-9]+)\s+(.+?)\s+(\d+)\s+(cx|un|ml|fl|fr|kit|amp|vl|bd|pc)\b.+?R\$\s*([\d.,]+)\s+R\$\s*[\d.,]+/gi;
+  let m;
+  while((m = itemRegex.exec(text)) !== null){
+    const precoLiq = parseFloat((m[6]||'0').replace(/\./g,'').replace(',','.'));
+    result.itens.push({
+      seq: parseInt(m[1]),
+      codigo: m[2].trim(),
+      descricao: m[3].trim(),
+      quantidade: parseInt(m[4]),
+      unidade: m[5].trim(),
+      precoLiquido: precoLiq
+    });
+  }
+  // Deduplicate by seq
+  const seen = new Set();
+  result.itens = result.itens.filter(it => {
+    if(seen.has(it.seq)) return false;
+    seen.add(it.seq);
+    return true;
+  });
+  return result;
+}
+
+function preencherFormMercus(data){
+  if(data.numeroPedidoMercus) { const el=document.getElementById('fat-num-mercus'); if(el) el.value = data.numeroPedidoMercus; }
+  if(data.pedidoErp)          { const el=document.getElementById('fat-num-erp');    if(el) el.value = data.pedidoErp; }
+  if(data.clienteNome)        { const el=document.getElementById('fat-cli-nome');   if(el) el.value = data.clienteNome; }
+  if(data.clienteCNPJ)        { const el=document.getElementById('fat-cli-cnpj');   if(el) el.value = data.clienteCNPJ; }
+  if(data.clienteEndereco)    { const el=document.getElementById('fat-cli-end');    if(el) el.value = data.clienteEndereco; }
+  if(data.clienteCidade)      { const el=document.getElementById('fat-cli-cidade'); if(el) el.value = data.clienteCidade; }
+  if(data.vendedor)           { const el=document.getElementById('fat-vendedor');   if(el) el.value = data.vendedor; }
+  if(data.condicaoPagamento)  { const el=document.getElementById('fat-cond-pag');   if(el) el.value = data.condicaoPagamento; }
+  if(data.observacoes)        { const el=document.getElementById('fat-obs');        if(el) el.value = data.observacoes; }
+
+  // Auto-select empresa from (não preencher): "14 - JPG ASA SUL"
+  if(data.naoPreencherRaw){
+    const sigRaw = data.naoPreencherRaw.replace(/^\d+\s*[-–]\s*/,'').trim().toUpperCase();
+    const emp = allEmpresas.find(e =>
+      (e.sigla||'').toUpperCase() === sigRaw ||
+      sigRaw.includes((e.sigla||'').toUpperCase()) ||
+      (e.nome||'').toUpperCase().includes(sigRaw)
+    );
+    if(emp){ const sel=document.getElementById('fat-empresa-sel'); if(sel) sel.value = emp.id; }
+  }
+
+  fatItens = (data.itens || []);
+  renderFatItensTable();
+}
+
+// ─── CRIAR PEDIDO ─────────────────────────────────────────────────────────────
+async function criarPedidoFat(){
+  const numMercus  = (document.getElementById('fat-num-mercus')?.value  || '').trim();
+  const empresaId  = document.getElementById('fat-empresa-sel')?.value  || '';
+  const tipoEntrega= document.getElementById('fat-tipo-entrega')?.value || '';
+
+  if(!numMercus)  { toast('Informe o Nº do pedido Mercus.'); return; }
+  if(!empresaId)  { toast('Selecione a empresa de faturamento.'); return; }
+  if(!tipoEntrega){ toast('Selecione o tipo de entrega.'); return; }
+  if(!fatItens.length){ toast('Adicione pelo menos um item ao pedido.'); return; }
+
+  const empresa = allEmpresas.find(e => e.id === empresaId);
+  if(!empresa){ toast('Empresa não encontrada.'); return; }
+
+  // Suffix auto-increment: count existing pedidos with same Mercus# + empresa
+  const existing = allPedidosFat.filter(p => p.numeroPedidoMercus === numMercus && p.empresaId === empresaId);
+  const sufixo = String.fromCharCode(65 + existing.length); // A=65
+  const numeroPedidoMesoLog = `${numMercus}-${sufixo}-${empresa.sigla}`;
+
+  const eventoId = document.getElementById('fat-evento-sel')?.value || '';
+
+  const pedido = {
+    numeroPedidoMercus: numMercus,
+    pedidoErp: document.getElementById('fat-num-erp')?.value || '',
+    sufixo,
+    numeroPedidoMesoLog,
+    empresaId,
+    empresaNome: empresa.nome,
+    empresaSigla: empresa.sigla,
+    tipoEntrega,
+    eventoId: tipoEntrega === 'evento' ? eventoId : '',
+    status: 'pendente',
+    faturistaId: fatUser?.id || 'adm',
+    faturistaNome: fatUser ? (fatUser.nome + ' ' + fatUser.sobrenome) : 'ADM',
+    clienteNome: document.getElementById('fat-cli-nome')?.value   || '',
+    clienteCNPJ: document.getElementById('fat-cli-cnpj')?.value   || '',
+    clienteEndereco: document.getElementById('fat-cli-end')?.value    || '',
+    clienteCidade:   document.getElementById('fat-cli-cidade')?.value || '',
+    vendedor:        document.getElementById('fat-vendedor')?.value   || '',
+    condicaoPagamento: document.getElementById('fat-cond-pag')?.value || '',
+    observacoes:     document.getElementById('fat-obs')?.value        || '',
+    itens: fatItens.map((it,i) => ({...it, seq:i+1, lotesSelecionados:[]})),
+    criadoEm: new Date().toISOString(),
+    atualizadoEm: new Date().toISOString()
+  };
+
+  try{
+    await db.collection('pedidosFaturamento').add(pedido);
+    toast('✅ Pedido ' + numeroPedidoMesoLog + ' criado!');
+    fatLimparForm();
+    fatTab('fila', document.getElementById('fat-btn-fila'));
+  }catch(e){
+    console.error(e);
+    toast('Erro ao criar pedido: ' + e.message);
+  }
+}
+
+// ─── EXPEDIÇÃO ────────────────────────────────────────────────────────────────
+function abrirExpedicao(pedidoId){
+  fatPedidoExp = pedidoId;
+  fatTab('expedicao', document.getElementById('fat-btn-expedicao'));
+  renderExpedicao();
+}
+
+function renderExpedicao(){
+  const container = document.getElementById('fat-exp-content');
+  if(!container || !fatPedidoExp) return;
+  const p = allPedidosFat.find(x => x.id === fatPedidoExp);
+  if(!p){
+    container.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:#888">Pedido não encontrado.</div>';
+    return;
+  }
+
+  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#002050;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:8px">
+    <div>
+      <div style="font-size:16px;font-weight:700;font-family:monospace">${p.numeroPedidoMesoLog}</div>
+      <div style="font-size:12px;opacity:.8;margin-top:2px">${p.clienteNome} · ${p.empresaNome} · ${p.tipoEntrega}</div>
+    </div>
+    <span style="background:${FAT_STATUS_BADGE[p.status]?.bg||'#fff'};color:${FAT_STATUS_BADGE[p.status]?.color||'#000'};padding:4px 12px;border-radius:10px;font-size:11px;font-weight:700">${FAT_STATUS_BADGE[p.status]?.label||p.status}</span>
+  </div>
+
+  <div class="form-group" style="margin-bottom:14px">
+    <label style="font-weight:700;font-size:13px">👤 Responsável pela Pré-Separação *</label>
+    <input type="text" id="fat-exp-responsavel" placeholder="Nome do responsável na expedição" value="${p.responsavelExpedicao||''}" style="width:320px;padding:9px 12px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px">
+  </div>
+
+  <div id="fat-exp-itens">`;
+
+  (p.itens||[]).forEach((it, i) => {
+    const sugestoes = sugerirLotesFIFO(it.codigo, it.quantidade);
+    const lotesSel  = it.lotesSelecionados||[];
+    const lotesRender = lotesSel.length ? lotesSel : sugestoes.map(s=>({lote:s.lote||s.numero||'', dataValidade:s.dataValidade||'', quantidade:Math.min(Number(s.quantidade||0), it.quantidade)}));
+
+    html += `<div class="card" style="margin-bottom:10px;padding:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:11px;background:#002050;color:#fff;padding:2px 8px;border-radius:4px;font-family:monospace">${it.codigo}</span>
+        <span style="font-size:13px;font-weight:600;flex:1">${it.descricao}</span>
+        <span style="font-size:14px;font-weight:700;color:#002050">${it.quantidade} ${it.unidade}</span>
+      </div>`;
+
+    if(sugestoes.length){
+      html += `<div style="font-size:11px;color:#1565C0;margin-bottom:8px;padding:6px 10px;background:#E3F2FD;border-radius:4px">
+        💡 FIFO: ${sugestoes.map(s=>`Lote ${s.lote||s.numero||'?'} (Val: ${s.dataValidade||'?'}) — ${Math.min(Number(s.quantidade||0), it.quantidade)} disp.`).join(' · ')}
+      </div>`;
+    }
+
+    html += `<div id="fat-lotes-${i}" data-item-idx="${i}">`;
+    lotesRender.forEach((l,j) => {
+      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+        <input type="text" id="fat-lote-${i}-${j}-lote" placeholder="Lote" value="${l.lote||''}" style="width:110px;padding:6px 8px;border:1px solid #d0d7de;border-radius:4px;font-size:12px">
+        <input type="text" id="fat-lote-${i}-${j}-val"  placeholder="YYYY-MM-DD" value="${l.dataValidade||''}" style="width:130px;padding:6px 8px;border:1px solid #d0d7de;border-radius:4px;font-size:12px">
+        <input type="number" id="fat-lote-${i}-${j}-qtd" placeholder="Qtd" value="${l.quantidade||1}" min="1" style="width:65px;padding:6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center">
+        <button onclick="document.getElementById('fat-lotes-${i}').querySelectorAll('div')[${j}].remove()" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:20px;line-height:1">×</button>
+      </div>`;
+    });
+    html += `</div>`;
+
+    html += `<button onclick="fatAdicionarLoteRow(${i})" class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;font-size:11px;margin-top:4px">+ Adicionar Lote</button>
+    </div>`;
+  });
+
+  html += `</div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+    <button class="btn btn-outline" onclick="fatTab('fila',document.getElementById('fat-btn-fila'))">← Voltar</button>
+    <button class="btn btn-success" style="padding:10px 24px" onclick="salvarExpedicao()">💾 Salvar e Gerar Comanda</button>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function fatAdicionarLoteRow(itemIdx){
+  const container = document.getElementById('fat-lotes-' + itemIdx);
+  if(!container) return;
+  const existing = container.querySelectorAll('div[style]');
+  const j = existing.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap';
+  div.innerHTML = `<input type="text" id="fat-lote-${itemIdx}-${j}-lote" placeholder="Lote" style="width:110px;padding:6px 8px;border:1px solid #d0d7de;border-radius:4px;font-size:12px">
+    <input type="text" id="fat-lote-${itemIdx}-${j}-val" placeholder="YYYY-MM-DD" style="width:130px;padding:6px 8px;border:1px solid #d0d7de;border-radius:4px;font-size:12px">
+    <input type="number" id="fat-lote-${itemIdx}-${j}-qtd" placeholder="Qtd" value="1" min="1" style="width:65px;padding:6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:20px;line-height:1">×</button>`;
+  container.appendChild(div);
+}
+
+function sugerirLotesFIFO(codigo, qtdNeeded){
+  return allStock
+    .filter(s => s.codigo === codigo && Number(s.quantidade||0) > 0)
+    .sort((a,b) => (a.dataValidade||'9999-99-99').localeCompare(b.dataValidade||'9999-99-99'))
+    .slice(0, 5); // top 5 lots by expiry
+}
+
+async function salvarExpedicao(){
+  const p = allPedidosFat.find(x => x.id === fatPedidoExp);
+  if(!p){ toast('Pedido não encontrado.'); return; }
+
+  const responsavel = (document.getElementById('fat-exp-responsavel')?.value || '').trim();
+  if(!responsavel){ toast('Informe o responsável pela pré-separação.'); return; }
+
+  // Collect lotes from DOM
+  const itensAtualizados = (p.itens||[]).map((it, i) => {
+    const container = document.getElementById('fat-lotes-' + i);
+    const lotes = [];
+    if(container){
+      const rows = container.querySelectorAll('div[style]');
+      rows.forEach((row, j) => {
+        const loteEl = document.getElementById('fat-lote-'+i+'-'+j+'-lote') || row.querySelector('[id$="-lote"]');
+        const valEl  = document.getElementById('fat-lote-'+i+'-'+j+'-val')  || row.querySelector('[id$="-val"]');
+        const qtdEl  = document.getElementById('fat-lote-'+i+'-'+j+'-qtd')  || row.querySelector('[id$="-qtd"]');
+        const loteVal = loteEl?.value?.trim() || '';
+        if(loteVal){
+          lotes.push({
+            lote: loteVal,
+            dataValidade: valEl?.value?.trim() || '',
+            quantidade: Number(qtdEl?.value || 1)
+          });
+        }
+      });
+    }
+    return {...it, lotesSelecionados: lotes};
+  });
+
+  try{
+    await db.collection('pedidosFaturamento').doc(fatPedidoExp).update({
+      itens: itensAtualizados,
+      status: 'pre_separado',
+      responsavelExpedicao: responsavel,
+      dataPreSeparacao: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    });
+    toast('✅ Pré-separação salva!');
+    setTimeout(() => imprimirComanda(fatPedidoExp), 400);
+    fatTab('fila', document.getElementById('fat-btn-fila'));
+  }catch(e){
+    console.error(e);
+    toast('Erro: ' + e.message);
+  }
+}
+
+// ─── COMANDA TÉRMICA ──────────────────────────────────────────────────────────
+function imprimirComanda(pedidoId){
+  const p = allPedidosFat.find(x => x.id === pedidoId);
+  if(!p){ toast('Pedido não encontrado.'); return; }
+
+  const itensHTML = (p.itens||[]).map(it => {
+    const lotes = it.lotesSelecionados || [];
+    return `<div class="item">
+      <div class="item-cod">${it.codigo}</div>
+      <div class="item-desc">${it.descricao}</div>
+      <div class="item-qtd">Qtde pedida: <b>${it.quantidade} ${it.unidade}</b></div>
+      ${lotes.length ? lotes.map(l=>`<div class="lote-row">▸ Lote: ${l.lote} | Val: ${l.dataValidade||'?'} | Qtd: ${l.quantidade}${it.unidade}</div>`).join('') : '<div class="lote-row" style="color:#888">Lote não definido</div>'}
+    </div>`;
+  }).join('<div class="sep"></div>');
+
+  const w = window.open('','_blank','width=400,height=650');
+  if(!w){ toast('Permita popups para imprimir.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Comanda ${p.numeroPedidoMesoLog}</title>
+  <style>
+    @page{size:100mm 150mm;margin:3mm}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Courier New',monospace;font-size:8.5px;color:#000;width:94mm}
+    .hdr{text-align:center;border-bottom:2px dashed #000;padding-bottom:3px;margin-bottom:4px}
+    .hdr h1{font-size:13px;font-weight:900;letter-spacing:2px}
+    .hdr h2{font-size:9px;letter-spacing:1px}
+    .row{display:flex;justify-content:space-between;margin-bottom:1.5px;font-size:8px}
+    .lbl{font-weight:700}
+    .section{border-top:1px dashed #000;padding-top:3px;margin-top:3px}
+    .sec-title{font-weight:900;font-size:7.5px;text-transform:uppercase;margin-bottom:2px;letter-spacing:.5px}
+    .item{margin-bottom:4px}
+    .item-cod{font-size:7.5px;color:#333;letter-spacing:.3px}
+    .item-desc{font-weight:700;font-size:9px;line-height:1.2}
+    .item-qtd{font-size:8px;margin-bottom:1px}
+    .lote-row{font-size:7.5px;padding-left:5px;border-left:2px solid #000;margin:1px 0;line-height:1.3}
+    .sep{border-top:1px dotted #aaa;margin:3px 0}
+    .ftr{border-top:2px dashed #000;margin-top:4px;padding-top:3px;font-size:8px;text-align:center}
+    .assin{margin-top:8px;border-top:1px solid #000;text-align:center;font-size:7px;padding-top:2px}
+    @media print{body{width:94mm}}
+  </style></head><body>
+  <div class="hdr"><h1>MESO-LOG</h1><h2>COMANDA DE SEPARAÇÃO</h2></div>
+  <div class="row"><span class="lbl">Pedido:</span><span style="font-weight:900">${p.numeroPedidoMesoLog}</span></div>
+  <div class="row"><span class="lbl">Mercus #:</span><span>${p.numeroPedidoMercus}</span></div>
+  <div class="row"><span class="lbl">ERP:</span><span>${p.pedidoErp||'—'}</span></div>
+  <div class="row"><span class="lbl">Empresa:</span><span>${p.empresaNome}</span></div>
+  <div class="row"><span class="lbl">Entrega:</span><span>${(p.tipoEntrega||'').toUpperCase()}</span></div>
+  <div class="row"><span class="lbl">Cliente:</span><span style="font-size:7px;max-width:54mm;text-align:right">${p.clienteNome}</span></div>
+  <div class="row"><span class="lbl">CNPJ:</span><span style="font-size:7px">${p.clienteCNPJ||'—'}</span></div>
+  <div class="row"><span class="lbl">Vendedor:</span><span style="font-size:7px">${p.vendedor||'—'}</span></div>
+  <div class="row"><span class="lbl">Resp. Exp.:</span><span>${p.responsavelExpedicao||'—'}</span></div>
+  <div class="row"><span class="lbl">Emitido:</span><span>${new Date().toLocaleString('pt-BR')}</span></div>
+  <div class="section"><div class="sec-title">Itens e Lotes</div>${itensHTML}</div>
+  ${p.observacoes?`<div class="section"><div class="sec-title">Obs.</div><div style="font-size:7.5px">${p.observacoes}</div></div>`:''}
+  <div class="ftr">Cond. Pagamento: ${p.condicaoPagamento||'—'}</div>
+  <div class="assin">_________________________<br>Assinatura do Responsável</div>
+  <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1000)}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+// ─── FECHAMENTO DE CAIXA ──────────────────────────────────────────────────────
+function abrirFechamento(pedidoId){
+  fatFechId = pedidoId;
+  fatBipItems = [];
+  fatTab('fechamento', document.getElementById('fat-btn-fechamento'));
+  renderFechamento();
+}
+
+function renderFechamento(){
+  const container = document.getElementById('fat-fech-content');
+  if(!container || !fatFechId) return;
+  const p = allPedidosFat.find(x => x.id === fatFechId);
+  if(!p){
+    container.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:#888">Pedido não encontrado.</div>';
+    return;
+  }
+
+  if(!fatBipItems.length){
+    fatBipItems = (p.itens||[]).map(it => {
+      const stockEntry = allStock.find(s => s.codigo === it.codigo);
+      return {
+        codigo: it.codigo,
+        codigoBarras: stockEntry?.codigoDeBarras || stockEntry?.codigo || it.codigo,
+        descricao: it.descricao,
+        qtdEsperada: Number(it.quantidade || 1),
+        bipados: 0,
+        lotes: it.lotesSelecionados || []
+      };
+    });
+  }
+
+  const todos   = fatBipItems.every(it => it.bipados === it.qtdEsperada);
+  const excedido= fatBipItems.some(it => it.bipados > it.qtdEsperada);
+
+  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#002050;color:#fff;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:16px;font-weight:700;font-family:monospace">${p.numeroPedidoMesoLog}</div>
+      <div style="font-size:12px;opacity:.8;margin-top:2px">${p.clienteNome} · Fechamento de Caixa</div>
+    </div>
+    ${todos&&!excedido
+      ? '<span style="background:#4CAF50;padding:5px 14px;border-radius:12px;font-size:12px;font-weight:700">✅ PRONTO</span>'
+      : '<span style="background:rgba(255,255,255,.15);padding:5px 14px;border-radius:12px;font-size:12px">📦 Bipando...</span>'}
+  </div>
+
+  <div class="card" style="margin-bottom:14px;padding:16px;text-align:center">
+    <div style="font-size:12px;color:#666;margin-bottom:10px">Posicione o cursor no campo abaixo e bipe os itens com o leitor.</div>
+    <input type="text" id="fat-scan-input" placeholder="Aguardando leitura do código de barras..."
+      style="width:100%;max-width:500px;padding:12px 16px;border:2px solid #0078D4;border-radius:8px;font-size:14px;text-align:center;outline:none"
+      onkeydown="fatHandleScan(event)">
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      ${admLoggedIn ? `<button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80" onclick="fatModalMultiplicar()">✖️ Multiplicar (ADM)</button>` : ''}
+      <button class="btn btn-sm btn-outline" onclick="fatResetBipagem()">🔄 Resetar Contagem</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <table class="prod-table">
+      <thead><tr><th>Código</th><th>Produto</th><th style="text-align:center">Esperado</th><th style="text-align:center;font-size:18px">Bipado</th><th>Status</th></tr></thead>
+      <tbody>`;
+
+  fatBipItems.forEach((it,i) => {
+    const ok  = it.bipados === it.qtdEsperada;
+    const exc = it.bipados > it.qtdEsperada;
+    const bg  = ok ? '#E8F5E9' : exc ? '#FFEBEE' : it.bipados === 0 ? '#fff' : '#FFF8E1';
+    const statusLabel = ok  ? '<span style="color:#1B5E20;font-weight:700">✅ OK</span>'
+                       : exc? '<span style="color:#B71C1C;font-weight:700">❌ EXCEDIDO</span>'
+                       : it.bipados === 0 ? '<span style="color:#aaa">⏳ Aguardando</span>'
+                       : `<span style="color:#E65100;font-weight:700">⚠️ ${it.bipados}/${it.qtdEsperada}</span>`;
+    html += `<tr style="background:${bg}">
+      <td style="font-family:monospace;font-size:11px">${it.codigo}</td>
+      <td style="font-size:12px">${it.descricao}</td>
+      <td style="text-align:center;font-weight:700">${it.qtdEsperada}</td>
+      <td style="text-align:center;font-weight:700;font-size:18px">${it.bipados}</td>
+      <td>${statusLabel}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  if(todos && !excedido){
+    html += `<div style="text-align:right">
+      <button class="btn btn-success" style="padding:12px 28px;font-size:14px" onclick="finalizarFechamento()">✅ Finalizar e Fechar Pedido</button>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+  setTimeout(() => document.getElementById('fat-scan-input')?.focus(), 100);
+}
+
+function fatHandleScan(e){
+  if(e.key === 'Enter'){
+    const input = document.getElementById('fat-scan-input');
+    const code = (input?.value || '').trim();
+    if(code){
+      processarBipagem(code);
+      if(input) input.value = '';
+    }
+  }
+}
+
+function processarBipagem(code){
+  const idx = fatBipItems.findIndex(it =>
+    it.codigoBarras === code || it.codigo === code ||
+    (it.codigoBarras && code.includes(it.codigoBarras)) ||
+    (it.codigo && code.includes(it.codigo))
+  );
+  if(idx === -1){
+    toast('⚠️ Código não encontrado neste pedido: ' + code);
+    return;
+  }
+  fatBipItems[idx].bipados++;
+  const it = fatBipItems[idx];
+  if(it.bipados > it.qtdEsperada){
+    toast('❌ EXCESSO em ' + it.codigo + ' — ' + it.bipados + '/' + it.qtdEsperada);
+  } else if(it.bipados === it.qtdEsperada){
+    toast('✅ ' + it.descricao + ' completo!');
+  } else {
+    toast('📦 ' + it.codigo + ': ' + it.bipados + '/' + it.qtdEsperada);
+  }
+  renderFechamento();
+  setTimeout(() => document.getElementById('fat-scan-input')?.focus(), 80);
+}
+
+function fatResetBipagem(){
+  if(!confirm('Resetar toda a contagem de bipagem?')) return;
+  fatBipItems = fatBipItems.map(it => ({...it, bipados:0}));
+  renderFechamento();
+}
+
+function fatModalMultiplicar(){
+  const opts = fatBipItems.map((it,i) =>
+    `<option value="${i}">${it.codigo} — ${it.descricao} (${it.bipados}/${it.qtdEsperada})</option>`
+  ).join('');
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-group" style="margin-bottom:12px"><label style="font-weight:700">Produto</label>
+      <select id="fat-mult-item" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px">${opts}</select></div>
+    <div class="form-group"><label style="font-weight:700">Quantidade a adicionar</label>
+      <input type="number" id="fat-mult-qtd" value="1" min="1" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:18px;text-align:center;margin-top:4px"></div>`;
+  document.getElementById('modal-title').textContent = '✖️ Multiplicar Bipagem (ADM)';
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn btn-success" onclick="fatConfirmarMultiplicar()">Confirmar</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-det')">Cancelar</button>`;
+  document.getElementById('modal-det').classList.add('active');
+}
+
+function fatConfirmarMultiplicar(){
+  const idx = parseInt(document.getElementById('fat-mult-item')?.value || '0');
+  const qtd = parseInt(document.getElementById('fat-mult-qtd')?.value  || '1');
+  if(!isNaN(idx) && qtd > 0 && fatBipItems[idx]){
+    fatBipItems[idx].bipados += qtd;
+    toast('✅ +' + qtd + ' adicionado(s) a ' + fatBipItems[idx].codigo);
+  }
+  closeModal('modal-det');
+  renderFechamento();
+}
+
+async function finalizarFechamento(){
+  const p = allPedidosFat.find(x => x.id === fatFechId);
+  if(!p){ toast('Pedido não encontrado.'); return; }
+  const todos   = fatBipItems.every(it => it.bipados === it.qtdEsperada);
+  if(!todos){ toast('Bipagem incompleta. Verifique todos os itens.'); return; }
+
+  try{
+    await db.collection('pedidosFaturamento').doc(fatFechId).update({
+      status: 'fechado',
+      fechadoEm: new Date().toISOString(),
+      bipagem: fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
+      atualizadoEm: new Date().toISOString()
+    });
+    toast('✅ Pedido ' + p.numeroPedidoMesoLog + ' FECHADO com sucesso!');
+    fatFechId  = null;
+    fatBipItems= [];
+    fatTab('fila', document.getElementById('fat-btn-fila'));
+  }catch(e){
+    console.error(e);
+    toast('Erro: ' + e.message);
+  }
+}
+
+function verDetalhesPedido(pedidoId){
+  const p = allPedidosFat.find(x => x.id === pedidoId);
+  if(!p) return;
+  const s = FAT_STATUS_BADGE[p.status] || {label: p.status};
+  const itensHTML = `<div style="overflow-x:auto"><table class="prod-table" style="font-size:12px">
+    <thead><tr><th>Código</th><th>Produto</th><th>Qtde</th><th>Lotes</th></tr></thead>
+    <tbody>${(p.itens||[]).map(it=>`<tr>
+      <td style="font-family:monospace">${it.codigo}</td>
+      <td>${it.descricao}</td>
+      <td style="text-align:center">${it.quantidade} ${it.unidade}</td>
+      <td style="font-size:11px">${(it.lotesSelecionados||[]).map(l=>`${l.lote} (${l.dataValidade}) ×${l.quantidade}`).join(', ')||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:12px;font-size:13px">
+      <div><b>Nº MESO-LOG:</b></div><div style="font-family:monospace;font-weight:700">${p.numeroPedidoMesoLog}</div>
+      <div><b>Mercus / ERP:</b></div><div>#${p.numeroPedidoMercus} / ${p.pedidoErp||'—'}</div>
+      <div><b>Empresa:</b></div><div>${p.empresaNome}</div>
+      <div><b>Status:</b></div><div>${s.label}</div>
+      <div><b>Entrega:</b></div><div>${p.tipoEntrega}</div>
+      <div><b>Cliente:</b></div><div>${p.clienteNome}</div>
+      <div><b>CNPJ:</b></div><div>${p.clienteCNPJ||'—'}</div>
+      <div><b>Vendedor:</b></div><div>${p.vendedor||'—'}</div>
+      <div><b>Resp. Expedição:</b></div><div>${p.responsavelExpedicao||'—'}</div>
+      <div><b>Cond. Pag.:</b></div><div>${p.condicaoPagamento||'—'}</div>
+    </div>
+    ${p.observacoes?`<div style="background:#FFF3E0;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px"><b>Obs.:</b> ${p.observacoes}</div>`:''}
+    ${itensHTML}`;
+  document.getElementById('modal-title').textContent = 'Pedido ' + p.numeroPedidoMesoLog;
+  document.getElementById('modal-actions').innerHTML = `
+    ${['pre_separado','faturado'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
+    <button class="btn btn-outline" onclick="closeModal('modal-det')">Fechar</button>`;
+  document.getElementById('modal-det').classList.add('active');
+}
+
+// ─── FATURISTAS ───────────────────────────────────────────────────────────────
+function renderFaturistas(){
+  const tbody = document.getElementById('fat-faturistas-tbody');
+  if(!tbody) return;
+  if(!allFaturistas.length){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allFaturistas.map(f => `<tr>
+    <td style="font-family:monospace;font-size:12px">${f.username||'—'}</td>
+    <td>${f.nome||''} ${f.sobrenome||''}</td>
+    <td style="font-size:12px;color:#666">${(f.cpf||'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')}</td>
+    <td><span style="background:${f.ativo!==false?'#E8F5E9':'#FFEBEE'};color:${f.ativo!==false?'#1B5E20':'#B71C1C'};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${f.ativo!==false?'Ativo':'Inativo'}</span></td>
+    <td style="display:flex;gap:6px">
+      <button class="btn btn-sm" style="${f.ativo!==false?'background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A':'background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7'}" onclick="toggleFaturista('${f.id}',${f.ativo!==false})">${f.ativo!==false?'Desativar':'Ativar'}</button>
+      <button class="btn btn-sm btn-danger" onclick="excluirFaturista('${f.id}','${(f.nome||'')+' '+(f.sobrenome||'')}')">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function salvarFaturista(){
+  const nome     = (document.getElementById('fat-new-nome')?.value      || '').trim();
+  const sobrenome= (document.getElementById('fat-new-sobrenome')?.value || '').trim();
+  const cpf      = (document.getElementById('fat-new-cpf')?.value       || '').replace(/\D/g,'');
+  if(!nome || !sobrenome){ toast('Informe nome e sobrenome.'); return; }
+  if(cpf.length < 5){ toast('CPF precisa ter pelo menos 5 dígitos.'); return; }
+  const username = (nome + '.' + sobrenome).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\s+/g,'_').replace(/[^a-z0-9._]/g,'');
+  const senha = cpf.slice(-5);
+  if(allFaturistas.find(f => f.username === username)){
+    toast('Já existe um faturista com esse nome de usuário: ' + username); return;
+  }
+  try{
+    await db.collection('faturistas').add({nome, sobrenome, cpf, username, senha, ativo:true, criadoEm: new Date().toISOString()});
+    toast(`✅ Faturista cadastrado. Login: ${username} · Senha: ${senha}`);
+    document.getElementById('fat-new-nome').value = '';
+    document.getElementById('fat-new-sobrenome').value = '';
+    document.getElementById('fat-new-cpf').value = '';
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+async function toggleFaturista(id, currentAtivo){
+  try{
+    await db.collection('faturistas').doc(id).update({ativo: !currentAtivo});
+    toast('Atualizado.');
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+async function excluirFaturista(id, nome){
+  if(!confirm('Excluir faturista "' + nome + '"?')) return;
+  try{
+    await db.collection('faturistas').doc(id).delete();
+    toast('🗑️ Faturista removido.');
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+// ─── EMPRESAS ────────────────────────────────────────────────────────────────
+function renderEmpresas(){
+  const tbody = document.getElementById('fat-empresas-tbody');
+  if(!tbody) return;
+  if(!allEmpresas.length){
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px">Nenhuma empresa cadastrada.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allEmpresas.map(e => {
+    const bloq   = !!e.bloqueada;
+    const ativa  = e.ativa !== false;
+    const statusBg    = bloq ? '#FFF3E0' : ativa ? '#E8F5E9' : '#FFEBEE';
+    const statusColor = bloq ? '#E65100' : ativa ? '#1B5E20' : '#B71C1C';
+    const statusLabel = bloq ? '🔒 Bloqueada' : ativa ? '✅ Ativa' : '❌ Inativa';
+    return `<tr>
+      <td style="font-weight:600">${e.nome}</td>
+      <td style="font-family:monospace;font-size:12px">${e.sigla||'—'}</td>
+      <td><span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${statusLabel}</span></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;font-size:11px" onclick="toggleEmpresaBloqueada('${e.id}',${!bloq})">${bloq?'🔓 Desbloquear':'🔒 Bloquear'}</button>
+        <button class="btn btn-sm" style="${ativa?'background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A':'background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7'};font-size:11px" onclick="toggleEmpresa('${e.id}',${!ativa})">${ativa?'Desativar':'Ativar'}</button>
+        <button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${e.id}','${e.nome}')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function salvarEmpresa(){
+  const nome  = (document.getElementById('fat-new-emp-nome')?.value  || '').trim();
+  const sigla = (document.getElementById('fat-new-emp-sigla')?.value || '').trim();
+  if(!nome || !sigla){ toast('Informe nome e sigla da empresa.'); return; }
+  try{
+    await db.collection('empresas').add({nome, sigla, ativa:true, bloqueada:false, criadoEm: new Date().toISOString()});
+    toast('✅ Empresa ' + nome + ' adicionada.');
+    document.getElementById('fat-new-emp-nome').value = '';
+    document.getElementById('fat-new-emp-sigla').value = '';
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+async function toggleEmpresa(id, novaAtiva){
+  try{ await db.collection('empresas').doc(id).update({ativa: novaAtiva}); toast('Atualizado.'); }
+  catch(e){ toast('Erro: ' + e.message); }
+}
+
+async function toggleEmpresaBloqueada(id, novaBloq){
+  try{ await db.collection('empresas').doc(id).update({bloqueada: novaBloq}); toast('Atualizado.'); }
+  catch(e){ toast('Erro: ' + e.message); }
+}
+
+async function excluirEmpresa(id, nome){
+  if(!confirm('Excluir empresa "' + nome + '"? Isso não remove pedidos existentes.')) return;
+  try{ await db.collection('empresas').doc(id).delete(); toast('🗑️ Empresa removida.'); }
+  catch(e){ toast('Erro: ' + e.message); }
 }
 </script>
 </body>
