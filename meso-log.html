@@ -1685,8 +1685,31 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                     <p style="font-size:12px;color:#555;margin:4px 0" id="pdv-found-info"></p>
                     <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
                       <label style="font-size:12px;min-width:50px">Qtd:</label>
-                      <input id="pdv-qty" type="number" min="1" value="1" class="form-control" style="width:70px">
+                      <input id="pdv-qty" type="number" min="1" value="1" class="form-control" style="width:70px" oninput="pdvCalcPrecoItem()">
                       <select id="pdv-lote-sel" class="form-control" style="flex:1;font-size:12px"></select>
+                    </div>
+                    <!-- Bloco de preço/desconto -->
+                    <div style="background:#FFF8E7;border:1px solid #FFD566;border-radius:7px;padding:9px 10px;margin-top:8px">
+                      <div style="display:grid;grid-template-columns:1fr 88px;gap:6px;margin-bottom:7px">
+                        <div>
+                          <label style="font-size:10px;font-weight:700;color:#7B5E00;display:block;margin-bottom:2px">💰 Preço Unit. (R$)</label>
+                          <input id="pdv-preco-unit" type="number" min="0" step="0.01" class="form-control" placeholder="0,00" style="font-size:13px;font-weight:700" oninput="pdvCalcPrecoItem()">
+                        </div>
+                        <div>
+                          <label style="font-size:10px;font-weight:700;color:#7B5E00;display:block;margin-bottom:2px">🏷️ Desconto %</label>
+                          <input id="pdv-desconto-perc" type="number" min="0" max="100" step="0.5" value="0" class="form-control" placeholder="0" style="font-size:13px;font-weight:700" oninput="pdvCalcPrecoItem()">
+                        </div>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <div>
+                          <div style="font-size:10px;color:#7B5E00;font-weight:600">Com desconto / un:</div>
+                          <div id="pdv-preco-com-desc" style="font-size:14px;font-weight:800;color:#107C10">R$ 0,00</div>
+                        </div>
+                        <div style="text-align:right">
+                          <div style="font-size:10px;color:#7B5E00;font-weight:600">Subtotal:</div>
+                          <div id="pdv-subtotal-item" style="font-size:14px;font-weight:800;color:#002050">R$ 0,00</div>
+                        </div>
+                      </div>
                     </div>
                     <div style="display:flex;gap:6px;margin-top:8px;align-items:center;background:#F8F9FB;border-radius:6px;padding:6px 8px">
                       <span style="font-size:11px;color:#555;font-weight:600;min-width:56px">Entrega:</span>
@@ -1808,6 +1831,26 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                       </div>
                       <div style="display:flex;justify-content:space-between;font-size:12px;color:#C07800">
                         <span>🟡 A entregar:</span><strong id="pdv-total-sob-pedido">0 un</strong>
+                      </div>
+                    </div>
+                    <!-- Resumo financeiro -->
+                    <div id="pdv-resumo-financeiro" style="display:none;background:#F0F7FF;border:1px solid #BDD7EE;border-radius:8px;padding:10px;margin-top:10px">
+                      <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:7px;letter-spacing:.5px">💰 RESUMO FINANCEIRO</div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                        <span style="color:#555">Subtotal bruto:</span>
+                        <strong id="pdv-fin-subtotal" style="color:#333">R$ 0,00</strong>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                        <span style="color:#D13438">Desconto total:</span>
+                        <strong id="pdv-fin-desconto" style="color:#D13438">-R$ 0,00</strong>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
+                        <span style="color:#C07800">% médio de desconto:</span>
+                        <strong id="pdv-fin-pct" style="color:#C07800">0%</strong>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;background:#002050;border-radius:6px;padding:8px 10px">
+                        <span style="color:#fff;font-size:13px;font-weight:700">💲 VALOR FINAL</span>
+                        <strong id="pdv-fin-total" style="color:#FFD566;font-size:18px">R$ 0,00</strong>
                       </div>
                     </div>
                   </div>
@@ -6905,7 +6948,7 @@ async function pdvScanProduto(val){
     const disponivel=depItem&&depItem.quantidade>0;
     const qtdEvento=depItem?depItem.quantidade:0;
     const base=catItem||depItem;
-    pdvFoundItem={id:depItem?.id||base.stockId,stockId:base.stockId||depItem?.id,codigo:base.codigo,descricao:base.descricao,lote:base.lote||'',quantidade:qtdEvento,barcode:base.barcode||val};
+    pdvFoundItem={id:depItem?.id||base.stockId,stockId:base.stockId||depItem?.id,codigo:base.codigo,descricao:base.descricao,lote:base.lote||'',quantidade:qtdEvento,barcode:base.barcode||val,precoCusto:Number(base.precoCusto||depItem?.precoCusto||0)};
     const radioEnt=document.getElementById('pdv-tipo-entregue');
     const radioSP=document.getElementById('pdv-tipo-sob-pedido');
     if(disponivel&&radioEnt) radioEnt.checked=true;
@@ -6917,6 +6960,12 @@ async function pdvScanProduto(val){
     const loteEl=document.getElementById('pdv-lote-sel');
     if(loteEl) loteEl.innerHTML=`<option value="${base.lote||''}">${base.lote||'S/Lote'}</option>`;
     document.getElementById('pdv-qty').value=1;
+    // Pre-fill price
+    const precoEl=document.getElementById('pdv-preco-unit');
+    if(precoEl){precoEl.value=pdvFoundItem.precoCusto>0?pdvFoundItem.precoCusto.toFixed(2):'';}
+    const descEl=document.getElementById('pdv-desconto-perc');
+    if(descEl) descEl.value='0';
+    pdvCalcPrecoItem();
     found.style.display='block';
   }catch(e){}
 }
@@ -6927,11 +6976,19 @@ function pdvAddCarrinho(natureza){
   if(qty<=0){toast('Quantidade inválida.');return;}
   const tipoRadio=document.querySelector('input[name="pdv-tipo-entrega"]:checked');
   const tipoEntrega=tipoRadio?tipoRadio.value:'entregue';
-  // Check if already in cart (same id + same tipoEntrega)
-  const idx=pdvCarrinho.findIndex(c=>c.id===pdvFoundItem.id&&c.tipoEntrega===tipoEntrega);
+  const precoUnit=parseFloat(document.getElementById('pdv-preco-unit')?.value)||0;
+  const descontoPct=parseFloat(document.getElementById('pdv-desconto-perc')?.value)||0;
+  const precoComDesc=precoUnit*(1-descontoPct/100);
+  const subtotalItem=natureza==='bonificacao'?0:precoComDesc*qty;
+  // Check if already in cart (same id + same tipoEntrega + same natureza)
+  const idx=pdvCarrinho.findIndex(c=>c.id===pdvFoundItem.id&&c.tipoEntrega===tipoEntrega&&c.natureza===natureza);
   if(idx>=0){
     pdvCarrinho[idx].quantidade+=qty;
-    pdvCarrinho[idx].natureza=natureza;
+    // Recalculate weighted avg price if merging
+    pdvCarrinho[idx].precoUnit=precoUnit||pdvCarrinho[idx].precoUnit;
+    pdvCarrinho[idx].descontoPct=descontoPct||pdvCarrinho[idx].descontoPct;
+    pdvCarrinho[idx].precoComDesc=precoComDesc||pdvCarrinho[idx].precoComDesc;
+    pdvCarrinho[idx].subtotalItem=natureza==='bonificacao'?0:pdvCarrinho[idx].precoComDesc*pdvCarrinho[idx].quantidade;
   }else{
     pdvCarrinho.push({
       id:pdvFoundItem.id,
@@ -6940,7 +6997,11 @@ function pdvAddCarrinho(natureza){
       lote:pdvFoundItem.lote||'',
       quantidade:qty,
       natureza,
-      tipoEntrega
+      tipoEntrega,
+      precoUnit,
+      descontoPct,
+      precoComDesc,
+      subtotalItem
     });
   }
   pdvFoundItem=null;
@@ -6966,6 +7027,16 @@ function renderCarrinho(){
     const ent=it.tipoEntrega||'entregue';
     const entColor=ent==='entregue'?'#107C10':'#C07800';
     const entLabel=ent==='entregue'?'🟢 Pronta Entrega':'🟡 Sob Pedido';
+    const temPreco=it.precoUnit>0;
+    const precoLine=temPreco&&it.natureza==='venda'
+      ?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span style="font-size:11px;color:#555">R$ <input type="number" min="0" step="0.01" value="${(it.precoUnit||0).toFixed(2)}" class="form-control" style="width:78px;font-size:11px;display:inline-block"
+            onchange="pdvCarrinho[${i}].precoUnit=parseFloat(this.value)||0;pdvCarrinho[${i}].precoComDesc=pdvCarrinho[${i}].precoUnit*(1-pdvCarrinho[${i}].descontoPct/100);pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()"></span>
+          <span style="font-size:11px;color:#D13438">desc <input type="number" min="0" max="100" step="0.5" value="${(it.descontoPct||0)}" class="form-control" style="width:54px;font-size:11px;display:inline-block"
+            onchange="pdvCarrinho[${i}].descontoPct=parseFloat(this.value)||0;pdvCarrinho[${i}].precoComDesc=pdvCarrinho[${i}].precoUnit*(1-pdvCarrinho[${i}].descontoPct/100);pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()">%</span>
+          <span style="font-size:12px;font-weight:700;color:#002050;margin-left:auto">= R$ ${(it.subtotalItem||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+        </div>`
+      :(it.natureza==='bonificacao'?'<div style="font-size:11px;color:#FF8C00;margin-top:3px">🎁 Bonificação — sem valor financeiro</div>':'');
     return `<div class="pdv-cart-item">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="flex:1">
@@ -6976,16 +7047,17 @@ function renderCarrinho(){
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap">
         <input type="number" min="1" value="${it.quantidade}" class="form-control" style="width:62px;font-size:12px"
-          onchange="pdvCarrinho[${i}].quantidade=Number(this.value)||1;renderCarrinho()">
+          onchange="pdvCarrinho[${i}].quantidade=Number(this.value)||1;pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()">
         <div class="natureza-toggle" style="flex:1">
-          <button class="${it.natureza==='venda'?'active-venda':''}" onclick="pdvCarrinho[${i}].natureza='venda';renderCarrinho()">#Venda</button>
-          <button class="${it.natureza==='bonificacao'?'active-boni':''}" onclick="pdvCarrinho[${i}].natureza='bonificacao';renderCarrinho()">#Bonif.</button>
+          <button class="${it.natureza==='venda'?'active-venda':''}" onclick="pdvCarrinho[${i}].natureza='venda';pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()">#Venda</button>
+          <button class="${it.natureza==='bonificacao'?'active-boni':''}" onclick="pdvCarrinho[${i}].natureza='bonificacao';pdvCarrinho[${i}].subtotalItem=0;renderCarrinho()">#Bonif.</button>
         </div>
         <button onclick="pdvCarrinho[${i}].tipoEntrega=pdvCarrinho[${i}].tipoEntrega==='entregue'?'sob_pedido':'entregue';renderCarrinho()"
           style="font-size:11px;padding:2px 7px;border:1px solid ${entColor};border-radius:10px;background:#fff;color:${entColor};cursor:pointer;white-space:nowrap">
           ${entLabel}
         </button>
       </div>
+      ${precoLine}
     </div>`;
   }).join('');
   totais.style.display='';
@@ -6997,9 +7069,37 @@ function renderCarrinho(){
   document.getElementById('pdv-total-boni').textContent=totalB+' un';
   const elE=document.getElementById('pdv-total-entregue');if(elE)elE.textContent=totalEnt+' un';
   const elS=document.getElementById('pdv-total-sob-pedido');if(elS)elS.textContent=totalSP+' un';
+  // Resumo financeiro
+  const vendasFin=pdvCarrinho.filter(c=>c.natureza==='venda'&&c.precoUnit>0);
+  const subtotalBruto=vendasFin.reduce((s,c)=>s+(c.precoUnit||0)*c.quantidade,0);
+  const valorFinal=vendasFin.reduce((s,c)=>s+(c.subtotalItem||0),0);
+  const descontoTotal=subtotalBruto-valorFinal;
+  const pctMedio=subtotalBruto>0?(descontoTotal/subtotalBruto*100):0;
+  const rf=document.getElementById('pdv-resumo-financeiro');
+  if(rf){
+    rf.style.display=vendasFin.length>0?'block':'none';
+    const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fs=document.getElementById('pdv-fin-subtotal');if(fs)fs.textContent=fmt(subtotalBruto);
+    const fd=document.getElementById('pdv-fin-desconto');if(fd)fd.textContent='-'+fmt(descontoTotal);
+    const fp=document.getElementById('pdv-fin-pct');if(fp)fp.textContent=pctMedio.toFixed(1)+'%';
+    const ft=document.getElementById('pdv-fin-total');if(ft)ft.textContent=fmt(valorFinal);
+  }
 }
 
 function pdvRemoverItem(i){pdvCarrinho.splice(i,1);renderCarrinho();}
+
+function pdvCalcPrecoItem(){
+  const qty=Number(document.getElementById('pdv-qty')?.value)||1;
+  const preco=parseFloat(document.getElementById('pdv-preco-unit')?.value)||0;
+  const desc=parseFloat(document.getElementById('pdv-desconto-perc')?.value)||0;
+  const precoComDesc=preco*(1-desc/100);
+  const subtotal=precoComDesc*qty;
+  const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const pd=document.getElementById('pdv-preco-com-desc');
+  const st=document.getElementById('pdv-subtotal-item');
+  if(pd)pd.textContent=fmt(precoComDesc);
+  if(st)st.textContent=fmt(subtotal);
+}
 
 /* ---- PDV CLIENTE — máscaras e auto-lookup ---- */
 function pdvMascaraCPF(el){
@@ -7115,6 +7215,12 @@ async function pdvFinalizarPedido(){
   const itensAll=JSON.parse(JSON.stringify(pdvCarrinho));
   const itensEntregues=itensAll.filter(it=>(it.tipoEntrega||'entregue')==='entregue');
   const itensAEntregar=itensAll.filter(it=>it.tipoEntrega==='sob_pedido');
+  // Calcular totais financeiros
+  const vendasFin=itensAll.filter(c=>c.natureza==='venda'&&c.precoUnit>0);
+  const subtotalBruto=vendasFin.reduce((s,c)=>s+(c.precoUnit||0)*c.quantidade,0);
+  const valorFinal=vendasFin.reduce((s,c)=>s+(c.subtotalItem||0),0);
+  const descontoTotal=subtotalBruto-valorFinal;
+  const pctDesconto=subtotalBruto>0?(descontoTotal/subtotalBruto*100):0;
   const pedido={
     eventoId:pdvEventoAtivo.id,eventoNome:pdvEventoAtivo.nome,
     vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,
@@ -7128,6 +7234,10 @@ async function pdvFinalizarPedido(){
     statusEntregue:itensEntregues.length>0?'entregue':'',
     statusAEntregar:itensAEntregar.length>0?'pendente':'',
     status:itensAEntregar.length>0?'parcial':'entregue',
+    subtotalBruto:parseFloat(subtotalBruto.toFixed(2)),
+    descontoTotal:parseFloat(descontoTotal.toFixed(2)),
+    pctDesconto:parseFloat(pctDesconto.toFixed(2)),
+    valorFinal:parseFloat(valorFinal.toFixed(2)),
     criadoEm:new Date().toISOString(),
     numero:'PED-'+Date.now().toString(36).toUpperCase()
   };
@@ -8339,6 +8449,12 @@ function pdvSelecionarItemNome(item){
   const loteEl=document.getElementById('pdv-lote-sel');
   if(loteEl) loteEl.innerHTML=`<option value="${item.lote||''}">${item.lote||'S/Lote'} (${item.quantidade} un)</option>`;
   document.getElementById('pdv-qty').value=1;
+  // Pre-fill price
+  const precoEl=document.getElementById('pdv-preco-unit');
+  if(precoEl){precoEl.value=item.precoCusto>0?Number(item.precoCusto).toFixed(2):'';}
+  const descEl=document.getElementById('pdv-desconto-perc');
+  if(descEl) descEl.value='0';
+  pdvCalcPrecoItem();
   document.getElementById('pdv-found-card').style.display='block';
 }
 
