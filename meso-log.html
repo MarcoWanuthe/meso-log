@@ -1704,18 +1704,87 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   </div>
                 </div>
                 <div class="card" style="margin-top:12px">
-                  <h4 style="color:#002050;margin-bottom:10px">👤 Cliente</h4>
-                  <input id="pdv-cliente-nome" class="form-control" placeholder="Nome do cliente / estabelecimento">
-                  <input id="pdv-cliente-doc" class="form-control" style="margin-top:8px" placeholder="CPF / CNPJ (opcional)">
-                  <div style="margin-top:10px">
-                    <label style="font-size:12px;color:#555;margin-bottom:4px;display:block">Entrega:</label>
+                  <h4 style="color:#002050;margin-bottom:12px">👤 Cliente</h4>
+
+                  <!-- Nome -->
+                  <div style="margin-bottom:8px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">Nome / Estabelecimento *</label>
+                    <input id="pdv-cliente-nome" class="form-control" placeholder="Nome do cliente ou estabelecimento">
+                  </div>
+
+                  <!-- CPF -->
+                  <div style="margin-bottom:8px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">CPF</label>
+                    <input id="pdv-cliente-cpf" class="form-control" placeholder="000.000.000-00" maxlength="14" oninput="pdvMascaraCPF(this)">
+                  </div>
+
+                  <!-- CNPJ + auto-lookup -->
+                  <div style="margin-bottom:8px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">
+                      CNPJ
+                      <span id="pdv-cnpj-status" style="font-size:10px;font-weight:400;margin-left:6px"></span>
+                    </label>
+                    <div style="position:relative">
+                      <input id="pdv-cliente-cnpj" class="form-control" placeholder="00.000.000/0000-00" maxlength="18"
+                        oninput="pdvMascaraCNPJ(this)"
+                        onblur="pdvBuscarCNPJ(this.value)">
+                      <span id="pdv-cnpj-spin" style="display:none;position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:13px;animation:spin 1s linear infinite">⏳</span>
+                    </div>
+                  </div>
+
+                  <!-- CEP + endereço automático -->
+                  <div style="margin-bottom:6px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">
+                      CEP
+                      <span id="pdv-cep-status" style="font-size:10px;font-weight:400;margin-left:6px"></span>
+                    </label>
+                    <input id="pdv-cliente-cep" class="form-control" placeholder="00000-000" maxlength="9"
+                      oninput="pdvMascaraCEP(this)"
+                      onblur="pdvBuscarCEP(this.value)">
+                  </div>
+
+                  <!-- Bloco endereço (aparece após CEP) -->
+                  <div id="pdv-endereco-block" style="display:none;margin-bottom:8px;padding:10px;background:#F8F9FB;border-radius:7px;border:1px solid #E0E4EC">
+                    <div style="display:grid;grid-template-columns:1fr 68px;gap:6px;margin-bottom:6px">
+                      <input id="pdv-cli-logradouro" class="form-control" placeholder="Rua / Avenida">
+                      <input id="pdv-cli-numero" class="form-control" placeholder="Nº">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+                      <input id="pdv-cli-bairro" class="form-control" placeholder="Bairro">
+                      <input id="pdv-cli-complemento" class="form-control" placeholder="Complemento">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 52px;gap:6px;margin-bottom:6px">
+                      <input id="pdv-cli-cidade" class="form-control" placeholder="Cidade">
+                      <input id="pdv-cli-uf" class="form-control" placeholder="UF">
+                    </div>
+                    <input id="pdv-cli-referencia" class="form-control" placeholder="📍 Ponto de referência">
+                  </div>
+
+                  <!-- Telefone -->
+                  <div style="margin-bottom:8px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">Telefone / WhatsApp</label>
+                    <input id="pdv-cliente-tel" class="form-control" placeholder="(11) 99999-9999" maxlength="15" oninput="pdvMascaraTel(this)">
+                  </div>
+
+                  <!-- Instagram -->
+                  <div style="margin-bottom:10px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">Instagram</label>
+                    <div style="position:relative">
+                      <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#888;font-size:13px;pointer-events:none">@</span>
+                      <input id="pdv-cliente-instagram" class="form-control" placeholder="usuario" style="padding-left:22px">
+                    </div>
+                  </div>
+
+                  <!-- Entrega + Obs -->
+                  <div style="margin-bottom:8px">
+                    <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:3px">Entrega</label>
                     <select id="pdv-entrega-tipo" class="form-control" style="font-size:13px">
                       <option value="evento">✅ Entregue no evento</option>
                       <option value="sede">🏢 A entregar pela sede</option>
                       <option value="pendente">⏳ Pendente / A definir</option>
                     </select>
                   </div>
-                  <textarea id="pdv-obs" class="form-control" style="margin-top:8px;height:60px;resize:none" placeholder="Observações do pedido..."></textarea>
+                  <textarea id="pdv-obs" class="form-control" style="height:54px;resize:none" placeholder="Observações do pedido..."></textarea>
                 </div>
               </div>
               <!-- Coluna direita: carrinho -->
@@ -6932,11 +7001,114 @@ function renderCarrinho(){
 
 function pdvRemoverItem(i){pdvCarrinho.splice(i,1);renderCarrinho();}
 
+/* ---- PDV CLIENTE — máscaras e auto-lookup ---- */
+function pdvMascaraCPF(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if(v.length>3)v=v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  el.value=v;
+}
+function pdvMascaraCNPJ(el){
+  let v=el.value.replace(/\D/g,'').slice(0,14);
+  if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
+  else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/,'$1.$2.$3/$4');
+  else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d{0,3})/,'$1.$2');
+  el.value=v;
+}
+async function pdvBuscarCNPJ(val){
+  const cnpj=(val||'').replace(/\D/g,'');
+  if(cnpj.length!==14)return;
+  const st=document.getElementById('pdv-cnpj-status');
+  const sp=document.getElementById('pdv-cnpj-spin');
+  if(st)st.textContent='🔍 Buscando...';
+  if(sp)sp.style.display='inline';
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpj);
+    if(!r.ok)throw new Error('não encontrado');
+    const d=await r.json();
+    // Preenche nome se campo vazio
+    const nomeEl=document.getElementById('pdv-cliente-nome');
+    if(nomeEl&&!nomeEl.value){nomeEl.value=d.razao_social||d.nome_fantasia||'';}
+    // Preenche endereço
+    const cepEl=document.getElementById('pdv-cliente-cep');
+    if(cepEl&&d.cep){cepEl.value=d.cep.replace(/(\d{5})(\d{3})/,'$1-$2');}
+    const lgEl=document.getElementById('pdv-cli-logradouro');
+    if(lgEl&&d.logradouro){lgEl.value=(d.descricao_tipo_logradouro?d.descricao_tipo_logradouro+' ':'')+d.logradouro;}
+    const numEl=document.getElementById('pdv-cli-numero');
+    if(numEl&&d.numero){numEl.value=d.numero;}
+    const bEl=document.getElementById('pdv-cli-bairro');
+    if(bEl&&d.bairro){bEl.value=d.bairro;}
+    const cidEl=document.getElementById('pdv-cli-cidade');
+    if(cidEl&&d.municipio){cidEl.value=d.municipio;}
+    const ufEl=document.getElementById('pdv-cli-uf');
+    if(ufEl&&d.uf){ufEl.value=d.uf;}
+    const bloco=document.getElementById('pdv-endereco-block');
+    if(bloco)bloco.style.display='block';
+    if(st)st.innerHTML='<span style="color:#0D9488">✅ '+((d.nome_fantasia||d.razao_social||'').slice(0,30))+'</span>';
+  }catch(e){
+    if(st)st.innerHTML='<span style="color:#E11D48">❌ CNPJ não encontrado</span>';
+  }finally{
+    if(sp)sp.style.display='none';
+  }
+}
+function pdvMascaraCEP(el){
+  let v=el.value.replace(/\D/g,'').slice(0,8);
+  if(v.length>5)v=v.replace(/(\d{5})(\d{0,3})/,'$1-$2');
+  el.value=v;
+}
+async function pdvBuscarCEP(val){
+  const cep=(val||'').replace(/\D/g,'');
+  if(cep.length!==8)return;
+  const st=document.getElementById('pdv-cep-status');
+  if(st)st.textContent='🔍 Buscando...';
+  try{
+    const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d=await r.json();
+    if(d.erro)throw new Error('CEP inválido');
+    const lgEl=document.getElementById('pdv-cli-logradouro');
+    if(lgEl)lgEl.value=d.logradouro||'';
+    const bEl=document.getElementById('pdv-cli-bairro');
+    if(bEl)bEl.value=d.bairro||'';
+    const cidEl=document.getElementById('pdv-cli-cidade');
+    if(cidEl)cidEl.value=d.localidade||'';
+    const ufEl=document.getElementById('pdv-cli-uf');
+    if(ufEl)ufEl.value=d.uf||'';
+    const bloco=document.getElementById('pdv-endereco-block');
+    if(bloco)bloco.style.display='block';
+    if(st)st.innerHTML='<span style="color:#0D9488">✅ '+(d.localidade||'')+' / '+(d.uf||'')+'</span>';
+    // Focus número
+    const numEl=document.getElementById('pdv-cli-numero');
+    if(numEl)numEl.focus();
+  }catch(e){
+    if(st)st.innerHTML='<span style="color:#E11D48">❌ CEP não encontrado</span>';
+  }
+}
+function pdvMascaraTel(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>10)v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length>6)v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  el.value=v;
+}
+
 async function pdvFinalizarPedido(){
   if(!pdvCarrinho.length){toast('Carrinho vazio.');return;}
   if(!pdvEventoAtivo){toast('Selecione um evento primeiro.');return;}
   const cliente=document.getElementById('pdv-cliente-nome').value.trim();
-  const doc=document.getElementById('pdv-cliente-doc').value.trim();
+  const cpf=document.getElementById('pdv-cliente-cpf')?.value.trim()||'';
+  const cnpj=document.getElementById('pdv-cliente-cnpj')?.value.trim()||'';
+  const cep=document.getElementById('pdv-cliente-cep')?.value.trim()||'';
+  const logradouro=document.getElementById('pdv-cli-logradouro')?.value.trim()||'';
+  const numero=document.getElementById('pdv-cli-numero')?.value.trim()||'';
+  const bairro=document.getElementById('pdv-cli-bairro')?.value.trim()||'';
+  const complemento=document.getElementById('pdv-cli-complemento')?.value.trim()||'';
+  const cidade=document.getElementById('pdv-cli-cidade')?.value.trim()||'';
+  const uf=document.getElementById('pdv-cli-uf')?.value.trim()||'';
+  const referencia=document.getElementById('pdv-cli-referencia')?.value.trim()||'';
+  const telefone=document.getElementById('pdv-cliente-tel')?.value.trim()||'';
+  const instagram=document.getElementById('pdv-cliente-instagram')?.value.trim()||'';
   const entrega=document.getElementById('pdv-entrega-tipo').value;
   const obs=document.getElementById('pdv-obs').value.trim();
   const btn=event.target;btn.disabled=true;btn.textContent='⏳ Salvando...';
@@ -6946,7 +7118,10 @@ async function pdvFinalizarPedido(){
   const pedido={
     eventoId:pdvEventoAtivo.id,eventoNome:pdvEventoAtivo.nome,
     vendedorId:pdvVendedorAtivo.id,vendedorNome:pdvVendedorAtivo.nome,
-    cliente,doc,obs,
+    cliente,cpf,cnpj,
+    endereco:{cep,logradouro,numero,bairro,complemento,cidade,uf,referencia},
+    telefone,instagram,
+    obs,entrega,
     itens:itensAll,
     itensEntregues,
     itensAEntregar,
@@ -6966,9 +7141,17 @@ async function pdvFinalizarPedido(){
       }
     }
     await db.collection('pedidos_evento').add(pedido);
-    // Clear cart
+    // Clear cart and client fields
     pdvCarrinho=[];renderCarrinho();
-    ['pdv-cliente-nome','pdv-cliente-doc','pdv-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['pdv-cliente-nome','pdv-cliente-cpf','pdv-cliente-cnpj','pdv-cliente-cep',
+     'pdv-cli-logradouro','pdv-cli-numero','pdv-cli-bairro','pdv-cli-complemento',
+     'pdv-cli-cidade','pdv-cli-uf','pdv-cli-referencia',
+     'pdv-cliente-tel','pdv-cliente-instagram','pdv-obs']
+      .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const endBloco=document.getElementById('pdv-endereco-block');
+    if(endBloco)endBloco.style.display='none';
+    const cnpjSt=document.getElementById('pdv-cnpj-status');if(cnpjSt)cnpjSt.textContent='';
+    const cepSt=document.getElementById('pdv-cep-status');if(cepSt)cepSt.textContent='';
     toast('✅ Pedido '+pedido.numero+' registrado!');
     document.getElementById('pdv-scan-input').focus();
   }catch(e){
