@@ -8174,11 +8174,20 @@ async function renderExpedicaoPedidos(){
       const todosItens=p.itens||[];
       const itEnt=(p.itensEntregues||todosItens.filter(i=>(i.tipoEntrega||'entregue')==='entregue'));
       const itSP =(p.itensAEntregar||todosItens.filter(i=>i.tipoEntrega==='sob_pedido'));
-      const rowItem=(it,cor)=>`
-        <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #E8F0E8">
-          <span style="color:#222">${it.descricao} <span style="color:#888">· Lote ${it.lote||'—'} · ${it.quantidade} un</span></span>
-          <span style="font-weight:700;color:${it.natureza==='bonificacao'?'#E65100':cor}">${it.natureza==='venda'?'#Venda':'#Bonif'}</span>
+      if(!_pdvExpChecked[docId]) _pdvExpChecked[docId]={};
+      const rowItem=(it,cor,idx,grupo)=>{
+        const key=`${grupo}-${idx}`;
+        const chk=!!_pdvExpChecked[docId][key];
+        return `
+        <div style="display:flex;align-items:center;gap:7px;font-size:11px;padding:5px 0;border-bottom:1px solid #E8F0E8">
+          <input type="checkbox" id="exp-chk-${docId}-${key}" ${chk?'checked':''}
+            onchange="pdvExpToggleItem('${docId}','${key}',this.checked)"
+            style="width:15px;height:15px;cursor:pointer;accent-color:#107C10;flex-shrink:0">
+          <span id="exp-lbl-${docId}-${key}" style="flex:1;color:${chk?'#aaa':'#222'};${chk?'text-decoration:line-through':''}"
+            >${it.descricao} <span style="color:${chk?'#ccc':'#888'}">· Lote ${it.lote||'—'} · ${it.quantidade} un</span></span>
+          <span style="font-weight:700;color:${chk?'#ccc':it.natureza==='bonificacao'?'#E65100':cor}">${it.natureza==='venda'?'#Venda':'#Bonif'}</span>
         </div>`;
+      };
 
       const fase2=!cobrado?'': `
         <div style="background:#F0FFF4;border:1px solid #A8D5A2;border-radius:7px;padding:10px;margin-top:10px">
@@ -8189,19 +8198,19 @@ async function renderExpedicaoPedidos(){
           ${itEnt.length>0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
             <div style="font-size:11px;font-weight:700;color:#107C10;margin-bottom:5px">✅ Entregues no evento (${itEnt.length} item${itEnt.length>1?'s':''})</div>
-            ${itEnt.map(it=>rowItem(it,'#107C10')).join('')}
+            ${itEnt.map((it,i)=>rowItem(it,'#107C10',i,'e')).join('')}
           </div>`:''}
 
           ${itSP.length>0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
             <div style="font-size:11px;font-weight:700;color:#C07800;margin-bottom:5px">📦 A enviar posteriormente (${itSP.length} item${itSP.length>1?'s':''})</div>
-            ${itSP.map(it=>rowItem(it,'#C07800')).join('')}
+            ${itSP.map((it,i)=>rowItem(it,'#C07800',i,'s')).join('')}
           </div>`:''}
 
           ${itEnt.length===0&&itSP.length===0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
             <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:5px">📦 Itens do pedido</div>
-            ${todosItens.map(it=>rowItem(it,'#0078D4')).join('')}
+            ${todosItens.map((it,i)=>rowItem(it,'#0078D4',i,'t')).join('')}
           </div>`:''}
 
           <button onclick="pdvImprimirExpedicao('${docId}')"
@@ -8236,7 +8245,24 @@ async function renderExpedicaoPedidos(){
 }
 
 let _pdvExpComprovantes={};
-let _pdvExpDocs={};   // cache: docId → pedido data
+let _pdvExpDocs={};      // cache: docId → pedido data
+let _pdvExpChecked={};   // cache: docId → {key: bool} itens marcados como entregues
+
+function pdvExpToggleItem(docId,key,checked){
+  if(!_pdvExpChecked[docId]) _pdvExpChecked[docId]={};
+  _pdvExpChecked[docId][key]=checked;
+  const lbl=document.getElementById('exp-lbl-'+docId+'-'+key);
+  if(lbl){
+    lbl.style.color=checked?'#aaa':'#222';
+    lbl.style.textDecoration=checked?'line-through':'none';
+  }
+  // atualiza cor do badge #Venda/#Bonif na mesma linha
+  const chkEl=document.getElementById('exp-chk-'+docId+'-'+key);
+  if(chkEl){
+    const row=chkEl.closest('div');
+    if(row){const badge=row.querySelector('span:last-child');if(badge)badge.style.color=checked?'#ccc':'';}
+  }
+}
 
 function pdvImprimirExpedicao(docId){
   const p=_pdvExpDocs[docId];
