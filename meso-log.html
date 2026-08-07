@@ -8267,7 +8267,7 @@ function pdvExpToggleItem(docId,key,checked){
 function pdvImprimirExpedicao(docId){
   const p=_pdvExpDocs[docId];
   if(!p){toast('Dados do pedido não encontrados.');return;}
-  imprimirPedidoPDF(p,docId);
+  imprimirPedidoPDF(p,docId,_pdvExpChecked[docId]||null);
 }
 
 function pdvExpComprovanteChange(docId,input){
@@ -8902,7 +8902,7 @@ window.addEventListener('offline',()=>{
 document.addEventListener('DOMContentLoaded',pdvAtualizarBadgeOffline);
 
 /* ---- PDF RECIBO DE PEDIDO INDIVIDUAL ---- */
-function imprimirPedidoPDF(p, docId){
+function imprimirPedidoPDF(p, docId, checkedState){
   const dtFmt=(p.criadoEm||'').slice(0,16).replace('T',' ');
   const entregaLabel={evento:'Entregue no evento',sede:'A entregar pela sede',pendente:'Pendente'};
   const statusBg={pendente:'#FFF3CD',entregue:'#D4EDDA',cancelado:'#F8D7DA',parcial:'#CCE5FF'};
@@ -8916,24 +8916,36 @@ function imprimirPedidoPDF(p, docId){
   const cepLine=end.cep?'CEP: '+end.cep:'';
   const refLine=end.referencia?'Ref: '+end.referencia:'';
 
-  // Itens — vendas (com preço) e bonificações separados
-  const itensVenda=(p.itens||[]).filter(i=>i.natureza==='venda');
-  const itensBoni=(p.itens||[]).filter(i=>i.natureza==='bonificacao');
+  // Separação de itens por status de entrega
+  const todosItens=p.itens||[];
+  const itEnt=p.itensEntregues||todosItens.filter(i=>(i.tipoEntrega||'entregue')==='entregue');
+  const itSP =p.itensAEntregar||todosItens.filter(i=>i.tipoEntrega==='sob_pedido');
 
-  const rowVenda=it=>`
-    <tr>
+  // Se veio do painel de expedição com checkboxes, refinar quais foram confirmados
+  let entsRecibo, aEnviarRecibo;
+  if(checkedState && Object.keys(checkedState).length>0){
+    entsRecibo    = itEnt.filter((_,i)=>!!checkedState[`e-${i}`]);
+    const naoConf = itEnt.filter((_,i)=>!checkedState[`e-${i}`]);
+    aEnviarRecibo = [...itSP, ...naoConf];
+  } else {
+    entsRecibo    = itEnt;
+    aEnviarRecibo = itSP;
+  }
+  // Fallback: se nenhuma separação, mostrar tudo como entregue
+  if(entsRecibo.length===0 && aEnviarRecibo.length===0) entsRecibo=todosItens;
+
+  const rowItem=(it,bgFallback)=>{
+    const isBoni=it.natureza==='bonificacao';
+    const bg=isBoni?'#FFF8F0':(bgFallback||'');
+    return `<tr style="background:${bg}">
       <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:10px">${it.descricao}<br><span style="color:#888;font-size:9px">Lote: ${it.lote||'—'}</span></td>
       <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:10px">${it.quantidade}</td>
       <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:10px">${it.precoUnit>0?fmt(it.precoUnit):'—'}</td>
       <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:10px;color:#D13438">${it.descontoPct>0?it.descontoPct.toFixed(1)+'%':'—'}</td>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:10px;font-weight:700">${it.subtotalItem>0?fmt(it.subtotalItem):'—'}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-size:10px;font-weight:700">${!isBoni&&it.subtotalItem>0?fmt(it.subtotalItem):'—'}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:9px;font-weight:700;color:${isBoni?'#E65100':'#107C10'}">${isBoni?'Bonif':'Venda'}</td>
     </tr>`;
-  const rowBoni=it=>`
-    <tr style="background:#FFF8F0">
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:10px">${it.descricao}<br><span style="color:#888;font-size:9px">Lote: ${it.lote||'—'}</span></td>
-      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:10px">${it.quantidade}</td>
-      <td colspan="3" style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:10px;color:#E65100;font-weight:600">Bonificação</td>
-    </tr>`;
+  };
 
   // Pagamentos
   const pagHtml=(p.pagamentos&&p.pagamentos.length>0)?p.pagamentos.map(pg=>{
@@ -9004,20 +9016,20 @@ function imprimirPedidoPDF(p, docId){
   ${p.instagram?`<div class="row"><strong>Instagram</strong><span>${p.instagram}</span></div>`:''}
   ${endLine?`<div class="row"><strong>Endereço</strong><span>${endLine}${cepLine?' · '+cepLine:''}${refLine?' · '+refLine:''}</span></div>`:''}
 
-  <!-- ITENS DE VENDA -->
-  ${itensVenda.length>0?`
-  <div class="sec-title">Itens — Venda</div>
+  <!-- ITENS ENTREGUES NO EVENTO -->
+  ${entsRecibo.length>0?`
+  <div class="sec-title" style="color:#107C10;border-color:#107C10">✅ Entregues no Evento (${entsRecibo.length} item${entsRecibo.length>1?'s':''})</div>
   <table>
-    <thead><tr><th>Produto / Lote</th><th class="c">Qtd</th><th class="r">Preço Un.</th><th class="c">Desc%</th><th class="r">Subtotal</th></tr></thead>
-    <tbody>${itensVenda.map(rowVenda).join('')}</tbody>
+    <thead><tr><th>Produto / Lote</th><th class="c">Qtd</th><th class="r">Preço Un.</th><th class="c">Desc%</th><th class="r">Subtotal</th><th class="c">Tipo</th></tr></thead>
+    <tbody>${entsRecibo.map(it=>rowItem(it,'#F0FFF4')).join('')}</tbody>
   </table>`:''}
 
-  <!-- ITENS BONIFICAÇÃO -->
-  ${itensBoni.length>0?`
-  <div class="sec-title">Itens — Bonificação</div>
+  <!-- ITENS A ENVIAR POSTERIORMENTE -->
+  ${aEnviarRecibo.length>0?`
+  <div class="sec-title" style="color:#C07800;border-color:#C07800">📦 A Enviar Posteriormente (${aEnviarRecibo.length} item${aEnviarRecibo.length>1?'s':''})</div>
   <table>
-    <thead><tr><th>Produto / Lote</th><th class="c">Qtd</th><th colspan="3">Tipo</th></tr></thead>
-    <tbody>${itensBoni.map(rowBoni).join('')}</tbody>
+    <thead><tr><th>Produto / Lote</th><th class="c">Qtd</th><th class="r">Preço Un.</th><th class="c">Desc%</th><th class="r">Subtotal</th><th class="c">Tipo</th></tr></thead>
+    <tbody>${aEnviarRecibo.map(it=>rowItem(it,'#FFFBF0')).join('')}</tbody>
   </table>`:''}
 
   <!-- RESUMO FINANCEIRO -->
