@@ -2026,13 +2026,19 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA EXPEDIÇÃO -->
         <div id="pdv-view-expedicao" style="display:none">
-          <h3 style="color:#002050;margin-bottom:14px">🚚 Expedição — Confirmar Entregas</h3>
-          <div class="card" style="margin-bottom:16px">
-            <h4 style="color:#002050;margin-bottom:10px">Bipar Pedido ou Produto</h4>
-            <input id="pdv-exp-scan" class="form-control" placeholder="Digite o nº do pedido ou bipe o produto..." oninput="pdvExpedicaoScan(this.value)" style="font-size:15px">
-            <div id="pdv-exp-resultado" style="margin-top:12px"></div>
+          <h3 style="color:#002050;margin-bottom:4px">🚚 Expedição</h3>
+          <p style="font-size:12px;color:#666;margin-bottom:14px">Confirme o pagamento, anexe o comprovante e gere o recibo.</p>
+
+          <!-- Filtro por fase -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <button onclick="pdvExpFiltro('todos',this)" id="pdv-exp-f-todos"
+              style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #002050;background:#002050;color:#fff;cursor:pointer;font-weight:600">Todos</button>
+            <button onclick="pdvExpFiltro('cobranca',this)" id="pdv-exp-f-cobranca"
+              style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #D13438;background:#fff;color:#D13438;cursor:pointer;font-weight:600">⏳ Ag. Cobrança</button>
+            <button onclick="pdvExpFiltro('cobrado',this)" id="pdv-exp-f-cobrado"
+              style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #107C10;background:#fff;color:#107C10;cursor:pointer;font-weight:600">✅ Cobrados</button>
           </div>
-          <h4 style="color:#002050;margin-bottom:10px">Pedidos Pendentes de Entrega</h4>
+
           <div id="pdv-exp-pedidos-lista"></div>
         </div>
 
@@ -8086,47 +8092,154 @@ document.addEventListener('keydown', e=>{
 });
 
 /* ---- EXPEDIÇÃO ---- */
-async function pdvExpedicaoScan(val){
-  val=val.trim();if(val.length<3) return;
-  const el=document.getElementById('pdv-exp-resultado');
-  if(!el||!pdvEventoAtivo) return;
-  try{
-    const snap=await db.collection('pedidos_evento')
-      .where('eventoId','==',pdvEventoAtivo.id)
-      .where('numero','==',val).limit(1).get();
-    if(snap.empty){el.innerHTML='<p style="color:#D13438">Pedido não encontrado.</p>';return;}
-    const d=snap.docs[0];
-    const p=d.data();
-    el.innerHTML=`<div class="pedido-card" style="border-color:#0078D4">
-      <strong>${p.numero}</strong> · ${p.cliente||'—'} · <span style="color:${p.status==='entregue'?'#107C10':'#856404'}">${p.status}</span>
-      ${p.status!=='entregue'?`<button onclick="confirmarEntregaPedido('${d.id}')" class="btn" style="margin-left:10px;font-size:11px;padding:4px 10px;background:#107C10;color:#fff">✅ Entregar</button>`:''}
-    </div>`;
-  }catch(e){}
+let _pdvExpFiltro='todos';
+
+function pdvExpFiltro(f,btn){
+  _pdvExpFiltro=f;
+  ['todos','cobranca','cobrado'].forEach(k=>{
+    const b=document.getElementById('pdv-exp-f-'+k);
+    if(!b) return;
+    const styles={
+      todos:  {border:'#002050',bg:'#002050',color:'#fff'},
+      cobranca:{border:'#D13438',bg:'#D13438',color:'#fff'},
+      cobrado: {border:'#107C10',bg:'#107C10',color:'#fff'},
+    };
+    const active=styles[k];
+    if(k===f){b.style.background=active.bg;b.style.color=active.color;b.style.borderColor=active.border;}
+    else{b.style.background='#fff';b.style.color=active.border;b.style.borderColor=active.border;}
+  });
+  renderExpedicaoPedidos();
 }
 
 async function renderExpedicaoPedidos(){
   const lista=document.getElementById('pdv-exp-pedidos-lista');
-  if(!lista||!pdvEventoAtivo) return;
+  if(!lista||!pdvEventoAtivo){if(lista)lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum evento ativo.</p>';return;}
+  lista.innerHTML='<p style="color:#aaa;text-align:center;padding:16px">Carregando...</p>';
   try{
-    const snap=await db.collection('pedidos_evento')
-      .where('eventoId','==',pdvEventoAtivo.id)
-      .where('status','==','pendente').get();
-    if(snap.empty){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum pedido pendente.</p>';return;}
-    lista.innerHTML=snap.docs.map(d=>{
-      const p=d.data();
-      return `<div class="pedido-card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <strong>${p.numero}</strong> · <span style="font-size:12px">${p.cliente||'—'}</span>
-            <div style="font-size:11px;color:#666;margin-top:3px">
-              🚚 ${p.entrega==='sede'?'A entregar pela sede':'Pendente'} · 💼 ${p.vendedorNome}
+    let q=db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id);
+    const snap=await q.orderBy('criadoEm','desc').get();
+    let docs=snap.docs.filter(d=>d.data().status!=='cancelado');
+    if(_pdvExpFiltro==='cobranca') docs=docs.filter(d=>!d.data().statusFat||d.data().statusFat==='pendente');
+    if(_pdvExpFiltro==='cobrado')  docs=docs.filter(d=>d.data().statusFat==='recebido');
+    if(!docs.length){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum pedido nesta fila.</p>';return;}
+    const metLbl={pix:'Pix',dinheiro:'Dinheiro',credito:'Cartão de Crédito',debito:'Cartão de Débito',transferencia:'Transferência',boleto:'Boleto',crediario:'Crediário',outros:'Outros'};
+    const fmt=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const statusLbl={entregue:'entregue',parcial:'parcial',pendente:'pendente'};
+    const statusBg={entregue:'#D4EDDA',parcial:'#CCE5FF',pendente:'#FFF3CD'};
+    const statusTx={entregue:'#155724',parcial:'#004085',pendente:'#856404'};
+
+    lista.innerHTML=docs.map(d=>{
+      const p=d.data(); const docId=d.id;
+      const cobrado=p.statusFat==='recebido';
+      const dtFmt=(p.criadoEm||'').slice(0,16).replace('T',' ');
+      const pagamentos=p.pagamentos||[];
+      const totalFin=pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
+
+      // ---- FASE 1: FATURAMENTO ----
+      const fase1=cobrado?'':`
+        <div style="background:#FFFBF0;border:1px solid #FFD566;border-radius:7px;padding:10px;margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:#7B5E00;margin-bottom:8px;letter-spacing:.4px">💳 CONDIÇÕES DE PAGAMENTO</div>
+          ${pagamentos.length?pagamentos.map(pg=>{
+            const parc=pg.parcelas>1?` — ${pg.parcelas}x de ${fmt(pg.valor/pg.parcelas)}`:'';
+            const obs=pg.obs?` <span style="color:#888">(${pg.obs})</span>`:'';
+            return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #FFE5A0">
+              <span>${metLbl[pg.metodo]||pg.metodo}${parc}${obs}</span>
+              <strong>${fmt(pg.valor)}</strong>
+            </div>`;
+          }).join(''):`<div style="font-size:12px;color:#aaa">Não informado</div>`}
+          ${totalFin>0?`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#002050;margin-top:6px;padding-top:6px;border-top:1px solid #FFD566">
+            <span>TOTAL A COBRAR</span><span style="color:#D13438">${fmt(p.valorFinal||totalFin)}</span>
+          </div>`:''}
+          <div style="margin-top:10px">
+            <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px">📎 Comprovante de pagamento:</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="file" id="comp-file-${docId}" accept="image/*,application/pdf" style="display:none" onchange="pdvExpComprovanteChange('${docId}',this)">
+              <button onclick="document.getElementById('comp-file-${docId}').click()"
+                style="font-size:11px;padding:5px 10px;background:#F0F7FF;border:1px dashed #0078D4;border-radius:6px;color:#0078D4;cursor:pointer">
+                📁 Selecionar arquivo
+              </button>
+              <span id="comp-nome-${docId}" style="font-size:11px;color:#107C10"></span>
             </div>
           </div>
-          <button onclick="confirmarEntregaPedido('${d.id}')" class="btn" style="font-size:11px;padding:6px 12px;background:#107C10;color:#fff">✅ Entregar</button>
+          <button onclick="pdvConfirmarPagamento('${docId}')"
+            style="margin-top:10px;width:100%;padding:9px;background:#107C10;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">
+            ✅ Confirmar Pagamento Recebido
+          </button>
+        </div>`;
+
+      // ---- FASE 2: PÓS-COBRANÇA ----
+      const fase2=!cobrado?'': `
+        <div style="background:#F0FFF4;border:1px solid #A8D5A2;border-radius:7px;padding:10px;margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:#155724;margin-bottom:6px">✅ PAGAMENTO CONFIRMADO</div>
+          ${p.pagamentoEm?`<div style="font-size:10px;color:#555">Em: ${p.pagamentoEm.slice(0,16).replace('T',' ')}</div>`:''}
+          ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:2px">📎 ${p.comprovanteNome}</div>`:''}
+          <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
+            <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:6px">📦 ITENS DA EXPEDIÇÃO</div>
+            ${(p.itens||[]).map(it=>`
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #E0F0E0">
+                <span>${it.descricao} <span style="color:#888">· Lote ${it.lote||'—'} · ${it.quantidade} un</span></span>
+                <span style="font-weight:600;color:${it.natureza==='bonificacao'?'#E65100':'#0078D4'}">${it.natureza==='venda'?'#Venda':'#Bonif'}</span>
+              </div>`).join('')}
+          </div>
+          <button onclick="imprimirPedidoPDF(${JSON.stringify(p).replace(/</g,'\\u003c')},'${docId}')"
+            style="margin-top:10px;width:100%;padding:9px;background:#002050;color:#FFD566;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">
+            🖨️ Emitir Recibo
+          </button>
+        </div>`;
+
+      return `<div class="pedido-card" style="border-left:4px solid ${cobrado?'#107C10':'#D13438'};margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <strong style="font-size:13px;color:#002050">${p.numero}</strong>
+            <span style="font-size:11px;color:#555;margin-left:8px">${dtFmt}</span><br>
+            <span style="font-size:12px">👤 ${p.cliente||'—'}</span>
+            ${p.cpf&&p.cpf.replace(/\D/g,'')?`<span style="font-size:10px;color:#888;margin-left:6px">CPF: ${p.cpf}</span>`:''}
+            ${p.cnpj&&p.cnpj.replace(/\D/g,'')?`<span style="font-size:10px;color:#888;margin-left:6px">CNPJ: ${p.cnpj}</span>`:''}
+            <div style="font-size:11px;color:#666;margin-top:2px">💼 ${p.vendedorNome||'—'}</div>
+          </div>
+          <div style="text-align:right">
+            <span style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;background:${statusBg[p.status]||'#eee'};color:${statusTx[p.status]||'#333'}">${statusLbl[p.status]||p.status}</span>
+            <div style="margin-top:4px">
+              <span style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;background:${cobrado?'#D4EDDA':'#FDE7E9'};color:${cobrado?'#155724':'#D13438'}">
+                ${cobrado?'💰 Cobrado':'⏳ Ag. Cobrança'}
+              </span>
+            </div>
+          </div>
         </div>
+        ${fase1}${fase2}
       </div>`;
     }).join('');
-  }catch(e){}
+  }catch(e){lista.innerHTML=`<p style="color:#D13438">Erro: ${e.message}</p>`;}
+}
+
+let _pdvExpComprovantes={};
+
+function pdvExpComprovanteChange(docId,input){
+  if(!input.files||!input.files[0]) return;
+  const file=input.files[0];
+  const nomeEl=document.getElementById('comp-nome-'+docId);
+  if(nomeEl) nomeEl.textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+  _pdvExpComprovantes[docId]={nome:file.name,tipo:file.type,tamanho:file.size};
+  if(file.size<=1048576){
+    const r=new FileReader();
+    r.onload=e=>{_pdvExpComprovantes[docId].base64=e.target.result;};
+    r.readAsDataURL(file);
+  }
+}
+
+async function pdvConfirmarPagamento(docId){
+  const comp=_pdvExpComprovantes[docId]||null;
+  try{
+    const upd={
+      statusFat:'recebido',
+      pagamentoEm:new Date().toISOString(),
+      ...(comp?{comprovanteNome:comp.nome,comprovanteTipo:comp.tipo,comprovanteTamanho:comp.tamanho}:{})
+    };
+    await db.collection('pedidos_evento').doc(docId).update(upd);
+    delete _pdvExpComprovantes[docId];
+    toast('✅ Pagamento confirmado!');
+    renderExpedicaoPedidos();
+  }catch(e){toast('Erro: '+e.message);}
 }
 
 /* ---- FECHAMENTO ---- */
