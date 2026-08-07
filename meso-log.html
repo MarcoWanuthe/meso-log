@@ -8129,8 +8129,10 @@ async function renderExpedicaoPedidos(){
     const statusBg={entregue:'#D4EDDA',parcial:'#CCE5FF',pendente:'#FFF3CD'};
     const statusTx={entregue:'#155724',parcial:'#004085',pendente:'#856404'};
 
+    _pdvExpDocs={};
     lista.innerHTML=docs.map(d=>{
       const p=d.data(); const docId=d.id;
+      _pdvExpDocs[docId]=p;
       const cobrado=p.statusFat==='recebido';
       const dtFmt=(p.criadoEm||'').slice(0,16).replace('T',' ');
       const pagamentos=p.pagamentos||[];
@@ -8169,20 +8171,40 @@ async function renderExpedicaoPedidos(){
         </div>`;
 
       // ---- FASE 2: PÓS-COBRANÇA ----
+      const todosItens=p.itens||[];
+      const itEnt=(p.itensEntregues||todosItens.filter(i=>(i.tipoEntrega||'entregue')==='entregue'));
+      const itSP =(p.itensAEntregar||todosItens.filter(i=>i.tipoEntrega==='sob_pedido'));
+      const rowItem=(it,cor)=>`
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #E8F0E8">
+          <span style="color:#222">${it.descricao} <span style="color:#888">· Lote ${it.lote||'—'} · ${it.quantidade} un</span></span>
+          <span style="font-weight:700;color:${it.natureza==='bonificacao'?'#E65100':cor}">${it.natureza==='venda'?'#Venda':'#Bonif'}</span>
+        </div>`;
+
       const fase2=!cobrado?'': `
         <div style="background:#F0FFF4;border:1px solid #A8D5A2;border-radius:7px;padding:10px;margin-top:10px">
-          <div style="font-size:11px;font-weight:700;color:#155724;margin-bottom:6px">✅ PAGAMENTO CONFIRMADO</div>
+          <div style="font-size:11px;font-weight:700;color:#155724;margin-bottom:4px">✅ PAGAMENTO CONFIRMADO</div>
           ${p.pagamentoEm?`<div style="font-size:10px;color:#555">Em: ${p.pagamentoEm.slice(0,16).replace('T',' ')}</div>`:''}
           ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:2px">📎 ${p.comprovanteNome}</div>`:''}
+
+          ${itEnt.length>0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
-            <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:6px">📦 ITENS DA EXPEDIÇÃO</div>
-            ${(p.itens||[]).map(it=>`
-              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #E0F0E0">
-                <span>${it.descricao} <span style="color:#888">· Lote ${it.lote||'—'} · ${it.quantidade} un</span></span>
-                <span style="font-weight:600;color:${it.natureza==='bonificacao'?'#E65100':'#0078D4'}">${it.natureza==='venda'?'#Venda':'#Bonif'}</span>
-              </div>`).join('')}
-          </div>
-          <button onclick="imprimirPedidoPDF(${JSON.stringify(p).replace(/</g,'\\u003c')},'${docId}')"
+            <div style="font-size:11px;font-weight:700;color:#107C10;margin-bottom:5px">✅ Entregues no evento (${itEnt.length} item${itEnt.length>1?'s':''})</div>
+            ${itEnt.map(it=>rowItem(it,'#107C10')).join('')}
+          </div>`:''}
+
+          ${itSP.length>0?`
+          <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
+            <div style="font-size:11px;font-weight:700;color:#C07800;margin-bottom:5px">📦 A enviar posteriormente (${itSP.length} item${itSP.length>1?'s':''})</div>
+            ${itSP.map(it=>rowItem(it,'#C07800')).join('')}
+          </div>`:''}
+
+          ${itEnt.length===0&&itSP.length===0?`
+          <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
+            <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:5px">📦 Itens do pedido</div>
+            ${todosItens.map(it=>rowItem(it,'#0078D4')).join('')}
+          </div>`:''}
+
+          <button onclick="pdvImprimirExpedicao('${docId}')"
             style="margin-top:10px;width:100%;padding:9px;background:#002050;color:#FFD566;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">
             🖨️ Emitir Recibo
           </button>
@@ -8214,6 +8236,13 @@ async function renderExpedicaoPedidos(){
 }
 
 let _pdvExpComprovantes={};
+let _pdvExpDocs={};   // cache: docId → pedido data
+
+function pdvImprimirExpedicao(docId){
+  const p=_pdvExpDocs[docId];
+  if(!p){toast('Dados do pedido não encontrados.');return;}
+  imprimirPedidoPDF(p,docId);
+}
 
 function pdvExpComprovanteChange(docId,input){
   if(!input.files||!input.files[0]) return;
