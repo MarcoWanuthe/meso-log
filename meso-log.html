@@ -1864,15 +1864,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                     <div id="pdv-pagamentos-lista"></div>
                     <!-- Saldo -->
                     <div id="pdv-pag-saldo" style="display:none;margin-top:6px;padding:7px 10px;border-radius:6px;font-size:12px;font-weight:700;text-align:center"></div>
-                    <!-- Comprovante -->
-                    <div style="margin-top:8px">
-                      <input type="file" id="pdv-comprovante-file" accept="image/*,application/pdf" style="display:none" onchange="pdvComprovanteSelecionado(this)">
-                      <button onclick="document.getElementById('pdv-comprovante-file').click()"
-                        style="font-size:12px;padding:6px 10px;background:#F0F7FF;border:1px dashed #0078D4;border-radius:6px;color:#0078D4;cursor:pointer;width:100%;text-align:center">
-                        📎 Anexar comprovante de pagamento
-                      </button>
-                      <div id="pdv-comprovante-nome" style="font-size:11px;color:#107C10;margin-top:4px;text-align:center"></div>
-                    </div>
                   </div>
                   <!-- ===================================== -->
                   <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:12px;font-size:15px" onclick="pdvFinalizarPedido()">✅ Finalizar Pedido</button>
@@ -7130,7 +7121,7 @@ function pdvAdicionarPagamento(){
   const valorFinal=pdvCarrinho.filter(c=>c.natureza==='venda'&&c.precoUnit>0).reduce((s,c)=>s+(c.subtotalItem||0),0);
   const totalPago=pdvPagamentos.reduce((s,p)=>s+(p.valor||0),0);
   const restante=Math.max(0,parseFloat((valorFinal-totalPago).toFixed(2)));
-  pdvPagamentos.push({metodo:'pix',valor:restante});
+  pdvPagamentos.push({metodo:'pix',valor:restante,parcelas:1,obs:''});
   pdvRenderPagamentos();
 }
 
@@ -7142,20 +7133,45 @@ function pdvRemoverPagamento(i){
 function pdvRenderPagamentos(){
   const lista=document.getElementById('pdv-pagamentos-lista');
   if(!lista) return;
-  const opts=PDV_METODOS.map(m=>`<option value="${m.v}">${m.l}</option>`).join('');
-  lista.innerHTML=pdvPagamentos.map((p,i)=>`
-    <div style="display:grid;grid-template-columns:1fr 105px 26px;gap:5px;margin-bottom:5px;align-items:center">
-      <select class="form-control" style="font-size:12px;padding:4px 6px"
-        onchange="pdvPagamentos[${i}].metodo=this.value">
-        ${PDV_METODOS.map(m=>`<option value="${m.v}"${p.metodo===m.v?' selected':''}>${m.l}</option>`).join('')}
-      </select>
-      <input type="number" min="0" step="0.01" class="form-control"
-        value="${p.valor>0?p.valor.toFixed(2):''}"
-        placeholder="R$ 0,00" style="font-size:12px;text-align:right;padding:4px 6px"
-        oninput="pdvPagamentos[${i}].valor=parseFloat(this.value)||0;pdvCalcPagamentos()">
-      <button onclick="pdvRemoverPagamento(${i})"
-        style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1;padding:0">×</button>
-    </div>`).join('');
+  const comParcelas=['credito','crediario'];
+  lista.innerHTML=pdvPagamentos.map((p,i)=>{
+    const showParc=comParcelas.includes(p.metodo);
+    return `
+    <div style="background:#F8FAFC;border:1px solid #DDE3EA;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      <div style="display:grid;grid-template-columns:1fr 105px 26px;gap:5px;align-items:center">
+        <select class="form-control" style="font-size:12px;padding:4px 6px"
+          onchange="pdvPagamentos[${i}].metodo=this.value;pdvPagamentos[${i}].parcelas=1;pdvRenderPagamentos()">
+          ${PDV_METODOS.map(m=>`<option value="${m.v}"${p.metodo===m.v?' selected':''}>${m.l}</option>`).join('')}
+        </select>
+        <input type="number" min="0" step="0.01" class="form-control"
+          value="${p.valor>0?p.valor.toFixed(2):''}"
+          placeholder="R$ 0,00" style="font-size:12px;text-align:right;padding:4px 6px"
+          oninput="pdvPagamentos[${i}].valor=parseFloat(this.value)||0;pdvCalcPagamentos()">
+        <button onclick="pdvRemoverPagamento(${i})"
+          style="background:none;border:none;color:#D13438;cursor:pointer;font-size:18px;line-height:1;padding:0">×</button>
+      </div>
+      ${showParc?`
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:6px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <label style="font-size:11px;color:#555;white-space:nowrap">Parcelas:</label>
+          <select class="form-control" style="font-size:12px;padding:3px 5px;width:70px"
+            onchange="pdvPagamentos[${i}].parcelas=parseInt(this.value);pdvRenderPagamentos()">
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}"${(p.parcelas||1)===n?' selected':''}>${n}x</option>`).join('')}
+          </select>
+          ${(p.parcelas||1)>1&&p.valor>0?`<span style="font-size:11px;color:#002050;font-weight:700">${'R$ '+((p.valor/(p.parcelas||1)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))}/x</span>`:''}
+        </div>
+        <input class="form-control" placeholder="Obs: bandeira, código..." style="font-size:11px;padding:3px 6px"
+          value="${p.obs||''}"
+          oninput="pdvPagamentos[${i}].obs=this.value">
+      </div>`:''}
+      ${!showParc&&['pix','transferencia'].includes(p.metodo)?`
+      <div style="margin-top:6px">
+        <input class="form-control" placeholder="Obs: chave Pix, banco..." style="font-size:11px;padding:3px 6px;width:100%"
+          value="${p.obs||''}"
+          oninput="pdvPagamentos[${i}].obs=this.value">
+      </div>`:''}
+    </div>`;
+  }).join('');
   pdvCalcPagamentos();
 }
 
@@ -7345,8 +7361,7 @@ async function pdvFinalizarPedido(){
     descontoTotal:parseFloat(descontoTotal.toFixed(2)),
     pctDesconto:parseFloat(pctDesconto.toFixed(2)),
     valorFinal:parseFloat(valorFinal.toFixed(2)),
-    pagamentos:pdvPagamentos.length>0?pdvPagamentos.map(p=>({metodo:p.metodo,valor:parseFloat((p.valor||0).toFixed(2))})):[],
-    comprovante:pdvComprovanteData?{nome:pdvComprovanteData.nome,tipo:pdvComprovanteData.tipo,tamanho:pdvComprovanteData.tamanho}:null,
+    pagamentos:pdvPagamentos.length>0?pdvPagamentos.map(p=>({metodo:p.metodo,valor:parseFloat((p.valor||0).toFixed(2)),parcelas:p.parcelas||1,obs:p.obs||''})):[],
     criadoEm:new Date().toISOString(),
     numero:'PED-'+Date.now().toString(36).toUpperCase()
   };
@@ -7365,8 +7380,6 @@ async function pdvFinalizarPedido(){
     renderCarrinho();
     const pLista=document.getElementById('pdv-pagamentos-lista');if(pLista)pLista.innerHTML='';
     const pSaldo=document.getElementById('pdv-pag-saldo');if(pSaldo)pSaldo.style.display='none';
-    const pNome=document.getElementById('pdv-comprovante-nome');if(pNome)pNome.textContent='';
-    const pFile=document.getElementById('pdv-comprovante-file');if(pFile)pFile.value='';
     ['pdv-cliente-nome','pdv-cliente-cpf','pdv-cliente-cnpj','pdv-cliente-cep',
      'pdv-cli-logradouro','pdv-cli-numero','pdv-cli-bairro','pdv-cli-complemento',
      'pdv-cli-cidade','pdv-cli-uf','pdv-cli-referencia',
