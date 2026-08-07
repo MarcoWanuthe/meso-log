@@ -8116,9 +8116,10 @@ async function renderExpedicaoPedidos(){
   if(!lista||!pdvEventoAtivo){if(lista)lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum evento ativo.</p>';return;}
   lista.innerHTML='<p style="color:#aaa;text-align:center;padding:16px">Carregando...</p>';
   try{
-    let q=db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id);
-    const snap=await q.orderBy('criadoEm','desc').get();
-    let docs=snap.docs.filter(d=>d.data().status!=='cancelado');
+    const snap=await db.collection('pedidos_evento').where('eventoId','==',pdvEventoAtivo.id).get();
+    let docs=snap.docs
+      .filter(d=>d.data().status!=='cancelado')
+      .sort((a,b)=>(b.data().criadoEm||'').localeCompare(a.data().criadoEm||''));
     if(_pdvExpFiltro==='cobranca') docs=docs.filter(d=>!d.data().statusFat||d.data().statusFat==='pendente');
     if(_pdvExpFiltro==='cobrado')  docs=docs.filter(d=>d.data().statusFat==='recebido');
     if(!docs.length){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum pedido nesta fila.</p>';return;}
