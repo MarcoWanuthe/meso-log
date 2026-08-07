@@ -6208,7 +6208,7 @@ function verDetalhesPerda(id){
       <p style="margin-bottom:8px"><strong>Data:</strong> ${dt}</p>
       ${r.observacoes?`<p style="margin-bottom:8px"><strong>Observações:</strong> ${r.observacoes}</p>`:''}
     `;
-    showModal();
+    document.getElementById('modal-det').classList.add('open');
   });
 }
 
@@ -8775,7 +8775,8 @@ function solicitarCancelamentoPedido(id, numero){
     </div>
     <p id="cancel-pin-err" style="color:#D13438;font-size:12px;text-align:center;min-height:16px"></p>
   `;
-  showModal();
+  document.getElementById('modal-actions').innerHTML='';
+  document.getElementById('modal-det').classList.add('open');
 }
 
 let _cancelPinBuf='';
@@ -8817,7 +8818,7 @@ async function cancelPinConfirm(){
       status:'cancelado',canceladoEm:new Date().toISOString(),
       canceladoPor:autorNome,motivoCancelamento:motivo.trim()
     });
-    closeModal();
+    closeModal('modal-det');
     _cancelPedidoId=null;_cancelPinBuf='';
     toast('Pedido cancelado por '+autorNome);
     renderPedidosEvento();
