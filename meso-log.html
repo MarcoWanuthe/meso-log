@@ -9827,7 +9827,14 @@ async function parseMercusPDF(file){
     for(let i = 1; i <= pdf.numPages; i++){
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      fullText += content.items.map(it => it.str).join(' ') + '\n';
+      // Ordena por posição: top→bottom (Y decrescente), left→right (X crescente)
+      // Itens dentro de 4pt da mesma linha são tratados como mesma linha
+      const sorted = content.items.slice().sort((a, b) => {
+        const ay = Math.round(a.transform[5]), by = Math.round(b.transform[5]);
+        if(Math.abs(ay - by) > 4) return by - ay; // linhas diferentes
+        return a.transform[4] - b.transform[4];   // mesma linha: esquerda→direita
+      });
+      fullText += sorted.map(it => it.str).join(' ') + '\n';
     }
     const parsed = parseMercusText(fullText);
     preencherFormMercus(parsed);
@@ -9896,7 +9903,9 @@ function parseMercusText(text){
   // ── ITEM REGEX ──
   // Padrão de código aceito: T-XXX, PRDXXX, ou qualquer código alfanumérico de 3-20 chars
   // (ex: MF0020, MES-01, 7898123, AB-CDE-001, etc.)
-  const CODE_PAT = '(?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}|[A-Z]{1,6}-[A-Z0-9]{2,}|[A-Z][A-Z0-9]{3,19})';
+  // Padrões aceitos: T-XXXX (com ou sem espaço após hífen), PRD..., ou código com hífen ex: MES-01
+  // REMOVIDO o padrão genérico [A-Z][A-Z0-9]{3,19} que causava falsos positivos (ex: "Inscri")
+  const CODE_PAT = '(?:T-\\s*[A-Z0-9]+|PRD[A-Z0-9]{3,}|[A-Z]{1,6}-[A-Z0-9]{2,})';
   // Unidades aceitas (português + espanhol + abreviações)
   const UNITS = 'caixas?|cx|unidades?|unidad(?:es?)?|unid|kits?|un|ml|fl|fr|amp(?:olas?)?|vl|bd|pc|kg|lt|gl|frascos?|ampolas?|blisters?|comp(?:rimidos?)?|cap(?:s[uú]las?)?|sachs?|sachês?|env|pct|bx|strips?|doses?|tubos?|seringas?|bisnagas?|par|pares';
 
@@ -9911,7 +9920,7 @@ function parseMercusText(text){
   let m;
   while((m = itemRegex.exec(text)) !== null){
     // Evita falsos positivos: código não pode ser palavra comum
-    const cod = m[2].trim();
+    const cod = m[2].trim().replace(/\s+/g,''); // normaliza "T- DSEN0001" → "T-DSEN0001"
     if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|FONE|CNPJ|EMAIL|CIDADE|ESTADO|BAIRRO|RUA|AV|CEP|PAGAMENTO|ENTREGA|PEDIDO|CLIENTE|EMPRESA)$/i.test(cod)) continue;
     const precoLiq = parseFloat((m[6]||'0').replace(/\./g,'').replace(',','.'));
     const qtd = parseFloat((m[4]||'1').replace(',','.'));
@@ -9935,7 +9944,7 @@ function parseMercusText(text){
     );
     let fa;
     while((fa = fallA.exec(text)) !== null){
-      const cod = fa[2].trim();
+      const cod = fa[2].trim().replace(/\s+/g,'');
       if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
       result.itens.push({
         seq: parseInt(fa[1]), codigo: cod, descricao: '',
@@ -9955,7 +9964,7 @@ function parseMercusText(text){
     );
     let fb;
     while((fb = fallB.exec(text)) !== null){
-      const cod = fb[2].trim();
+      const cod = fb[2].trim().replace(/\s+/g,'');
       if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
       result.itens.push({
         seq: parseInt(fb[1]), codigo: cod, descricao: '',
