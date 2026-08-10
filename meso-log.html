@@ -10269,10 +10269,11 @@ function renderFechamento(){
 
   if(!fatBipItems.length){
     fatBipItems = (p.itens||[]).map(it => {
+      // allStock usa o campo "barcode" para código de barras EAN
       const stockEntry = allStock.find(s => s.codigo === it.codigo);
       return {
         codigo: it.codigo,
-        codigoBarras: stockEntry?.codigoDeBarras || stockEntry?.codigo || it.codigo,
+        codigoBarras: stockEntry?.barcode || '',   // campo correto em allStock
         descricao: it.descricao,
         qtdEsperada: Number(it.quantidade || 1),
         bipados: 0,
@@ -10351,13 +10352,26 @@ function fatHandleScan(e){
 }
 
 function processarBipagem(code){
-  const idx = fatBipItems.findIndex(it =>
-    it.codigoBarras === code || it.codigo === code ||
-    (it.codigoBarras && code.includes(it.codigoBarras)) ||
-    (it.codigo && code.includes(it.codigo))
+  const codeNorm = code.trim();
+  // 1. Tenta match direto pelo barcode EAN ou código interno do item
+  let idx = fatBipItems.findIndex(it =>
+    (it.codigoBarras && it.codigoBarras === codeNorm) ||
+    it.codigo === codeNorm ||
+    (it.codigoBarras && codeNorm.endsWith(it.codigoBarras)) ||
+    (it.codigo && codeNorm.includes(it.codigo))
   );
+  // 2. Fallback: busca o barcode em allStock para encontrar o código interno
+  if(idx === -1 && typeof allStock !== 'undefined'){
+    const stockMatch = allStock.find(s =>
+      (s.barcode && s.barcode === codeNorm) ||
+      (s.barcode && codeNorm.endsWith(s.barcode))
+    );
+    if(stockMatch){
+      idx = fatBipItems.findIndex(it => it.codigo === stockMatch.codigo);
+    }
+  }
   if(idx === -1){
-    toast('⚠️ Código não encontrado neste pedido: ' + code);
+    toast('⚠️ Código não encontrado neste pedido: ' + codeNorm);
     return;
   }
   fatBipItems[idx].bipados++;
