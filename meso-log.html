@@ -9827,27 +9827,17 @@ async function parseMercusPDF(file){
     for(let i = 1; i <= pdf.numPages; i++){
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      // Ordena por posição: top→bottom (Y decrescente), left→right (X crescente)
-      // Itens dentro de 4pt da mesma linha são tratados como mesma linha
-      const sorted = content.items.slice().sort((a, b) => {
-        const ay = Math.round(a.transform[5]), by = Math.round(b.transform[5]);
-        if(Math.abs(ay - by) > 4) return by - ay; // linhas diferentes
-        return a.transform[4] - b.transform[4];   // mesma linha: esquerda→direita
-      });
-      fullText += sorted.map(it => it.str).join(' ') + '\n';
+      // Sem sort — usa a ordem natural do pdf.js (geralmente correta para PDFs bem estruturados)
+      fullText += content.items.map(it => it.str).join(' ') + '\n';
     }
+    // SEMPRE loga o texto bruto para diagnóstico no console F12
+    console.log('[MESO-LOG] Texto extraído do PDF (primeiros 2000 chars):\n' + fullText.slice(0,2000));
     const parsed = parseMercusText(fullText);
     preencherFormMercus(parsed);
     const nItens = (parsed.itens||[]).length;
     statusEl.textContent = `✅ Pedido #${parsed.numeroPedidoMercus||'?'} importado — ${nItens} item(s).`;
-    // Diagnóstico: se 0 itens, loga o texto bruto do PDF no console para análise
     if(nItens === 0){
-      console.warn('[MESO-LOG] PDF sem itens reconhecidos. Texto bruto:');
-      console.warn(fullText.slice(0, 3000));
-      // Tenta encontrar a seção de itens e mostrar trecho para debug
-      const secIdx = fullText.search(/\b(Produto|C[oó]digo|Item|Seq)\b/i);
-      const snippet = secIdx >= 0 ? fullText.slice(secIdx, secIdx + 600) : fullText.slice(0, 600);
-      console.warn('[MESO-LOG] Seção esperada de itens:', snippet);
+      console.warn('[MESO-LOG] 0 itens encontrados. Verifique o texto acima.');
     }
   }catch(e){
     console.error(e);
@@ -9910,75 +9900,84 @@ function parseMercusText(text){
   const UNITS = 'caixas?|cx|unidades?|unidad(?:es?)?|unid|kits?|un|ml|fl|fr|amp(?:olas?)?|vl|bd|pc|kg|lt|gl|frascos?|ampolas?|blisters?|comp(?:rimidos?)?|cap(?:s[uú]las?)?|sachs?|sachês?|env|pct|bx|strips?|doses?|tubos?|seringas?|bisnagas?|par|pares';
 
   // Regex principal: seq + código + desc opcional + qtde + unidade + 3 preços R$
+  // Regex principal: código + descrição opcional + qtde + unidade + preços
+  // Não exige seq# antes do código (flexível para qualquer ordem de extração do PDF)
   const itemRegex = new RegExp(
-    '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
-    '(?:\\s+((?:(?!R\\$|\\b\\d+\\s+(?:' + UNITS + ')\\b).)*?))?' +
+    '\\b(' + CODE_PAT + ')\\b' +
+    '(?:\\s+((?:(?!R\\$|\\b\\d+(?:[.,]\\d+)?\\s+(?:' + UNITS + ')\\b).)*?))?' +
     '\\s*(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
-    '\\s+R\\$\\s*[\\d.,]+[\\s\\S]*?R\\$\\s*([\\d.,]+)\\s+R\\$\\s*[\\d.,]+',
+    '(?:\\s+R\\$\\s*[\\d.,]+)?[\\s\\S]*?R\\$\\s*([\\d.,]+)\\s+R\\$\\s*[\\d.,]+',
     'gi'
   );
   let m;
+  let seqAuto = 0;
   while((m = itemRegex.exec(text)) !== null){
-    // Evita falsos positivos: código não pode ser palavra comum
-    const cod = m[2].trim().replace(/\s+/g,''); // normaliza "T- DSEN0001" → "T-DSEN0001"
-    if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|FONE|CNPJ|EMAIL|CIDADE|ESTADO|BAIRRO|RUA|AV|CEP|PAGAMENTO|ENTREGA|PEDIDO|CLIENTE|EMPRESA)$/i.test(cod)) continue;
-    const precoLiq = parseFloat((m[6]||'0').replace(/\./g,'').replace(',','.'));
-    const qtd = parseFloat((m[4]||'1').replace(',','.'));
+    const cod = m[1].trim().replace(/\s+/g,'');
+    if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|FONE|CNPJ|EMAIL|CIDADE|ESTADO|BAIRRO|RUA|AV|CEP|PAGAMENTO|ENTREGA|PEDIDO|CLIENTE|EMPRESA|PRODUTO|CODIGO|UNIDADE|PRECO|SUBTOTAL)$/i.test(cod)) continue;
+    // Evitar duplicatas pelo mesmo código
+    if(result.itens.some(it => it.codigo === cod)) continue;
+    seqAuto++;
+    const precoLiq = parseFloat((m[5]||'0').replace(/\./g,'').replace(',','.'));
+    const qtd = parseFloat((m[3]||'1').replace(',','.'));
     result.itens.push({
-      seq: parseInt(m[1]),
+      seq: seqAuto,
       codigo: cod,
-      descricao: (m[3]||'').trim(),
+      descricao: (m[2]||'').trim(),
       quantidade: qtd,
-      unidade: m[5].trim().toUpperCase(),
+      unidade: m[4].trim().toUpperCase(),
       precoLiquido: precoLiq
     });
   }
 
-  // Fallback A: sem coluna de preço líquido (2 R$ em vez de 3)
+  // Fallback A: 2 preços R$ (sem coluna de preço líquido separada)
   if(result.itens.length === 0){
     const fallA = new RegExp(
-      '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
-      '(?:[\\s\\S]*?)(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
-      '\\s+R\\$\\s*[\\d.,]+[\\s\\S]*?R\\$\\s*([\\d.,]+)',
+      '\\b(' + CODE_PAT + ')\\b' +
+      '(?:[\\s\\S]{0,150}?)(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
+      '[\\s\\S]*?R\\$\\s*([\\d.,]+)',
       'gi'
     );
-    let fa;
+    let fa; let seqA = 0;
     while((fa = fallA.exec(text)) !== null){
-      const cod = fa[2].trim().replace(/\s+/g,'');
-      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
+      const cod = fa[1].trim().replace(/\s+/g,'');
+      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|PRODUTO|CODIGO)$/i.test(cod)) continue;
+      if(result.itens.some(it => it.codigo === cod)) continue;
+      seqA++;
       result.itens.push({
-        seq: parseInt(fa[1]), codigo: cod, descricao: '',
-        quantidade: parseFloat((fa[3]||'1').replace(',','.')),
-        unidade: fa[4].trim().toUpperCase(),
-        precoLiquido: parseFloat((fa[5]||'0').replace(/\./g,'').replace(',','.'))
+        seq: seqA, codigo: cod, descricao: '',
+        quantidade: parseFloat((fa[2]||'1').replace(',','.')),
+        unidade: fa[3].trim().toUpperCase(),
+        precoLiquido: parseFloat((fa[4]||'0').replace(/\./g,'').replace(',','.'))
       });
     }
   }
 
-  // Fallback B: sem preço algum (apenas seq + código + qtde + unidade)
+  // Fallback B: sem preço (só código + qtde + unidade)
   if(result.itens.length === 0){
     const fallB = new RegExp(
-      '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
+      '\\b(' + CODE_PAT + ')\\b' +
       '(?:[^\\n]{0,120}?)(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')',
       'gi'
     );
-    let fb;
+    let fb; let seqB = 0;
     while((fb = fallB.exec(text)) !== null){
-      const cod = fb[2].trim().replace(/\s+/g,'');
-      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
+      const cod = fb[1].trim().replace(/\s+/g,'');
+      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|PRODUTO|CODIGO)$/i.test(cod)) continue;
+      if(result.itens.some(it => it.codigo === cod)) continue;
+      seqB++;
       result.itens.push({
-        seq: parseInt(fb[1]), codigo: cod, descricao: '',
-        quantidade: parseFloat((fb[3]||'1').replace(',','.')),
-        unidade: fb[4].trim().toUpperCase(),
+        seq: seqB, codigo: cod, descricao: '',
+        quantidade: parseFloat((fb[2]||'1').replace(',','.')),
+        unidade: fb[3].trim().toUpperCase(),
         precoLiquido: 0
       });
     }
   }
-  // Deduplicate by seq
+  // Deduplica por código
   const seen = new Set();
   result.itens = result.itens.filter(it => {
-    if(seen.has(it.seq)) return false;
-    seen.add(it.seq);
+    if(seen.has(it.codigo)) return false;
+    seen.add(it.codigo);
     return true;
   });
 
