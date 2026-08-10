@@ -3265,6 +3265,11 @@ function startListeners(){
       return;
     }
     allEmpresas = snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Seed empresa TESTE se não existir
+    if(!allEmpresas.find(e=>(e.sigla||'').toUpperCase()==='TESTE')){
+      db.collection('empresas').add({nome:'Empresa TESTE',sigla:'TESTE',ativa:true,criadoEm:new Date().toISOString()})
+        .catch(e=>console.warn('seed TESTE:',e));
+    }
     fatPopulateEmpresaSelect();
     if(document.getElementById('fview-empresas')?.style.display!=='none') renderEmpresas();
   }, err=>console.warn('empresas:', err));
@@ -9726,10 +9731,25 @@ function renderFatItensTable(){
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">Nenhum item. Importe um PDF ou adicione manualmente.</td></tr>';
     return;
   }
+  // Build datalist for product autocomplete from allStock
+  const dlId = 'fat-prod-datalist';
+  let dl = document.getElementById(dlId);
+  if(!dl){ dl = document.createElement('datalist'); dl.id = dlId; document.body.appendChild(dl); }
+  dl.innerHTML = (typeof allStock !== 'undefined' ? allStock : [])
+    .map(s => `<option value="${(s.descricao||'').replace(/"/g,"'")}" data-cod="${s.codigo||''}">${s.codigo||''}</option>`).join('');
+
   tbody.innerHTML = fatItens.map((it,i) => `<tr>
     <td style="font-size:11px;color:#888">${i+1}</td>
-    <td><input type="text" value="${it.codigo||''}" style="width:120px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;font-family:monospace" onchange="fatItens[${i}].codigo=this.value"></td>
-    <td style="min-width:220px"><input type="text" value="${it.descricao||''}" style="width:100%;min-width:200px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px" onchange="fatItens[${i}].descricao=this.value"></td>
+    <td><input type="text" value="${it.codigo||''}" style="width:120px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;font-family:monospace"
+      onchange="fatItens[${i}].codigo=this.value"
+      oninput="fatAutoFillFromCodigo(${i},this.value)"></td>
+    <td style="min-width:220px;position:relative">
+      <input type="text" id="fat-desc-${i}" value="${(it.descricao||'').replace(/"/g,'&quot;')}"
+        list="${dlId}"
+        style="width:100%;min-width:200px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px"
+        oninput="fatAutoFillFromDesc(${i},this.value)"
+        onchange="fatItens[${i}].descricao=this.value">
+    </td>
     <td style="text-align:center"><input type="number" value="${it.quantidade||1}" min="1" style="width:55px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].quantidade=Number(this.value)"></td>
     <td><input type="text" value="${it.unidade||'cx'}" style="width:40px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].unidade=this.value"></td>
     <td style="text-align:right"><input type="number" value="${it.precoLiquido||0}" step="0.01" style="width:85px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:right" onchange="fatItens[${i}].precoLiquido=Number(this.value)"></td>
@@ -9740,6 +9760,32 @@ function renderFatItensTable(){
 function fatAdicionarItem(){
   fatItens.push({seq: fatItens.length+1, codigo:'', descricao:'', quantidade:1, unidade:'cx', precoLiquido:0});
   renderFatItensTable();
+  // Focus last description field
+  setTimeout(()=>{ const el=document.getElementById('fat-desc-'+(fatItens.length-1)); if(el) el.focus(); },50);
+}
+
+// Autocomplete: when user selects/types a description, auto-fill código
+function fatAutoFillFromDesc(i, val){
+  fatItens[i].descricao = val;
+  const match = (typeof allStock !== 'undefined' ? allStock : [])
+    .find(s => (s.descricao||'').toLowerCase() === val.toLowerCase());
+  if(match){
+    fatItens[i].codigo = match.codigo || fatItens[i].codigo;
+    const codEl = document.querySelector(`#fat-itens-tbody tr:nth-child(${i+1}) td:nth-child(2) input`);
+    if(codEl) codEl.value = fatItens[i].codigo;
+  }
+}
+
+// Autocomplete: when user types a código, auto-fill description
+function fatAutoFillFromCodigo(i, val){
+  fatItens[i].codigo = val;
+  const match = (typeof allStock !== 'undefined' ? allStock : [])
+    .find(s => (s.codigo||'').toLowerCase() === val.toLowerCase());
+  if(match){
+    fatItens[i].descricao = match.descricao || fatItens[i].descricao;
+    const descEl = document.getElementById('fat-desc-'+i);
+    if(descEl) descEl.value = fatItens[i].descricao;
+  }
 }
 
 function fatLimparForm(){
@@ -9819,6 +9865,15 @@ function parseMercusText(text){
   // Vendedor
   const mVend = text.match(/Vendedor\s*:?\s*(.+?)(?=Tipo de pedido|Condi[çc]|Data|$)/is);
   if(mVend) result.vendedor = mVend[1].replace(/\s+/g,' ').trim().slice(0,60);
+  // Tipo de pedido → mapeado para tipoEntrega
+  const mTipo = text.match(/Tipo de pedido\s*:?\s*(\S[^\n\r]{0,40}?)(?=\s{2,}|\n|Transportadora|$)/i);
+  if(mTipo){
+    const raw = mTipo[1].replace(/\s+/g,' ').trim().toLowerCase();
+    if(/evento|externo|congresso|feira/i.test(raw))   result.tipoEntrega = 'evento';
+    else if(/retira|loja|balc/i.test(raw))             result.tipoEntrega = 'loja';
+    else                                               result.tipoEntrega = 'envio'; // Venda = envio padrão
+    result.tipoPedidoRaw = mTipo[1].trim();
+  }
   // Condição de pagamento — para antes de "Data de Emissão" ou totais
   const mCond = text.match(/Condi[çc][aã]o de Pagamento\s*:?\s*(.+?)(?=Data de Emiss|Total|Qtde\.\s+Total|$)/is);
   if(mCond) result.condicaoPagamento = mCond[1].replace(/\s+/g,' ').trim().slice(0,80);
@@ -9924,6 +9979,13 @@ function preencherFormMercus(data){
       (e.nome||'').toUpperCase().includes(sigRaw)
     );
     if(emp){ const sel=document.getElementById('fat-empresa-sel'); if(sel) sel.value = emp.id; }
+  }
+
+  // Auto-set tipo de entrega from parsed PDF "Tipo de pedido"
+  if(data.tipoEntrega){
+    const sel = document.getElementById('fat-tipo-entrega');
+    if(sel) sel.value = data.tipoEntrega;
+    fatTipoEntregaChange(); // show/hide evento field
   }
 
   fatItens = (data.itens || []);
