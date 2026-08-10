@@ -9729,7 +9729,7 @@ function renderFatItensTable(){
   tbody.innerHTML = fatItens.map((it,i) => `<tr>
     <td style="font-size:11px;color:#888">${i+1}</td>
     <td><input type="text" value="${it.codigo||''}" style="width:120px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;font-family:monospace" onchange="fatItens[${i}].codigo=this.value"></td>
-    <td><input type="text" value="${it.descricao||''}" style="width:200px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px" onchange="fatItens[${i}].descricao=this.value"></td>
+    <td style="min-width:220px"><input type="text" value="${it.descricao||''}" style="width:100%;min-width:200px;padding:4px 6px;border:1px solid #d0d7de;border-radius:4px;font-size:12px" onchange="fatItens[${i}].descricao=this.value"></td>
     <td style="text-align:center"><input type="number" value="${it.quantidade||1}" min="1" style="width:55px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].quantidade=Number(this.value)"></td>
     <td><input type="text" value="${it.unidade||'cx'}" style="width:40px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:center" onchange="fatItens[${i}].unidade=this.value"></td>
     <td style="text-align:right"><input type="number" value="${it.precoLiquido||0}" step="0.01" style="width:85px;padding:4px;border:1px solid #d0d7de;border-radius:4px;font-size:12px;text-align:right" onchange="fatItens[${i}].precoLiquido=Number(this.value)"></td>
@@ -9847,6 +9847,60 @@ function parseMercusText(text){
     seen.add(it.seq);
     return true;
   });
+
+  // ── Enrich descriptions: extract prefix (before seq) and suffix (after last R$) ──
+  // Locate each seq+code position in the joined text
+  const anchors2 = [];
+  const aRe2 = /\b(\d{1,3})\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{5,}))\b/gi;
+  let a2m;
+  while((a2m = aRe2.exec(text)) !== null){
+    const sq = parseInt(a2m[1]);
+    if(!anchors2.find(a => a.seq === sq))
+      anchors2.push({seq: sq, start: a2m.index, end: a2m.index + a2m[0].length});
+  }
+  anchors2.sort((a, b) => a.start - b.start);
+
+  result.itens.forEach(it => {
+    const pos = anchors2.find(a => a.seq === it.seq);
+    if(!pos) return;
+
+    // PREFIX: text between previous item's last R$ and current seq number
+    const prevPos = anchors2.find(a => a.seq === it.seq - 1);
+    let prefixRaw = '';
+    if(!prevPos){
+      const tm = text.slice(0, pos.start).match(/Tabela\b/i);
+      const from = tm ? (text.slice(0, pos.start).lastIndexOf(tm[0]) + tm[0].length) : 0;
+      prefixRaw = text.slice(from, pos.start).trim();
+    } else {
+      const seg = text.slice(prevPos.end, pos.start);
+      const prices = [...seg.matchAll(/R\$\s*[\d.,]+/gi)];
+      const lastPrice = prices.pop();
+      const from = lastPrice ? prevPos.end + lastPrice.index + lastPrice[0].length : prevPos.end;
+      prefixRaw = text.slice(from, pos.start).trim();
+    }
+    // Keep only the part starting from the last 5+ uppercase word (product name)
+    const prefixMatch = prefixRaw.match(/[A-ZÁÉÍÓÚÃÕÂÊÔÇ]{5,}.*/s);
+    const prefix = prefixMatch ? prefixMatch[0].replace(/\s+/g, ' ').trim() : '';
+
+    // SUFFIX: limit to THIS item's segment (before next anchor), use index 2 (subtotal = 3rd R$)
+    const nextPos = anchors2.find(a => a.seq === it.seq + 1);
+    const itemSegEnd = nextPos ? nextPos.start : text.length;
+    const itemSeg = text.slice(pos.end, itemSegEnd);
+    const segPrices = [...itemSeg.matchAll(/R\$\s*[\d.,]+/gi)];
+    let suffix = '';
+    if(segPrices.length >= 3){
+      const subtotalEnd = segPrices[2].index + segPrices[2][0].length;
+      const suffixZone = itemSeg.slice(subtotalEnd).trim();
+      const stopMatch = suffixZone.match(/[A-ZÁÉÍÓÚÃÕÂÊÔÇ]{5,}|(?:Qtde|Total|Valor|Desconto)\b/i);
+      suffix = (stopMatch ? suffixZone.slice(0, stopMatch.index) : suffixZone).replace(/\s+/g, ' ').trim();
+    }
+
+    // Combine prefix + inline + suffix
+    const parts = [prefix, it.descricao, suffix].filter(Boolean);
+    const combined = parts.join(' ').replace(/\s+/g, ' ').trim();
+    if(combined) it.descricao = combined;
+  });
+
   return result;
 }
 
