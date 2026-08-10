@@ -9831,7 +9831,17 @@ async function parseMercusPDF(file){
     }
     const parsed = parseMercusText(fullText);
     preencherFormMercus(parsed);
-    statusEl.textContent = `✅ Pedido #${parsed.numeroPedidoMercus||'?'} importado — ${(parsed.itens||[]).length} item(s).`;
+    const nItens = (parsed.itens||[]).length;
+    statusEl.textContent = `✅ Pedido #${parsed.numeroPedidoMercus||'?'} importado — ${nItens} item(s).`;
+    // Diagnóstico: se 0 itens, loga o texto bruto do PDF no console para análise
+    if(nItens === 0){
+      console.warn('[MESO-LOG] PDF sem itens reconhecidos. Texto bruto:');
+      console.warn(fullText.slice(0, 3000));
+      // Tenta encontrar a seção de itens e mostrar trecho para debug
+      const secIdx = fullText.search(/\b(Produto|C[oó]digo|Item|Seq)\b/i);
+      const snippet = secIdx >= 0 ? fullText.slice(secIdx, secIdx + 600) : fullText.slice(0, 600);
+      console.warn('[MESO-LOG] Seção esperada de itens:', snippet);
+    }
   }catch(e){
     console.error(e);
     statusEl.textContent = '❌ Erro ao ler PDF: ' + e.message;
@@ -9883,41 +9893,74 @@ function parseMercusText(text){
   const mObs = text.match(/Informa[çc][õo]es Adicionais\s*:?\s*(.+?)(?=$)/is);
   if(mObs) result.observacoes = mObs[1].replace(/\s+/g,' ').trim().slice(0,400);
 
-  // Items: seq + Código (T-XXXXX ou PRD...) + descrição opcional + qtde + unidade + preços R$
-  // Unidades aceitas: inclui ampola, frasco, blister, comprimido, sache, envelope, etc.
-  const UNITS = 'caixas?|cx|unidades?|unidad[e]?|unid|kits?|un|ml|fl|fr|amp(?:olas?)?|vl|bd|pc|kg|lt|gl|frascos?|ampolas?|blisters?|comp(?:rimidos?)?|cap(?:sulas?)?|sachs?|sachê|env|pct|bx|strips?|dose|doses|tubo|tubos|seringa|seringas|bisnaga|bisnagas';
+  // ── ITEM REGEX ──
+  // Padrão de código aceito: T-XXX, PRDXXX, ou qualquer código alfanumérico de 3-20 chars
+  // (ex: MF0020, MES-01, 7898123, AB-CDE-001, etc.)
+  const CODE_PAT = '(?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}|[A-Z]{1,6}-[A-Z0-9]{2,}|[A-Z][A-Z0-9]{3,19})';
+  // Unidades aceitas (português + espanhol + abreviações)
+  const UNITS = 'caixas?|cx|unidades?|unidad(?:es?)?|unid|kits?|un|ml|fl|fr|amp(?:olas?)?|vl|bd|pc|kg|lt|gl|frascos?|ampolas?|blisters?|comp(?:rimidos?)?|cap(?:s[uú]las?)?|sachs?|sachês?|env|pct|bx|strips?|doses?|tubos?|seringas?|bisnagas?|par|pares';
+
+  // Regex principal: seq + código + desc opcional + qtde + unidade + 3 preços R$
   const itemRegex = new RegExp(
-    '\\b(\\d{1,3})\\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}))\\b' +
-    '(?:\\s+((?:(?!R\\$).)*?))?' +
+    '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
+    '(?:\\s+((?:(?!R\\$|\\b\\d+\\s+(?:' + UNITS + ')\\b).)*?))?' +
     '\\s*(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
     '\\s+R\\$\\s*[\\d.,]+[\\s\\S]*?R\\$\\s*([\\d.,]+)\\s+R\\$\\s*[\\d.,]+',
     'gi'
   );
   let m;
   while((m = itemRegex.exec(text)) !== null){
+    // Evita falsos positivos: código não pode ser palavra comum
+    const cod = m[2].trim();
+    if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME|FONE|CNPJ|EMAIL|CIDADE|ESTADO|BAIRRO|RUA|AV|CEP|PAGAMENTO|ENTREGA|PEDIDO|CLIENTE|EMPRESA)$/i.test(cod)) continue;
     const precoLiq = parseFloat((m[6]||'0').replace(/\./g,'').replace(',','.'));
     const qtd = parseFloat((m[4]||'1').replace(',','.'));
     result.itens.push({
       seq: parseInt(m[1]),
-      codigo: m[2].trim(),
+      codigo: cod,
       descricao: (m[3]||'').trim(),
       quantidade: qtd,
       unidade: m[5].trim().toUpperCase(),
       precoLiquido: precoLiq
     });
   }
-  // Fallback: se a regex principal não achou nada, tenta regex simplificada
-  // (PDFs sem coluna de preço líquido explícita)
+
+  // Fallback A: sem coluna de preço líquido (2 R$ em vez de 3)
   if(result.itens.length === 0){
-    const fallRe = /\b(\d{1,3})\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}))\b(?:[^\n]*?)(\d+(?:[.,]\d+)?)\s+(?:R\$|un|unid|cx|kit|amp|ml|kg)/gi;
-    let fm;
-    while((fm = fallRe.exec(text)) !== null){
+    const fallA = new RegExp(
+      '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
+      '(?:[\\s\\S]*?)(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
+      '\\s+R\\$\\s*[\\d.,]+[\\s\\S]*?R\\$\\s*([\\d.,]+)',
+      'gi'
+    );
+    let fa;
+    while((fa = fallA.exec(text)) !== null){
+      const cod = fa[2].trim();
+      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
       result.itens.push({
-        seq: parseInt(fm[1]),
-        codigo: fm[2].trim(),
-        descricao: '',
-        quantidade: parseFloat((fm[3]||'1').replace(',','.')),
-        unidade: 'UN',
+        seq: parseInt(fa[1]), codigo: cod, descricao: '',
+        quantidade: parseFloat((fa[3]||'1').replace(',','.')),
+        unidade: fa[4].trim().toUpperCase(),
+        precoLiquido: parseFloat((fa[5]||'0').replace(/\./g,'').replace(',','.'))
+      });
+    }
+  }
+
+  // Fallback B: sem preço algum (apenas seq + código + qtde + unidade)
+  if(result.itens.length === 0){
+    const fallB = new RegExp(
+      '\\b(\\d{1,3})\\s+(' + CODE_PAT + ')\\b' +
+      '(?:[^\\n]{0,120}?)(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')',
+      'gi'
+    );
+    let fb;
+    while((fb = fallB.exec(text)) !== null){
+      const cod = fb[2].trim();
+      if(/^(TOTAL|VALOR|DESCONTO|QTDE|DATA|NOME)$/i.test(cod)) continue;
+      result.itens.push({
+        seq: parseInt(fb[1]), codigo: cod, descricao: '',
+        quantidade: parseFloat((fb[3]||'1').replace(',','.')),
+        unidade: fb[4].trim().toUpperCase(),
         precoLiquido: 0
       });
     }
