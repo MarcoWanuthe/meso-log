@@ -9656,7 +9656,9 @@ function renderFilaPedidos(){
     (p.numeroPedidoMesoLog||'').toLowerCase().includes(q) ||
     (p.clienteNome||'').toLowerCase().includes(q)
   );
+  // Por padrão, ocultar pedidos fechados (a menos que o filtro seja explicitamente "fechado")
   if(statusFil) pedidos = pedidos.filter(p => p.status === statusFil);
+  else pedidos = pedidos.filter(p => p.status !== 'fechado');
 
   if(!pedidos.length){
     container.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:#aaa">Nenhum pedido encontrado.</div>';
@@ -9881,19 +9883,44 @@ function parseMercusText(text){
   const mObs = text.match(/Informa[çc][õo]es Adicionais\s*:?\s*(.+?)(?=$)/is);
   if(mObs) result.observacoes = mObs[1].replace(/\s+/g,' ').trim().slice(0,400);
 
-  // Items: seq + Código (T-XXXXX ou PRD...) + descrição opcional (para antes de R$) + qtde + unidade + preço líquido
-  const itemRegex = /\b(\d{1,3})\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{5,}))\b(?:\s+((?:(?!R\$).)*?))?\s*(\d+)\s+(caixas?|cx|unidades?|unidad[e]?|unid|kits?|un|ml|fl|fr|amp|vl|bd|pc|kg|lt|gl)\s+R\$\s*[\d.,]+.*?R\$\s*([\d.,]+)\s+R\$\s*[\d.,]+/gi;
+  // Items: seq + Código (T-XXXXX ou PRD...) + descrição opcional + qtde + unidade + preços R$
+  // Unidades aceitas: inclui ampola, frasco, blister, comprimido, sache, envelope, etc.
+  const UNITS = 'caixas?|cx|unidades?|unidad[e]?|unid|kits?|un|ml|fl|fr|amp(?:olas?)?|vl|bd|pc|kg|lt|gl|frascos?|ampolas?|blisters?|comp(?:rimidos?)?|cap(?:sulas?)?|sachs?|sachê|env|pct|bx|strips?|dose|doses|tubo|tubos|seringa|seringas|bisnaga|bisnagas';
+  const itemRegex = new RegExp(
+    '\\b(\\d{1,3})\\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}))\\b' +
+    '(?:\\s+((?:(?!R\\$).)*?))?' +
+    '\\s*(\\d+(?:[.,]\\d+)?)\\s+(' + UNITS + ')' +
+    '\\s+R\\$\\s*[\\d.,]+[\\s\\S]*?R\\$\\s*([\\d.,]+)\\s+R\\$\\s*[\\d.,]+',
+    'gi'
+  );
   let m;
   while((m = itemRegex.exec(text)) !== null){
     const precoLiq = parseFloat((m[6]||'0').replace(/\./g,'').replace(',','.'));
+    const qtd = parseFloat((m[4]||'1').replace(',','.'));
     result.itens.push({
       seq: parseInt(m[1]),
       codigo: m[2].trim(),
       descricao: (m[3]||'').trim(),
-      quantidade: parseInt(m[4]),
+      quantidade: qtd,
       unidade: m[5].trim().toUpperCase(),
       precoLiquido: precoLiq
     });
+  }
+  // Fallback: se a regex principal não achou nada, tenta regex simplificada
+  // (PDFs sem coluna de preço líquido explícita)
+  if(result.itens.length === 0){
+    const fallRe = /\b(\d{1,3})\s+((?:T-[A-Z0-9]+|PRD[A-Z0-9]{3,}))\b(?:[^\n]*?)(\d+(?:[.,]\d+)?)\s+(?:R\$|un|unid|cx|kit|amp|ml|kg)/gi;
+    let fm;
+    while((fm = fallRe.exec(text)) !== null){
+      result.itens.push({
+        seq: parseInt(fm[1]),
+        codigo: fm[2].trim(),
+        descricao: '',
+        quantidade: parseFloat((fm[3]||'1').replace(',','.')),
+        unidade: 'UN',
+        precoLiquido: 0
+      });
+    }
   }
   // Deduplicate by seq
   const seen = new Set();
@@ -10433,7 +10460,7 @@ function fatModalMultiplicar(){
   document.getElementById('modal-actions').innerHTML = `
     <button class="btn btn-success" onclick="fatConfirmarMultiplicar()">Confirmar</button>
     <button class="btn btn-outline" onclick="closeModal('modal-det')">Cancelar</button>`;
-  document.getElementById('modal-det').classList.add('active');
+  document.getElementById('modal-det').classList.add('open');
 }
 
 function fatConfirmarMultiplicar(){
@@ -10503,7 +10530,7 @@ function verDetalhesPedido(pedidoId){
   document.getElementById('modal-actions').innerHTML = `
     ${['pre_separado','faturado'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
     <button class="btn btn-outline" onclick="closeModal('modal-det')">Fechar</button>`;
-  document.getElementById('modal-det').classList.add('active');
+  document.getElementById('modal-det').classList.add('open');
 }
 
 // ─── FATURISTAS ───────────────────────────────────────────────────────────────
