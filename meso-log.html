@@ -10476,15 +10476,59 @@ function processarBipagem(code){
     }
   }
   if(idx === -1){
-    toast('⚠️ Código não encontrado neste pedido: ' + codeNorm);
+    // EAN não cadastrado no produto — abre seleção manual para associar ao item certo
+    console.warn('[MESO-LOG] Barcode não encontrado:', codeNorm,
+      '| fatBipItems:', fatBipItems.map(it => ({codigo:it.codigo, ean:it.codigoBarras})));
+    _bipAssociarEAN(codeNorm);
     return;
   }
+  _bipRegistrar(idx);
+}
+
+// Associa manualmente um EAN desconhecido a um item do pedido
+function _bipAssociarEAN(eanCode){
+  const itensPendentes = fatBipItems
+    .map((it,i) => ({...it, _idx:i}))
+    .filter(it => it.bipados < it.qtdEsperada);
+
+  if(!itensPendentes.length){
+    toast('⚠️ Todos os itens já estão completos. Código: ' + eanCode);
+    return;
+  }
+
+  const opts = itensPendentes.map(it =>
+    `<option value="${it._idx}">${it.codigo} — ${it.descricao||'(sem descrição)'} (${it.bipados}/${it.qtdEsperada})</option>`
+  ).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <p style="margin:0 0 10px;font-size:13px;color:#555">
+      Código <strong>${eanCode}</strong> não está cadastrado no estoque.<br>
+      Selecione a qual produto ele pertence para registrar o bip:
+    </p>
+    <select id="bip-assoc-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px">${opts}</select>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="closeModal('modal-det')" style="flex:1;padding:9px;background:#eee;border:none;border-radius:6px;cursor:pointer">Cancelar</button>
+      <button onclick="_bipConfirmarAssoc('${eanCode}')" style="flex:2;padding:9px;background:#002050;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">✅ Confirmar Bip</button>
+    </div>`;
+  document.getElementById('modal-det').classList.add('open');
+}
+
+function _bipConfirmarAssoc(eanCode){
+  const idx = parseInt(document.getElementById('bip-assoc-sel')?.value ?? '-1');
+  if(idx === -1 || !fatBipItems[idx]) return;
+  // Salva o EAN no item para os próximos scans reconhecerem automaticamente
+  fatBipItems[idx].codigoBarras = eanCode;
+  closeModal('modal-det');
+  _bipRegistrar(idx);
+}
+
+function _bipRegistrar(idx){
   fatBipItems[idx].bipados++;
   const it = fatBipItems[idx];
   if(it.bipados > it.qtdEsperada){
     toast('❌ EXCESSO em ' + it.codigo + ' — ' + it.bipados + '/' + it.qtdEsperada);
   } else if(it.bipados === it.qtdEsperada){
-    toast('✅ ' + it.descricao + ' completo!');
+    toast('✅ ' + (it.descricao||it.codigo) + ' completo!');
   } else {
     toast('📦 ' + it.codigo + ': ' + it.bipados + '/' + it.qtdEsperada);
   }
