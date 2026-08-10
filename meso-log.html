@@ -10269,11 +10269,23 @@ function renderFechamento(){
 
   if(!fatBipItems.length){
     fatBipItems = (p.itens||[]).map(it => {
-      // allStock usa o campo "barcode" para código de barras EAN
-      const stockEntry = allStock.find(s => s.codigo === it.codigo);
+      // 1. Tenta achar pelo código interno (T-XXXXX)
+      let stockEntry = allStock.find(s => s.codigo === it.codigo);
+      // 2. Fallback por descrição (para itens PRD que não existem em allStock)
+      if(!stockEntry && it.descricao){
+        const descN = it.descricao.toLowerCase().trim();
+        stockEntry = allStock.find(s =>
+          s.descricao && (
+            s.descricao.toLowerCase().trim() === descN ||
+            descN.includes(s.descricao.toLowerCase().trim()) ||
+            s.descricao.toLowerCase().trim().split(' ').slice(0,4).join(' ').length > 5 &&
+            descN.includes(s.descricao.toLowerCase().trim().split(' ').slice(0,4).join(' '))
+          )
+        );
+      }
       return {
         codigo: it.codigo,
-        codigoBarras: stockEntry?.barcode || '',   // campo correto em allStock
+        codigoBarras: stockEntry?.barcode || '',
         descricao: it.descricao,
         qtdEsperada: Number(it.quantidade || 1),
         bipados: 0,
@@ -10367,7 +10379,22 @@ function processarBipagem(code){
       (s.barcode && codeNorm.endsWith(s.barcode))
     );
     if(stockMatch){
+      // 2a. Tenta por código interno
       idx = fatBipItems.findIndex(it => it.codigo === stockMatch.codigo);
+      // 2b. Fallback por descrição (cobre itens PRD vs T-code)
+      if(idx === -1 && stockMatch.descricao){
+        const smDesc = stockMatch.descricao.toLowerCase().trim();
+        idx = fatBipItems.findIndex(it => {
+          const itDesc = (it.descricao||'').toLowerCase().trim();
+          return itDesc === smDesc || itDesc.includes(smDesc) || smDesc.includes(itDesc);
+        });
+      }
+    }
+    // 2c. Se ainda não achou, tenta o próprio código scaneado como parte da descrição
+    if(idx === -1){
+      idx = fatBipItems.findIndex(it =>
+        it.codigoBarras && (it.codigoBarras === codeNorm || codeNorm.endsWith(it.codigoBarras))
+      );
     }
   }
   if(idx === -1){
