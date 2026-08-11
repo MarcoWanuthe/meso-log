@@ -2893,6 +2893,33 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- MODAL IMPRESSÃO PÓS-FECHAMENTO -->
+<div class="modal-overlay" id="modal-fat-impressao">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;color:#002050">🖨️ Imprimir Documentos</h3>
+      <button onclick="closeModal('modal-fat-impressao')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
+    </div>
+    <div style="font-size:13px;color:#555;margin-bottom:20px;background:#E8F5E9;padding:12px 16px;border-radius:8px;border-left:4px solid #4CAF50">
+      ✅ Pedido fechado com sucesso! Clique para abrir cada documento e imprimir.
+    </div>
+    <div id="fat-imp-nf-row" style="display:none;margin-bottom:10px">
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:14px;font-weight:700" onclick="_fatImprimirDoc('nf')">
+        📄 Abrir e Imprimir NF-e
+      </button>
+    </div>
+    <div id="fat-imp-etq-row" style="display:none;margin-bottom:10px">
+      <button class="btn btn-success" style="width:100%;padding:14px;font-size:14px;font-weight:700" onclick="_fatImprimirDoc('etq')">
+        📦 Abrir e Imprimir Etiqueta dos Correios
+      </button>
+    </div>
+    <div id="fat-imp-none-row" style="display:none;color:#888;font-size:13px;padding:10px;text-align:center;margin-bottom:10px">
+      ℹ️ Nenhum arquivo PDF/Etiqueta anexado a este pedido.
+    </div>
+    <button class="btn btn-outline" onclick="closeModal('modal-fat-impressao')" style="width:100%;margin-top:6px">Fechar sem imprimir</button>
+  </div>
+</div>
+
 <!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modal-det">
   <div class="modal" style="max-width:700px">
@@ -3009,6 +3036,7 @@ let fatPedidoExp = null;
 let fatFechId = null;
 let fatBipItems = [];
 let fatFinalizando = false; // guard contra duplo clique
+let _fatImpPedidoId = null; // ID do pedido para impressão pós-fechamento
 
 const FAT_EMPRESAS_SEED = [
   {nome:'JPG - Filial SP', sigla:'JPG SP', bloqueada:false, ativa:true},
@@ -4136,6 +4164,8 @@ document.getElementById('modal-status').addEventListener('click',function(e){if(
 document.addEventListener('DOMContentLoaded',function(){
   const mnf=document.getElementById('modal-registro-nf');
   if(mnf) mnf.addEventListener('click',function(e){if(e.target===this)closeModal('modal-registro-nf');});
+  const mfi=document.getElementById('modal-fat-impressao');
+  if(mfi) mfi.addEventListener('click',function(e){if(e.target===this)closeModal('modal-fat-impressao');});
 });
 
 // ==============================
@@ -9904,7 +9934,8 @@ async function salvarRegistroNF(){
   }catch(e){ toast('Erro: ' + e.message); }
 }
 
-// Helper: abre arquivo salvo no localStorage e dispara impressão automática
+// Helper: abre arquivo salvo no localStorage em nova aba para impressão
+// IMPORTANTE: deve ser chamado diretamente por um click do usuário para não ser bloqueado pelo browser
 function _autoPrintFromStorage(storageKey, janelaTitulo){
   const data = localStorage.getItem(storageKey);
   if(!data) return false;
@@ -9921,8 +9952,34 @@ function _autoPrintFromStorage(storageKey, janelaTitulo){
       w.addEventListener('load', () => { setTimeout(() => { try{ w.print(); }catch(e){} }, 500); });
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
-    return true;
+    return !!w;
   }catch(e){ console.error('[MESO-LOG] Erro ao imprimir', storageKey, e); return false; }
+}
+
+// Modal de impressão pós-fechamento — aberto via _abrirModalImpressao()
+// Os botões dentro do modal acionam window.open() por click do usuário → sem bloqueio de popup
+function _abrirModalImpressao(pedidoId){
+  _fatImpPedidoId = pedidoId;
+  const hasNf  = !!localStorage.getItem('meso_nf_'  + pedidoId);
+  const hasEtq = !!localStorage.getItem('meso_etq_' + pedidoId);
+  const nfRow   = document.getElementById('fat-imp-nf-row');
+  const etqRow  = document.getElementById('fat-imp-etq-row');
+  const noneRow = document.getElementById('fat-imp-none-row');
+  if(nfRow)   nfRow.style.display   = hasNf  ? '' : 'none';
+  if(etqRow)  etqRow.style.display  = hasEtq ? '' : 'none';
+  if(noneRow) noneRow.style.display = (!hasNf && !hasEtq) ? '' : 'none';
+  if(!hasNf && !hasEtq) return; // nada para imprimir, não mostra modal
+  const modal = document.getElementById('modal-fat-impressao');
+  if(modal) modal.classList.add('open');
+}
+
+// Chamada pelos botões do modal — click do usuário garante que window.open não é bloqueado
+function _fatImprimirDoc(tipo){
+  if(!_fatImpPedidoId){ toast('⚠️ Pedido não identificado.'); return; }
+  const key = tipo === 'nf' ? 'meso_nf_' + _fatImpPedidoId : 'meso_etq_' + _fatImpPedidoId;
+  const label = tipo === 'nf' ? 'NF-e' : 'Etiqueta Correios';
+  const ok = _autoPrintFromStorage(key, label);
+  if(!ok) toast('⚠️ Arquivo não encontrado ou popup bloqueado. Permita popups neste site.');
 }
 
 // ─── NOVO PEDIDO ──────────────────────────────────────────────────────────────
@@ -10811,55 +10868,65 @@ function fatConfirmarMultiplicar(){
 }
 
 async function finalizarFechamento(){
-  // Guard: impede duplo clique
+  // Guard: impede duplo clique enquanto Firestore processa
   if(fatFinalizando){ toast('⏳ Aguarde, processando...'); return; }
   const p = allPedidosFat.find(x => x.id === fatFechId);
-  if(!p){ toast('Pedido não encontrado. Volte à Fila e reabra.'); return; }
-  const todos = fatBipItems.every(it => it.bipados === it.qtdEsperada);
-  if(!todos){ toast('Bipagem incompleta. Verifique todos os itens.'); return; }
+  if(!p){ toast('❌ Pedido não encontrado. Volte à Fila e reabra.'); return; }
+  if(!fatBipItems.every(it => it.bipados === it.qtdEsperada)){
+    toast('⚠️ Bipagem incompleta. Verifique todos os itens.'); return;
+  }
 
   fatFinalizando = true;
-  // Desabilita botão visualmente
-  const btnFinal = document.querySelector('[onclick="finalizarFechamento()"]');
-  if(btnFinal){ btnFinal.disabled = true; btnFinal.textContent = '⏳ Fechando...'; }
+  // Desabilita botão via querySelector (funciona pois o botão está no DOM neste momento)
+  const btn = document.querySelector('[onclick="finalizarFechamento()"]');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Fechando...'; }
+
+  const closingId  = fatFechId;          // captura antes de qualquer reset
+  const closingNum = p.numeroPedidoMesoLog;
+  const closingPor = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
 
   try{
-    const closingId = fatFechId; // captura antes de resetar
-    const closingNum = p.numeroPedidoMesoLog;
+    // Promise.race: Firestore update vs timeout de 12s
+    // Sem isso, o await pode travar indefinidamente se a rede cair ou a regra Firestore bloquear
+    await Promise.race([
+      db.collection('pedidosFaturamento').doc(closingId).update({
+        status:       'fechado',
+        fechadoEm:    new Date().toISOString(),
+        fechadoPor:   closingPor,
+        bipagem:      fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
+        atualizadoEm: new Date().toISOString()
+      }),
+      new Promise((_,rej) => setTimeout(()=>rej(new Error(
+        'Timeout: servidor não respondeu em 12 segundos. Verifique a conexão com a internet e tente novamente.'
+      )), 12000))
+    ]);
 
-    await db.collection('pedidosFaturamento').doc(closingId).update({
-      status:       'fechado',
-      fechadoEm:    new Date().toISOString(),
-      fechadoPor:   (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
-      bipagem:      fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
-      atualizadoEm: new Date().toISOString()
-    });
-
-    fatFechId   = null;
-    fatBipItems = [];
+    // ✅ SUCESSO — Firestore confirmou a gravação
+    fatFechId      = null;
+    fatBipItems    = [];
+    fatFinalizando = false; // reset antes de trocar de tab
     fatTab('fila', document.getElementById('fat-btn-fila'));
-    toast('✅ Pedido ' + closingNum + ' FECHADO com sucesso!');
+    toast('✅ Pedido ' + closingNum + ' FECHADO por ' + closingPor + '!');
+    // Abre modal de impressão — o usuário clica nos botões (sem risco de popup blocker)
+    _abrirModalImpressao(closingId);
 
-    // Auto-impressão NF + Etiqueta — abre ambas imediatamente (sem setTimeout aninhado)
-    const hasNfLocal  = !!localStorage.getItem('meso_nf_'  + closingId);
-    const hasEtqLocal = !!localStorage.getItem('meso_etq_' + closingId);
-    if(hasNfLocal || hasEtqLocal){
-      setTimeout(() => {
-        let impressos = [];
-        if(hasNfLocal && _autoPrintFromStorage('meso_nf_' + closingId, 'NF-e')) impressos.push('NF');
-        if(hasEtqLocal && _autoPrintFromStorage('meso_etq_' + closingId, 'Etiqueta')) impressos.push('Etiqueta');
-        if(impressos.length) toast('🖨️ Abrindo para impressão: ' + impressos.join(' + '));
-        else toast('⚠️ Popups bloqueados pelo navegador. Permita popups para imprimir automaticamente.');
-      }, 600);
-    } else {
-      toast('ℹ️ Nenhum arquivo NF/Etiqueta anexado para impressão automática.');
-    }
   }catch(e){
-    console.error(e);
-    toast('Erro ao fechar pedido: ' + e.message);
-    // Reabilita botão em caso de erro
-    if(btnFinal){ btnFinal.disabled = false; btnFinal.textContent = '✅ Finalizar e Fechar Pedido'; }
-  } finally {
+    console.error('[MESO-LOG] finalizarFechamento erro:', e);
+    // Re-renderiza o fechamento para restaurar o botão com estado fresco
+    // (melhor que tentar reabilitar referência DOM possivelmente stale)
+    renderFechamento();
+    // Mostra erro dentro do painel (mais visível que toast que some em 3s)
+    setTimeout(()=>{
+      const cont = document.getElementById('fat-fech-content');
+      if(cont){
+        const div = document.createElement('div');
+        div.style.cssText = 'background:#FFEBEE;color:#B71C1C;padding:14px 18px;border-radius:8px;margin-top:12px;border:1.5px solid #EF9A9A;font-size:13px;line-height:1.5';
+        div.innerHTML = `<strong>❌ Erro ao fechar pedido</strong><br>${e.message}<br><small style="color:#C62828;display:block;margin-top:4px">Verifique a conexão e clique "Finalizar" novamente.</small>`;
+        cont.appendChild(div);
+      }
+    }, 50);
+
+  }finally{
     fatFinalizando = false;
   }
 }
