@@ -9815,9 +9815,9 @@ function renderFilaPedidos(){
     (p.numeroPedidoMesoLog||'').toLowerCase().includes(q) ||
     (p.clienteNome||'').toLowerCase().includes(q)
   );
-  // Por padrão, ocultar pedidos fechados (a menos que o filtro seja explicitamente "fechado")
+  // Por padrão, ocultar pedidos fechados e cancelados (ficam no Histórico)
   if(statusFil) pedidos = pedidos.filter(p => p.status === statusFil);
-  else pedidos = pedidos.filter(p => p.status !== 'fechado');
+  else pedidos = pedidos.filter(p => !['fechado','cancelado'].includes(p.status));
 
   if(!pedidos.length){
     container.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:#aaa">Nenhum pedido encontrado.</div>';
@@ -9847,6 +9847,10 @@ function renderFilaPedidos(){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
+          ${p.status === 'pagamento_verificado' ? `<div style="font-size:10px;color:#1565C0;font-weight:600;text-align:right">📦 Aguardando Pré-Separação</div>` : ''}
+          ${p.status === 'pre_separado'         ? `<div style="font-size:10px;color:#6A1B9A;font-weight:600;text-align:right">🧾 Aguardando Faturista registrar NF</div>` : ''}
+          ${p.status === 'faturado'             ? `<div style="font-size:10px;color:#E65100;font-weight:600;text-align:right">📎 Aguardando NF + Etiqueta dos Correios</div>` : ''}
+          ${p.status === 'nf_anexada'           ? `<div style="font-size:10px;color:#2E7D32;font-weight:600;text-align:right">✅ Pronto — Fechar Caixa disponível</div>` : ''}
           <div style="font-size:10px;color:#aaa">${(p.criadoEm||'').slice(0,10)} · ${p.faturistaNome||'ADM'}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
             ${canPagVerif && fatUserCan('verificar_pagamento') ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
