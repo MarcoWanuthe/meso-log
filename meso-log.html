@@ -2710,6 +2710,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="fatTab('novo',this)" id="fat-btn-novo">➕ Novo Pedido</button>
           <button onclick="fatTab('expedicao',this)" id="fat-btn-expedicao">📦 Expedição</button>
           <button onclick="fatTab('fechamento',this)" id="fat-btn-fechamento">✅ Fechamento</button>
+          <button onclick="fatTab('historico',this)" id="fat-btn-historico">📂 Histórico</button>
           <button onclick="fatTab('faturistas',this)" id="fat-btn-faturistas" style="display:none">👥 Faturistas</button>
           <button onclick="fatTab('empresas',this)" id="fat-btn-empresas" style="display:none">🏢 Empresas</button>
         </div>
@@ -2837,6 +2838,24 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <table class="prod-table"><thead><tr><th>Empresa</th><th>Sigla</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody id="fat-empresas-tbody"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px">Carregando empresas...</td></tr></tbody></table>
           </div>
+        </div>
+
+        <!-- TAB HISTÓRICO -->
+        <div id="fview-historico" style="display:none">
+          <div class="card" style="padding:14px 18px;margin-bottom:14px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <input type="text" id="fat-hist-search" placeholder="🔍 Nº, cliente, NF..." style="flex:1;min-width:180px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderHistorico()">
+              <select id="fat-hist-status" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderHistorico()">
+                <option value="">Fechados + Cancelados</option>
+                <option value="fechado">✅ Fechados</option>
+                <option value="cancelado">❌ Cancelados</option>
+              </select>
+              <input type="date" id="fat-hist-de" style="padding:8px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderHistorico()" title="Data inicial">
+              <input type="date" id="fat-hist-ate" style="padding:8px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderHistorico()" title="Data final">
+              <button class="btn btn-sm btn-outline" onclick="document.getElementById('fat-hist-search').value='';document.getElementById('fat-hist-status').value='';document.getElementById('fat-hist-de').value='';document.getElementById('fat-hist-ate').value='';renderHistorico()">🔄 Limpar</button>
+            </div>
+          </div>
+          <div id="fat-hist-lista"></div>
         </div>
 
       </div><!-- end fat-main-panel -->
@@ -3363,11 +3382,13 @@ function startListeners(){
   if(unsubPedidosFat) unsubPedidosFat();
   unsubPedidosFat = db.collection('pedidosFaturamento').orderBy('criadoEm','desc').onSnapshot(snap=>{
     allPedidosFat = snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(document.getElementById('fview-fila')?.style.display!=='none') renderFilaPedidos();
+    if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
+    if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
   }, err=>{
     db.collection('pedidosFaturamento').onSnapshot(snap2=>{
       allPedidosFat = snap2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
-      if(document.getElementById('fview-fila')?.style.display!=='none') renderFilaPedidos();
+      if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
+      if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
     });
   });
 }
@@ -9727,11 +9748,13 @@ function fatEnterMain(nomeDisplay){
   const bNovo = document.getElementById('fat-btn-novo');
   const bExp  = document.getElementById('fat-btn-expedicao');
   const bFech = document.getElementById('fat-btn-fechamento');
+  const bHist = document.getElementById('fat-btn-historico');
   const bFat  = document.getElementById('fat-btn-faturistas');
   const bEmp  = document.getElementById('fat-btn-empresas');
   if(bNovo) bNovo.style.display = canNovo     ? '' : 'none';
   if(bExp)  bExp.style.display  = canExp      ? '' : 'none';
   if(bFech) bFech.style.display = canFechTab  ? '' : 'none';
+  if(bHist) bHist.style.display = '';          // visível para todos os perfis
   if(bFat)  bFat.style.display  = isAdm       ? '' : 'none';
   if(bEmp)  bEmp.style.display  = isAdm       ? '' : 'none';
   fatTab('fila', document.getElementById('fat-btn-fila'));
@@ -9766,7 +9789,7 @@ function fatLogout(){
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function fatTab(tab, btn){
-  ['fila','novo','expedicao','fechamento','faturistas','empresas'].forEach(t=>{
+  ['fila','novo','expedicao','fechamento','historico','faturistas','empresas'].forEach(t=>{
     const el = document.getElementById('fview-'+t);
     if(el) el.style.display = (t === tab ? '' : 'none');
   });
@@ -9774,6 +9797,7 @@ function fatTab(tab, btn){
   if(btn) btn.classList.add('active');
   if(tab === 'fila')       renderFilaPedidos();
   if(tab === 'novo')       fatIniciarNovo();
+  if(tab === 'historico')  renderHistorico();
   if(tab === 'faturistas') renderFaturistas();
   if(tab === 'empresas')   renderEmpresas();
 }
@@ -10965,56 +10989,75 @@ async function finalizarFechamento(){
   }
 
   fatFinalizando = true;
-  // Desabilita botão via querySelector (funciona pois o botão está no DOM neste momento)
-  const btn = document.querySelector('[onclick="finalizarFechamento()"]');
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ Fechando...'; }
 
-  const closingId  = fatFechId;          // captura antes de qualquer reset
+  const closingId  = fatFechId;
   const closingNum = p.numeroPedidoMesoLog;
   const closingPor = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
 
+  // Countdown visual no botão: 6s → mostra progresso para o usuário saber que está processando
+  const btn = document.querySelector('[onclick="finalizarFechamento()"]');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Fechando... 6s'; }
+  let _secs = 5;
+  const _countInterval = setInterval(()=>{
+    const b = document.querySelector('[onclick="finalizarFechamento()"]');
+    if(b && b.disabled) b.textContent = '⏳ Fechando... ' + _secs + 's';
+    _secs--;
+    if(_secs < 0) clearInterval(_countInterval);
+  }, 1000);
+
   try{
-    // Promise.race: Firestore update vs timeout de 12s
-    // Sem isso, o await pode travar indefinidamente se a rede cair ou a regra Firestore bloquear
+    // Promise.race: Firestore update vs timeout de 6s com mensagem clara de erro
     await Promise.race([
       db.collection('pedidosFaturamento').doc(closingId).update({
         status:       'fechado',
         fechadoEm:    new Date().toISOString(),
         fechadoPor:   closingPor,
-        bipagem:      fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
+        bipagem:      fatBipItems.map(it => ({
+          codigo:       String(it.codigo || ''),
+          qtdEsperada:  Number(it.qtdEsperada) || 0,
+          bipados:      Number(it.bipados) || 0
+        })),
         atualizadoEm: new Date().toISOString()
       }),
       new Promise((_,rej) => setTimeout(()=>rej(new Error(
-        'Timeout: servidor não respondeu em 12 segundos. Verifique a conexão com a internet e tente novamente.'
-      )), 12000))
+        'Timeout (6s): servidor não respondeu. Verifique a conexão e tente novamente.'
+      )), 6000))
     ]);
 
-    // ✅ SUCESSO — Firestore confirmou a gravação
+    // ✅ SUCESSO
+    clearInterval(_countInterval);
     fatFechId      = null;
     fatBipItems    = [];
-    fatFinalizando = false; // reset antes de trocar de tab
+    fatFinalizando = false;
     fatTab('fila', document.getElementById('fat-btn-fila'));
     toast('✅ Pedido ' + closingNum + ' FECHADO por ' + closingPor + '!');
-    // Abre modal de impressão — o usuário clica nos botões (sem risco de popup blocker)
-    _abrirModalImpressao(closingId);
+    // Abre modal de impressão (async — catch próprio para não afetar fluxo principal)
+    _abrirModalImpressao(closingId).catch(e => console.warn('[MESO-LOG] Modal impressão:', e));
 
   }catch(e){
+    clearInterval(_countInterval);
     console.error('[MESO-LOG] finalizarFechamento erro:', e);
-    // Re-renderiza o fechamento para restaurar o botão com estado fresco
-    // (melhor que tentar reabilitar referência DOM possivelmente stale)
+    // Re-renderiza fechamento para restaurar botão fresco (evita referência DOM stale)
     renderFechamento();
-    // Mostra erro dentro do painel (mais visível que toast que some em 3s)
+    // Painel de erro persistente (não some como toast)
     setTimeout(()=>{
       const cont = document.getElementById('fat-fech-content');
       if(cont){
         const div = document.createElement('div');
-        div.style.cssText = 'background:#FFEBEE;color:#B71C1C;padding:14px 18px;border-radius:8px;margin-top:12px;border:1.5px solid #EF9A9A;font-size:13px;line-height:1.5';
-        div.innerHTML = `<strong>❌ Erro ao fechar pedido</strong><br>${e.message}<br><small style="color:#C62828;display:block;margin-top:4px">Verifique a conexão e clique "Finalizar" novamente.</small>`;
+        div.style.cssText = 'background:#FFEBEE;color:#B71C1C;padding:16px 18px;border-radius:8px;margin-top:12px;border:2px solid #EF9A9A;font-size:13px;line-height:1.6';
+        div.innerHTML = `<strong>❌ Falha ao fechar o pedido</strong><br>
+          <span style="font-size:12px">${e.message}</span><br>
+          <small style="color:#C62828;display:block;margin-top:6px">
+            Possíveis causas: sem conexão com a internet, ou sessão expirada.<br>
+            Clique "Finalizar" novamente após verificar a conexão.
+          </small>`;
         cont.appendChild(div);
+        div.scrollIntoView({behavior:'smooth', block:'nearest'});
       }
     }, 50);
 
   }finally{
+    clearInterval(_countInterval);
     fatFinalizando = false;
   }
 }
@@ -11054,12 +11097,92 @@ function verDetalhesPedido(pedidoId){
     ${itensHTML}`;
   document.getElementById('modal-title').textContent = 'Pedido ' + p.numeroPedidoMesoLog;
   document.getElementById('modal-actions').innerHTML = `
-    ${p.status === 'pendente' ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="closeModal('modal-det');verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
-    ${p.status === 'pre_separado' ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
-    ${['faturado','nf_anexada'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">📎 Gerenciar NF+Etiqueta</button>` : ''}
-    ${['pre_separado','faturado','nf_anexada'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
+    ${p.status === 'pendente' && fatUserCan('verificar_pagamento') ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="closeModal('modal-det');verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
+    ${p.status === 'pre_separado' && fatUserCan('registrar_nf') ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
+    ${['faturado','nf_anexada'].includes(p.status) && fatUserCan('registrar_nf') ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">📎 Gerenciar NF+Etiqueta</button>` : ''}
+    ${['pre_separado','faturado','nf_anexada'].includes(p.status) && fatUserCan('reimprimir_comanda') ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
     <button class="btn btn-outline" onclick="closeModal('modal-det')">Fechar</button>`;
   document.getElementById('modal-det').classList.add('open');
+}
+
+// ─── HISTÓRICO ────────────────────────────────────────────────────────────────
+function renderHistorico(){
+  const container = document.getElementById('fat-hist-lista');
+  if(!container) return;
+
+  const q       = (document.getElementById('fat-hist-search')?.value || '').toLowerCase();
+  const statFil = document.getElementById('fat-hist-status')?.value || '';
+  const de      = document.getElementById('fat-hist-de')?.value || '';
+  const ate     = document.getElementById('fat-hist-ate')?.value || '';
+
+  let pedidos = allPedidosFat.filter(p => ['fechado','cancelado'].includes(p.status));
+
+  if(statFil) pedidos = pedidos.filter(p => p.status === statFil);
+
+  if(q) pedidos = pedidos.filter(p =>
+    (p.numeroPedidoMesoLog||'').toLowerCase().includes(q) ||
+    (p.numeroPedidoMercus||'').includes(q) ||
+    (p.clienteNome||'').toLowerCase().includes(q) ||
+    (p.nfNumero||'').includes(q) ||
+    (p.fechadoPor||'').toLowerCase().includes(q)
+  );
+
+  if(de)  pedidos = pedidos.filter(p => (p.fechadoEm||p.atualizadoEm||'') >= de);
+  if(ate) pedidos = pedidos.filter(p => (p.fechadoEm||p.atualizadoEm||'').slice(0,10) <= ate);
+
+  // Ordena por fechadoEm DESC (mais recentes primeiro)
+  pedidos.sort((a,b) => (b.fechadoEm||b.atualizadoEm||'').localeCompare(a.fechadoEm||a.atualizadoEm||''));
+
+  if(!pedidos.length){
+    container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:#aaa"><div style="font-size:32px;margin-bottom:8px">📂</div>Nenhum pedido no histórico.</div>';
+    return;
+  }
+
+  // Contador
+  const total = pedidos.length;
+  const fechados   = pedidos.filter(p=>p.status==='fechado').length;
+  const cancelados = pedidos.filter(p=>p.status==='cancelado').length;
+
+  container.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="card" style="padding:10px 16px;flex:1;min-width:120px;text-align:center;background:#F5F5F5">
+        <div style="font-size:22px;font-weight:700;color:#424242">${total}</div>
+        <div style="font-size:11px;color:#888">Total</div>
+      </div>
+      <div class="card" style="padding:10px 16px;flex:1;min-width:120px;text-align:center;background:#E8F5E9">
+        <div style="font-size:22px;font-weight:700;color:#1B5E20">${fechados}</div>
+        <div style="font-size:11px;color:#388E3C">✅ Fechados</div>
+      </div>
+      <div class="card" style="padding:10px 16px;flex:1;min-width:120px;text-align:center;background:#FFEBEE">
+        <div style="font-size:22px;font-weight:700;color:#B71C1C">${cancelados}</div>
+        <div style="font-size:11px;color:#C62828">❌ Cancelados</div>
+      </div>
+    </div>
+    ${pedidos.map(p => {
+      const s = FAT_STATUS_BADGE[p.status] || {bg:'#f5f5f5',color:'#666',label:p.status};
+      const dataFech = (p.fechadoEm||p.atualizadoEm||'').slice(0,10);
+      const horaFech = (p.fechadoEm||p.atualizadoEm||'').slice(11,16);
+      const nItens = (p.itens||[]).length;
+      return `<div class="card" style="margin-bottom:8px;padding:12px 16px;border-left:4px solid ${s.color}">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}</div>
+            <div style="font-size:11px;color:#888;margin-top:1px">Mercus: #${p.numeroPedidoMercus||'—'} · ${p.empresaSigla||'—'} ${p.nfNumero?'· NF: '+p.nfNumero:''}</div>
+            <div style="font-size:13px;color:#333;margin-top:3px;font-weight:600">${p.clienteNome||'—'}</div>
+            <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
+            <div style="font-size:11px;color:#888">${dataFech}${horaFech?' '+horaFech:''}</div>
+            ${p.fechadoPor?`<div style="font-size:11px;color:#555">por ${p.fechadoPor}</div>`:''}
+            <div style="margin-top:4px">
+              <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver Detalhes</button>
+              ${(p.nfAnexada||p.etiquetaAnexada) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;margin-left:6px" onclick="_abrirModalImpressao('${p.id}').catch(()=>{})">🖨️ Imprimir</button>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
 }
 
 // ─── FATURISTAS ───────────────────────────────────────────────────────────────
