@@ -2372,8 +2372,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <div class="guide-step">
                 <div class="guide-step-num" style="background:#0D9488">2</div>
                 <div class="guide-step-text">
-                  <strong>📋 Fila — Visão geral dos pedidos:</strong> lista todos os pedidos de faturamento em tempo real. Use a barra de busca (Nº Mercus, MESO-LOG, cliente) e o filtro de status para localizar rapidamente um pedido. Os status disponíveis são:<br>
-                  <span style="display:inline-block;margin-top:6px">⚪ <strong>Pendente</strong> → 🔵 <strong>Em Análise</strong> → 🟡 <strong>Em Separação</strong> → 🟠 <strong>Aguard. NF</strong> → 🟣 <strong>Em Expedição</strong> → ✅ <strong>Expedido</strong> → 🔴 <strong>Cancelado</strong></span>
+                  <strong>📋 Fila — Visão geral dos pedidos:</strong> lista todos os pedidos de faturamento em tempo real. Use a barra de busca (Nº Mercus, MESO-LOG, cliente) e o filtro de status para localizar rapidamente um pedido. O fluxo completo é:<br>
+                  <span style="display:inline-block;margin-top:6px">⏳ <strong>Pendente</strong> → 💳 <strong>Pag. Verificado</strong> → 📦 <strong>Pré-Separação</strong> (LOT + VALIDADE) → 🧾 <strong>Faturado</strong> (NF registrada) → 📎 <strong>NF Anexada</strong> (PDF + Etiqueta) → ✅ <strong>Fechado</strong> (bipagem + impressão automática)</span>
                 </div>
               </div>
 
@@ -2721,10 +2721,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <select id="fat-fila-status" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderFilaPedidos()">
               <option value="">Todos os Status</option>
               <option value="pendente">⏳ Pendente</option>
+              <option value="pagamento_verificado">💳 Pag. Verificado</option>
               <option value="aguardando_expedicao">🔔 Ag. Expedição</option>
               <option value="em_separacao">🔄 Em Separação</option>
               <option value="pre_separado">📋 Pré-Separado</option>
-              <option value="faturado">💼 Faturado</option>
+              <option value="faturado">🧾 Faturado</option>
+              <option value="nf_anexada">📎 NF Anexada</option>
               <option value="fechado">✅ Fechado</option>
             </select>
           </div>
@@ -2835,6 +2837,53 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+
+<!-- MODAL REGISTRO NF + ANEXO DE ARQUIVOS -->
+<div class="modal-overlay" id="modal-registro-nf">
+  <div class="modal" style="max-width:540px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <h3>🧾 Registrar NF + Anexar Arquivos</h3>
+      <button onclick="closeModal('modal-registro-nf')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
+    </div>
+    <div id="modal-nf-pedido-num" style="font-size:12px;color:#555;margin-bottom:14px;padding:8px 12px;background:#F8F9FA;border-radius:6px;font-family:monospace;font-weight:700"></div>
+    <input type="hidden" id="modal-nf-pedido-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label style="font-size:11px;font-weight:700;color:#555">Nº NF-e *</label>
+        <input type="text" id="modal-nf-numero" placeholder="000.000.000" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:15px;font-family:monospace;box-sizing:border-box;margin-top:4px;font-weight:700">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:11px;font-weight:700;color:#555">Chave de Acesso (opcional)</label>
+        <input type="text" id="modal-nf-chave" placeholder="44 dígitos" maxlength="44" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:11px;font-family:monospace;box-sizing:border-box;margin-top:4px">
+      </div>
+    </div>
+    <div style="border:1px dashed #d0d7de;border-radius:8px;padding:14px;margin-bottom:12px;background:#FAFAFA">
+      <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📎 Anexar Arquivos (salvos neste navegador)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px">📄 NF-e PDF</label>
+          <input type="file" id="modal-nf-file" accept=".pdf" style="width:100%;font-size:12px;border:1px solid #d0d7de;border-radius:5px;padding:5px;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px">📦 Etiqueta de Envio</label>
+          <input type="file" id="modal-etq-file" accept=".pdf,image/*" style="width:100%;font-size:12px;border:1px solid #d0d7de;border-radius:5px;padding:5px;box-sizing:border-box">
+        </div>
+      </div>
+      <div id="modal-nf-file-status" style="font-size:11px;color:#555;margin-top:10px;padding:6px 10px;background:#fff;border-radius:5px;border:1px solid #eee"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#555">Observação (transportadora, prazo, notas...)</label>
+      <textarea id="modal-nf-obs" placeholder="Ex: Correios PAC, prazo 5 dias úteis..." style="width:100%;min-height:48px;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:12px;box-sizing:border-box;margin-top:4px"></textarea>
+    </div>
+    <div style="font-size:11px;color:#7A6200;margin-bottom:14px;padding:8px 12px;background:#FFF8E1;border-radius:6px;border-left:3px solid #FFB300">
+      ⚠️ Os arquivos ficam salvos <strong>neste navegador</strong>. A impressão automática acontece no fechamento do caixa, no mesmo computador.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="closeModal('modal-registro-nf')" style="flex:1">Cancelar</button>
+      <button class="btn btn-success" onclick="salvarRegistroNF()" style="flex:2;font-weight:700">💾 Salvar Faturamento</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modal-det">
@@ -4072,9 +4121,13 @@ async function salvarStatus(){
   }catch(e){alert('Erro: '+e.message);}
 }
 
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
 document.getElementById('modal-det').addEventListener('click',function(e){if(e.target===this)closeModal('modal-det');});
 document.getElementById('modal-status').addEventListener('click',function(e){if(e.target===this)closeModal('modal-status');});
+document.addEventListener('DOMContentLoaded',function(){
+  const mnf=document.getElementById('modal-registro-nf');
+  if(mnf) mnf.addEventListener('click',function(e){if(e.target===this)closeModal('modal-registro-nf');});
+});
 
 // ==============================
 // PDF
@@ -9564,12 +9617,15 @@ async function admExcluirUsuario(id,nome){
 // ============================
 
 const FAT_STATUS_BADGE = {
-  pendente:           {bg:'#FFF3E0',color:'#E65100',  label:'⏳ Pendente'},
-  aguardando_expedicao:{bg:'#E3F2FD',color:'#1565C0',label:'🔔 Ag. Expedição'},
-  em_separacao:       {bg:'#E8EAF6',color:'#283593',  label:'🔄 Em Separação'},
-  pre_separado:       {bg:'#F3E5F5',color:'#6A1B9A',  label:'📋 Pré-Separado'},
-  faturado:           {bg:'#E8F5E9',color:'#1B5E20',  label:'💼 Faturado'},
-  fechado:            {bg:'#F5F5F5',color:'#424242',  label:'✅ Fechado'},
+  pendente:             {bg:'#FFF3E0',color:'#E65100', label:'⏳ Pendente'},
+  pagamento_verificado: {bg:'#E8F5E9',color:'#1B5E20', label:'💳 Pag. Verificado'},
+  aguardando_expedicao: {bg:'#E3F2FD',color:'#1565C0', label:'🔔 Ag. Expedição'},
+  em_separacao:         {bg:'#E8EAF6',color:'#283593', label:'🔄 Em Separação'},
+  pre_separado:         {bg:'#F3E5F5',color:'#6A1B9A', label:'📋 Pré-Separado'},
+  faturado:             {bg:'#FFF9C4',color:'#F57F17', label:'🧾 Faturado'},
+  nf_anexada:           {bg:'#E0F2F1',color:'#00695C', label:'📎 NF Anexada'},
+  fechado:              {bg:'#F5F5F5',color:'#424242', label:'✅ Fechado'},
+  cancelado:            {bg:'#FFEBEE',color:'#B71C1C', label:'❌ Cancelado'},
 };
 
 // ─── PAGE INIT ────────────────────────────────────────────────────────────────
@@ -9668,14 +9724,19 @@ function renderFilaPedidos(){
   container.innerHTML = pedidos.map(p => {
     const s = FAT_STATUS_BADGE[p.status] || {bg:'#f5f5f5',color:'#666',label:p.status};
     const nItens = (p.itens||[]).length;
-    const canExp  = ['pendente','aguardando_expedicao','em_separacao'].includes(p.status);
-    const canFech = p.status === 'pre_separado';
-    const canRePrint = p.status === 'pre_separado' || p.status === 'faturado';
+    const canPagVerif = p.status === 'pendente';
+    const canExp      = ['pagamento_verificado','aguardando_expedicao','em_separacao'].includes(p.status);
+    const canNF       = p.status === 'pre_separado';
+    const canAnexo    = p.status === 'faturado';
+    const canFech     = ['faturado','nf_anexada'].includes(p.status);
+    const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
+    const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
+    const pagLabel    = p.pagamentoVerificado ? ' 💳' : '';
     return `<div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
-          <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}</div>
-          <div style="font-size:11px;color:#888;margin-top:2px">Mercus: #${p.numeroPedidoMercus||'—'} · ERP: ${p.pedidoErp||'—'} · ${p.empresaSigla||'—'}</div>
+          <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}${pagLabel}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">Mercus: #${p.numeroPedidoMercus||'—'} · ERP: ${p.pedidoErp||'—'} · ${p.empresaSigla||'—'}${nfLabel}</div>
           <div style="font-size:13px;color:#333;margin-top:4px;font-weight:600">${p.clienteNome||'—'}</div>
           <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
         </div>
@@ -9683,15 +9744,133 @@ function renderFilaPedidos(){
           <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
           <div style="font-size:10px;color:#aaa">${(p.criadoEm||'').slice(0,10)} · ${p.faturistaNome||'ADM'}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
-            ${canExp  ? `<button class="btn btn-sm btn-primary" onclick="abrirExpedicao('${p.id}')">📦 Expedir</button>` : ''}
-            ${canFech ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
-            ${canRePrint ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
+            ${canPagVerif ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
+            ${canExp      ? `<button class="btn btn-sm btn-primary" onclick="abrirExpedicao('${p.id}')">📦 Pré-Separação</button>` : ''}
+            ${canNF       ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
+            ${canAnexo    ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="abrirRegistroNF('${p.id}')">📎 Anexar NF+Etiqueta</button>` : ''}
+            ${canFech     ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
+            ${canRePrint  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
             <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+// ─── VERIFICAR PAGAMENTO ──────────────────────────────────────────────────────
+async function verificarPagamento(id){
+  const p = allPedidosFat.find(x => x.id === id);
+  if(!p) return;
+  if(!confirm(`Confirmar que o pagamento foi verificado para:\n\nPedido: ${p.numeroPedidoMesoLog}\nCliente: ${p.clienteNome}\n\nO pedido poderá seguir para Pré-Separação após esta confirmação.`)) return;
+  try{
+    await db.collection('pedidosFaturamento').doc(id).update({
+      status: 'pagamento_verificado',
+      pagamentoVerificado: true,
+      pagamentoVerificadoEm: new Date().toISOString(),
+      pagamentoVerificadoPor: (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
+      atualizadoEm: new Date().toISOString()
+    });
+    toast('💳 Pagamento verificado! Pedido liberado para Pré-Separação.');
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+// ─── REGISTRO DE NF + ANEXO DE ARQUIVOS ───────────────────────────────────────
+function abrirRegistroNF(id){
+  const p = allPedidosFat.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('modal-nf-pedido-id').value = id;
+  document.getElementById('modal-nf-pedido-num').textContent = p.numeroPedidoMesoLog + ' — ' + p.clienteNome;
+  document.getElementById('modal-nf-numero').value  = p.nfNumero || '';
+  document.getElementById('modal-nf-chave').value   = p.nfChave  || '';
+  document.getElementById('modal-nf-obs').value     = p.nfObs    || '';
+  const hasNf  = !!localStorage.getItem('meso_nf_'  + id);
+  const hasEtq = !!localStorage.getItem('meso_etq_' + id);
+  document.getElementById('modal-nf-file-status').innerHTML =
+    `<span style="color:${hasNf  ?'#1B5E20':'#888'}">📄 NF PDF: ${hasNf  ?'✅ Salva':'Não anexada'}</span>&nbsp;&nbsp;` +
+    `<span style="color:${hasEtq ?'#1B5E20':'#888'}">📦 Etiqueta: ${hasEtq?'✅ Salva':'Não anexada'}</span>`;
+  const nfInput  = document.getElementById('modal-nf-file');
+  const etqInput = document.getElementById('modal-etq-file');
+  if(nfInput)  nfInput.value  = '';
+  if(etqInput) etqInput.value = '';
+  document.getElementById('modal-registro-nf').classList.add('open');
+}
+
+async function salvarRegistroNF(){
+  const id       = (document.getElementById('modal-nf-pedido-id')?.value || '').trim();
+  const nfNumero = (document.getElementById('modal-nf-numero')?.value    || '').trim();
+  const nfChave  = (document.getElementById('modal-nf-chave')?.value     || '').trim();
+  const nfObs    = (document.getElementById('modal-nf-obs')?.value       || '').trim();
+  if(!nfNumero){ toast('⚠️ Informe o número da NF-e para prosseguir.'); return; }
+
+  const readAsDataURL = file => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+
+  const nfFile  = document.getElementById('modal-nf-file')?.files[0];
+  const etqFile = document.getElementById('modal-etq-file')?.files[0];
+  const MAX_SIZE = 3 * 1024 * 1024; // 3MB limit for localStorage
+
+  try{
+    if(nfFile){
+      if(nfFile.size > MAX_SIZE){ toast('⚠️ NF PDF muito grande (máx 3MB). Reduza o arquivo e tente novamente.'); return; }
+      const nfData = await readAsDataURL(nfFile);
+      try{ localStorage.setItem('meso_nf_' + id, nfData); }
+      catch(e){ toast('⚠️ Sem espaço no navegador para salvar NF. Limpe o armazenamento.'); return; }
+    }
+    if(etqFile){
+      if(etqFile.size > MAX_SIZE){ toast('⚠️ Etiqueta muito grande (máx 3MB).'); return; }
+      const etqData = await readAsDataURL(etqFile);
+      try{ localStorage.setItem('meso_etq_' + id, etqData); }
+      catch(e){ toast('⚠️ Sem espaço no navegador para salvar Etiqueta.'); return; }
+    }
+
+    const hasNf  = !!localStorage.getItem('meso_nf_'  + id);
+    const hasEtq = !!localStorage.getItem('meso_etq_' + id);
+    const newStatus = (hasNf && hasEtq) ? 'nf_anexada' : 'faturado';
+
+    await db.collection('pedidosFaturamento').doc(id).update({
+      status:            newStatus,
+      nfNumero,
+      nfChave,
+      nfObs,
+      nfAnexada:         hasNf,
+      etiquetaAnexada:   hasEtq,
+      faturadoEm:        new Date().toISOString(),
+      faturadoPor:       (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
+      atualizadoEm:      new Date().toISOString()
+    });
+
+    closeModal('modal-registro-nf');
+    const msg = newStatus === 'nf_anexada'
+      ? `🧾 NF ${nfNumero} registrada com arquivos anexados! Pedido pronto para fechar caixa.`
+      : `🧾 NF ${nfNumero} registrada. Anexe os arquivos (NF PDF + Etiqueta) para prosseguir ao fechamento.`;
+    toast(msg);
+  }catch(e){ toast('Erro: ' + e.message); }
+}
+
+// Helper: abre arquivo salvo no localStorage e dispara impressão automática
+function _autoPrintFromStorage(storageKey, janelaTitulo){
+  const data = localStorage.getItem(storageKey);
+  if(!data) return false;
+  try{
+    const byteStr = atob(data.split(',')[1]);
+    const mime    = data.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteStr.length);
+    const ia = new Uint8Array(ab);
+    for(let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([ab], {type: mime});
+    const url  = URL.createObjectURL(blob);
+    const w    = window.open(url, '_blank', 'width=900,height=700,toolbar=1,location=0,menubar=1');
+    if(w){
+      w.addEventListener('load', () => { setTimeout(() => { try{ w.print(); }catch(e){} }, 500); });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    return true;
+  }catch(e){ console.error('[MESO-LOG] Erro ao imprimir', storageKey, e); return false; }
 }
 
 // ─── NOVO PEDIDO ──────────────────────────────────────────────────────────────
@@ -10347,23 +10526,31 @@ function renderFechamento(){
 
   if(!fatBipItems.length){
     fatBipItems = (p.itens||[]).map(it => {
-      // 1. Tenta achar pelo código interno (T-XXXXX)
-      let stockEntry = allStock.find(s => s.codigo === it.codigo);
-      // 2. Fallback por descrição (para itens PRD que não existem em allStock)
+      // Usa a mesma função do inventário: busca allStock (Firestore) + STOCK_SEED
+      let stockEntry = buscarPorBarcode(it.codigo);
+      // Fallback por descrição (cobre mismatch de código Mercus vs código interno)
       if(!stockEntry && it.descricao){
         const descN = it.descricao.toLowerCase().trim();
-        stockEntry = allStock.find(s =>
+        const byDesc = allStock.find(s =>
           s.descricao && (
             s.descricao.toLowerCase().trim() === descN ||
             descN.includes(s.descricao.toLowerCase().trim()) ||
-            s.descricao.toLowerCase().trim().split(' ').slice(0,4).join(' ').length > 5 &&
-            descN.includes(s.descricao.toLowerCase().trim().split(' ').slice(0,4).join(' '))
+            s.descricao.toLowerCase().trim().includes(descN)
           )
-        );
+        ) || (typeof STOCK_SEED !== 'undefined' && STOCK_SEED.find(s =>
+          s.descricao && (
+            s.descricao.toLowerCase().trim() === descN ||
+            descN.includes(s.descricao.toLowerCase().trim()) ||
+            s.descricao.toLowerCase().trim().includes(descN)
+          )
+        ));
+        if(byDesc) stockEntry = byDesc;
       }
+      const barcode = stockEntry?.barcode || '';
+      console.log('[BIPAGEM] Item:', it.codigo, '| EAN encontrado:', barcode || '(não encontrado)');
       return {
         codigo: it.codigo,
-        codigoBarras: stockEntry?.barcode || '',
+        codigoBarras: barcode,
         descricao: it.descricao,
         qtdEsperada: Number(it.quantidade || 1),
         bipados: 0,
@@ -10443,42 +10630,41 @@ function fatHandleScan(e){
 
 function processarBipagem(code){
   const codeNorm = code.trim();
-  // 1. Tenta match direto pelo barcode EAN ou código interno do item
+  console.log('[BIP] Escaneado:', codeNorm);
+
+  // 1. Match direto: EAN já salvo no item OU código interno
   let idx = fatBipItems.findIndex(it =>
     (it.codigoBarras && it.codigoBarras === codeNorm) ||
-    it.codigo === codeNorm ||
-    (it.codigoBarras && codeNorm.endsWith(it.codigoBarras)) ||
-    (it.codigo && codeNorm.includes(it.codigo))
+    it.codigo === codeNorm
   );
-  // 2. Fallback: busca o barcode em allStock para encontrar o código interno
-  if(idx === -1 && typeof allStock !== 'undefined'){
-    const stockMatch = allStock.find(s =>
-      (s.barcode && s.barcode === codeNorm) ||
-      (s.barcode && codeNorm.endsWith(s.barcode))
-    );
-    if(stockMatch){
-      // 2a. Tenta por código interno
-      idx = fatBipItems.findIndex(it => it.codigo === stockMatch.codigo);
-      // 2b. Fallback por descrição (cobre itens PRD vs T-code)
-      if(idx === -1 && stockMatch.descricao){
-        const smDesc = stockMatch.descricao.toLowerCase().trim();
+
+  // 2. Busca no banco de dados igual ao módulo de inventário (allStock + STOCK_SEED)
+  if(idx === -1){
+    const stockItem = buscarPorBarcode(codeNorm);
+    console.log('[BIP] buscarPorBarcode retornou:', stockItem ? stockItem.codigo + ' | EAN: ' + stockItem.barcode : 'null');
+    if(stockItem){
+      // 2a. Match por código interno
+      idx = fatBipItems.findIndex(it => it.codigo === stockItem.codigo);
+      // 2b. Match por descrição (cobre divergência de código entre Mercus e banco interno)
+      if(idx === -1 && stockItem.descricao){
+        const smDesc = stockItem.descricao.toLowerCase().trim();
         idx = fatBipItems.findIndex(it => {
           const itDesc = (it.descricao||'').toLowerCase().trim();
           return itDesc === smDesc || itDesc.includes(smDesc) || smDesc.includes(itDesc);
         });
+        if(idx !== -1) console.log('[BIP] Match por descrição:', fatBipItems[idx].codigo);
+      }
+      // Persiste EAN no item para próximos scans (sem nova busca)
+      if(idx !== -1 && !fatBipItems[idx].codigoBarras){
+        fatBipItems[idx].codigoBarras = codeNorm;
+        console.log('[BIP] EAN', codeNorm, 'associado a', fatBipItems[idx].codigo);
       }
     }
-    // 2c. Se ainda não achou, tenta o próprio código scaneado como parte da descrição
-    if(idx === -1){
-      idx = fatBipItems.findIndex(it =>
-        it.codigoBarras && (it.codigoBarras === codeNorm || codeNorm.endsWith(it.codigoBarras))
-      );
-    }
   }
+
   if(idx === -1){
-    // EAN não cadastrado no produto — abre seleção manual para associar ao item certo
-    console.warn('[MESO-LOG] Barcode não encontrado:', codeNorm,
-      '| fatBipItems:', fatBipItems.map(it => ({codigo:it.codigo, ean:it.codigoBarras})));
+    console.warn('[BIP] Não encontrado:', codeNorm,
+      '| Itens esperados:', fatBipItems.map(it => it.codigo + '=' + it.codigoBarras));
     _bipAssociarEAN(codeNorm);
     return;
   }
@@ -10576,6 +10762,7 @@ async function finalizarFechamento(){
   if(!todos){ toast('Bipagem incompleta. Verifique todos os itens.'); return; }
 
   try{
+    const closingId = fatFechId; // capture before reset
     await db.collection('pedidosFaturamento').doc(fatFechId).update({
       status: 'fechado',
       fechadoEm: new Date().toISOString(),
@@ -10583,6 +10770,18 @@ async function finalizarFechamento(){
       atualizadoEm: new Date().toISOString()
     });
     toast('✅ Pedido ' + p.numeroPedidoMesoLog + ' FECHADO com sucesso!');
+
+    // Auto-impressão NF + Etiqueta (arquivos salvos localmente)
+    const hasNfLocal  = !!localStorage.getItem('meso_nf_'  + closingId);
+    const hasEtqLocal = !!localStorage.getItem('meso_etq_' + closingId);
+    if(hasNfLocal || hasEtqLocal){
+      toast('🖨️ Abrindo impressão automática da NF e Etiqueta...');
+      setTimeout(() => {
+        if(hasNfLocal)  _autoPrintFromStorage('meso_nf_'  + closingId, 'NF-e');
+        if(hasEtqLocal) setTimeout(() => _autoPrintFromStorage('meso_etq_' + closingId, 'Etiqueta'), 600);
+      }, 800);
+    }
+
     fatFechId  = null;
     fatBipItems= [];
     fatTab('fila', document.getElementById('fat-btn-fila'));
@@ -10618,12 +10817,19 @@ function verDetalhesPedido(pedidoId){
       <div><b>Vendedor:</b></div><div>${p.vendedor||'—'}</div>
       <div><b>Resp. Expedição:</b></div><div>${p.responsavelExpedicao||'—'}</div>
       <div><b>Cond. Pag.:</b></div><div>${p.condicaoPagamento||'—'}</div>
+      <div><b>Pagamento:</b></div><div>${p.pagamentoVerificado ? `<span style="color:#1B5E20;font-weight:700">💳 Verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '<span style="color:#E65100">⏳ Não verificado</span>'}</div>
+      ${p.nfNumero ? `<div><b>NF-e:</b></div><div style="font-family:monospace;font-weight:700">${p.nfNumero}${p.nfChave?` <span style="font-size:10px;color:#888">(${p.nfChave.slice(0,12)}...)</span>`:''}</div>` : ''}
+      ${p.nfAnexada||p.etiquetaAnexada ? `<div><b>Arquivos:</b></div><div>${p.nfAnexada?'📄 NF PDF ':''} ${p.etiquetaAnexada?'📦 Etiqueta':''}</div>` : ''}
     </div>
     ${p.observacoes?`<div style="background:#FFF3E0;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px"><b>Obs.:</b> ${p.observacoes}</div>`:''}
+    ${p.nfObs?`<div style="background:#E8F5E9;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px"><b>Obs. NF:</b> ${p.nfObs}</div>`:''}
     ${itensHTML}`;
   document.getElementById('modal-title').textContent = 'Pedido ' + p.numeroPedidoMesoLog;
   document.getElementById('modal-actions').innerHTML = `
-    ${['pre_separado','faturado'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
+    ${p.status === 'pendente' ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="closeModal('modal-det');verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
+    ${p.status === 'pre_separado' ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
+    ${['faturado','nf_anexada'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">📎 Gerenciar NF+Etiqueta</button>` : ''}
+    ${['pre_separado','faturado','nf_anexada'].includes(p.status) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
     <button class="btn btn-outline" onclick="closeModal('modal-det')">Fechar</button>`;
   document.getElementById('modal-det').classList.add('open');
 }
