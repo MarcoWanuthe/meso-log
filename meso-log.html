@@ -2801,17 +2801,25 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div id="fview-faturistas" style="display:none">
           <div class="card" style="margin-bottom:12px;padding:14px 18px">
             <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">➕ Cadastrar Faturista</h3>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nome</label><input type="text" id="fat-new-nome" placeholder="João" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Sobrenome</label><input type="text" id="fat-new-sobrenome" placeholder="Silva" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">CPF (somente dígitos)</label><input type="text" id="fat-new-cpf" placeholder="00000000000" maxlength="11" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
+              <div class="form-group" style="margin:0">
+                <label style="font-size:11px;font-weight:700;color:#555">Perfil de Acesso *</label>
+                <select id="fat-new-role" style="width:100%;padding:9px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;margin-top:4px">
+                  <option value="faturista">📋 Faturista (cria pedidos + NF)</option>
+                  <option value="financeiro">💳 Financeiro (verif. pagamento)</option>
+                  <option value="expedicao">📦 Expedição (separação + bipagem)</option>
+                </select>
+              </div>
               <button class="btn btn-success" onclick="salvarFaturista()" style="height:36px;white-space:nowrap">➕ Cadastrar</button>
             </div>
             <div style="margin-top:8px;font-size:11px;color:#888">Login: <strong>nome.sobrenome</strong> em minúsculas · Senha: <strong>últimos 5 dígitos do CPF</strong></div>
           </div>
           <div class="card" style="padding:0;overflow:hidden">
-            <table class="prod-table"><thead><tr><th>Usuário</th><th>Nome Completo</th><th>CPF</th><th>Status</th><th>Ação</th></tr></thead>
-            <tbody id="fat-faturistas-tbody"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr></tbody></table>
+            <table class="prod-table"><thead><tr><th>Usuário</th><th>Nome Completo</th><th>CPF</th><th>Perfil</th><th>Status</th><th>Ação</th></tr></thead>
+            <tbody id="fat-faturistas-tbody"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr></tbody></table>
           </div>
         </div>
 
@@ -3000,6 +3008,7 @@ let fatItens = [];
 let fatPedidoExp = null;
 let fatFechId = null;
 let fatBipItems = [];
+let fatFinalizando = false; // guard contra duplo clique
 
 const FAT_EMPRESAS_SEED = [
   {nome:'JPG - Filial SP', sigla:'JPG SP', bloqueada:false, ativa:true},
@@ -9616,6 +9625,32 @@ async function admExcluirUsuario(id,nome){
 // FATURAMENTO & EXPEDIÇÃO
 // ============================
 
+// ─── CONTROLE DE ROLES ────────────────────────────────────────────────────────
+const FAT_ROLES = {
+  faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#E3F2FD',
+    perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda'] },
+  financeiro: { label: '💳 Financeiro', color: '#2E7D32', bg: '#E8F5E9',
+    perms: ['ver_fila','verificar_pagamento','ver_detalhes'] },
+  expedicao:  { label: '📦 Expedição',  color: '#6A1B9A', bg: '#F3E5F5',
+    perms: ['ver_fila','pre_separacao','bipagem','fechamento','reimprimir_comanda','ver_detalhes'] },
+};
+
+function fatUserCan(action){
+  if(admLoggedIn) return true;
+  const role = fatUser?.role || 'expedicao';
+  return (FAT_ROLES[role]?.perms || []).includes(action);
+}
+
+function fatRoleLabel(role){
+  return FAT_ROLES[role]?.label || role || '—';
+}
+function fatRoleBg(role){
+  return FAT_ROLES[role]?.bg || '#eee';
+}
+function fatRoleColor(role){
+  return FAT_ROLES[role]?.color || '#333';
+}
+
 const FAT_STATUS_BADGE = {
   pendente:             {bg:'#FFF3E0',color:'#E65100', label:'⏳ Pendente'},
   pagamento_verificado: {bg:'#E8F5E9',color:'#1B5E20', label:'💳 Pag. Verificado'},
@@ -9646,15 +9681,29 @@ function initFaturamentoPage(){
 function fatEnterMain(nomeDisplay){
   document.getElementById('fat-login-panel').style.display = 'none';
   document.getElementById('fat-main-panel').style.display = '';
-  document.getElementById('fat-user-nome').textContent = nomeDisplay;
+  const role = admLoggedIn ? 'admin' : (fatUser?.role || 'expedicao');
+  const roleInfo = FAT_ROLES[role];
+  const roleChip = roleInfo
+    ? `<span style="background:${roleInfo.bg};color:${roleInfo.color};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px">${roleInfo.label}</span>`
+    : '';
+  document.getElementById('fat-user-nome').innerHTML = nomeDisplay + roleChip;
   const logoutBtn = document.getElementById('fat-logout-btn');
   if(logoutBtn) logoutBtn.style.display = admLoggedIn ? 'none' : '';
-  // ADM-only tabs
-  const isAdm = admLoggedIn;
-  const bFat = document.getElementById('fat-btn-faturistas');
-  const bEmp = document.getElementById('fat-btn-empresas');
-  if(bFat) bFat.style.display = isAdm ? '' : 'none';
-  if(bEmp) bEmp.style.display = isAdm ? '' : 'none';
+  // Controle de visibilidade de abas por role
+  const canNovo    = fatUserCan('criar_pedido');
+  const canExp     = fatUserCan('pre_separacao');
+  const canFechTab = fatUserCan('bipagem') || fatUserCan('fechamento');
+  const isAdm      = admLoggedIn;
+  const bNovo = document.getElementById('fat-btn-novo');
+  const bExp  = document.getElementById('fat-btn-expedicao');
+  const bFech = document.getElementById('fat-btn-fechamento');
+  const bFat  = document.getElementById('fat-btn-faturistas');
+  const bEmp  = document.getElementById('fat-btn-empresas');
+  if(bNovo) bNovo.style.display = canNovo     ? '' : 'none';
+  if(bExp)  bExp.style.display  = canExp      ? '' : 'none';
+  if(bFech) bFech.style.display = canFechTab  ? '' : 'none';
+  if(bFat)  bFat.style.display  = isAdm       ? '' : 'none';
+  if(bEmp)  bEmp.style.display  = isAdm       ? '' : 'none';
   fatTab('fila', document.getElementById('fat-btn-fila'));
 }
 
@@ -9728,9 +9777,10 @@ function renderFilaPedidos(){
     const canExp      = ['pagamento_verificado','aguardando_expedicao','em_separacao'].includes(p.status);
     const canNF       = p.status === 'pre_separado';
     const canAnexo    = p.status === 'faturado';
-    const canFech     = ['faturado','nf_anexada'].includes(p.status);
+    const canFech     = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
+    const pagVerifBy  = p.pagamentoVerificado ? `<span style="font-size:10px;color:#1B5E20;font-weight:600">💳 Pag. verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '';
     const pagLabel    = p.pagamentoVerificado ? ' 💳' : '';
     return `<div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
@@ -9739,18 +9789,19 @@ function renderFilaPedidos(){
           <div style="font-size:11px;color:#888;margin-top:2px">Mercus: #${p.numeroPedidoMercus||'—'} · ERP: ${p.pedidoErp||'—'} · ${p.empresaSigla||'—'}${nfLabel}</div>
           <div style="font-size:13px;color:#333;margin-top:4px;font-weight:600">${p.clienteNome||'—'}</div>
           <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
+          ${pagVerifBy ? `<div style="margin-top:3px">${pagVerifBy}</div>` : ''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
           <div style="font-size:10px;color:#aaa">${(p.criadoEm||'').slice(0,10)} · ${p.faturistaNome||'ADM'}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
-            ${canPagVerif ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
-            ${canExp      ? `<button class="btn btn-sm btn-primary" onclick="abrirExpedicao('${p.id}')">📦 Pré-Separação</button>` : ''}
-            ${canNF       ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
-            ${canAnexo    ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="abrirRegistroNF('${p.id}')">📎 Anexar NF+Etiqueta</button>` : ''}
-            ${canFech     ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
-            ${canRePrint  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
-            <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>
+            ${canPagVerif && fatUserCan('verificar_pagamento') ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
+            ${canExp      && fatUserCan('pre_separacao')       ? `<button class="btn btn-sm btn-primary" onclick="abrirExpedicao('${p.id}')">📦 Pré-Separação</button>` : ''}
+            ${canNF       && fatUserCan('registrar_nf')        ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
+            ${canAnexo    && fatUserCan('registrar_nf')        ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="abrirRegistroNF('${p.id}')">📎 Anexar NF+Etiqueta</button>` : ''}
+            ${canFech     && fatUserCan('bipagem')             ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
+            ${canRePrint  && fatUserCan('reimprimir_comanda')  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
+            ${fatUserCan('ver_detalhes') ? `<button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>` : ''}
           </div>
         </div>
       </div>
@@ -9760,6 +9811,7 @@ function renderFilaPedidos(){
 
 // ─── VERIFICAR PAGAMENTO ──────────────────────────────────────────────────────
 async function verificarPagamento(id){
+  if(!fatUserCan('verificar_pagamento')){ toast('⛔ Seu perfil não tem permissão para verificar pagamentos.'); return; }
   const p = allPedidosFat.find(x => x.id === id);
   if(!p) return;
   if(!confirm(`Confirmar que o pagamento foi verificado para:\n\nPedido: ${p.numeroPedidoMesoLog}\nCliente: ${p.clienteNome}\n\nO pedido poderá seguir para Pré-Separação após esta confirmação.`)) return;
@@ -10308,6 +10360,7 @@ async function criarPedidoFat(){
 
 // ─── EXPEDIÇÃO ────────────────────────────────────────────────────────────────
 function abrirExpedicao(pedidoId){
+  if(!fatUserCan('pre_separacao')){ toast('⛔ Seu perfil não tem acesso à Pré-Separação.'); return; }
   fatPedidoExp = pedidoId;
   fatTab('expedicao', document.getElementById('fat-btn-expedicao'));
   renderExpedicao();
@@ -10509,8 +10562,10 @@ function imprimirComanda(pedidoId){
 
 // ─── FECHAMENTO DE CAIXA ──────────────────────────────────────────────────────
 function abrirFechamento(pedidoId){
+  if(!fatUserCan('bipagem')){ toast('⛔ Seu perfil não tem acesso ao Fechamento de Caixa.'); return; }
   fatFechId = pedidoId;
   fatBipItems = [];
+  fatFinalizando = false; // reset guard ao abrir novo fechamento
   fatTab('fechamento', document.getElementById('fat-btn-fechamento'));
   renderFechamento();
 }
@@ -10756,38 +10811,56 @@ function fatConfirmarMultiplicar(){
 }
 
 async function finalizarFechamento(){
+  // Guard: impede duplo clique
+  if(fatFinalizando){ toast('⏳ Aguarde, processando...'); return; }
   const p = allPedidosFat.find(x => x.id === fatFechId);
-  if(!p){ toast('Pedido não encontrado.'); return; }
-  const todos   = fatBipItems.every(it => it.bipados === it.qtdEsperada);
+  if(!p){ toast('Pedido não encontrado. Volte à Fila e reabra.'); return; }
+  const todos = fatBipItems.every(it => it.bipados === it.qtdEsperada);
   if(!todos){ toast('Bipagem incompleta. Verifique todos os itens.'); return; }
 
+  fatFinalizando = true;
+  // Desabilita botão visualmente
+  const btnFinal = document.querySelector('[onclick="finalizarFechamento()"]');
+  if(btnFinal){ btnFinal.disabled = true; btnFinal.textContent = '⏳ Fechando...'; }
+
   try{
-    const closingId = fatFechId; // capture before reset
-    await db.collection('pedidosFaturamento').doc(fatFechId).update({
-      status: 'fechado',
-      fechadoEm: new Date().toISOString(),
-      bipagem: fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
+    const closingId = fatFechId; // captura antes de resetar
+    const closingNum = p.numeroPedidoMesoLog;
+
+    await db.collection('pedidosFaturamento').doc(closingId).update({
+      status:       'fechado',
+      fechadoEm:    new Date().toISOString(),
+      fechadoPor:   (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
+      bipagem:      fatBipItems.map(it => ({codigo:it.codigo, qtdEsperada:it.qtdEsperada, bipados:it.bipados})),
       atualizadoEm: new Date().toISOString()
     });
-    toast('✅ Pedido ' + p.numeroPedidoMesoLog + ' FECHADO com sucesso!');
 
-    // Auto-impressão NF + Etiqueta (arquivos salvos localmente)
+    fatFechId   = null;
+    fatBipItems = [];
+    fatTab('fila', document.getElementById('fat-btn-fila'));
+    toast('✅ Pedido ' + closingNum + ' FECHADO com sucesso!');
+
+    // Auto-impressão NF + Etiqueta — abre ambas imediatamente (sem setTimeout aninhado)
     const hasNfLocal  = !!localStorage.getItem('meso_nf_'  + closingId);
     const hasEtqLocal = !!localStorage.getItem('meso_etq_' + closingId);
     if(hasNfLocal || hasEtqLocal){
-      toast('🖨️ Abrindo impressão automática da NF e Etiqueta...');
       setTimeout(() => {
-        if(hasNfLocal)  _autoPrintFromStorage('meso_nf_'  + closingId, 'NF-e');
-        if(hasEtqLocal) setTimeout(() => _autoPrintFromStorage('meso_etq_' + closingId, 'Etiqueta'), 600);
-      }, 800);
+        let impressos = [];
+        if(hasNfLocal && _autoPrintFromStorage('meso_nf_' + closingId, 'NF-e')) impressos.push('NF');
+        if(hasEtqLocal && _autoPrintFromStorage('meso_etq_' + closingId, 'Etiqueta')) impressos.push('Etiqueta');
+        if(impressos.length) toast('🖨️ Abrindo para impressão: ' + impressos.join(' + '));
+        else toast('⚠️ Popups bloqueados pelo navegador. Permita popups para imprimir automaticamente.');
+      }, 600);
+    } else {
+      toast('ℹ️ Nenhum arquivo NF/Etiqueta anexado para impressão automática.');
     }
-
-    fatFechId  = null;
-    fatBipItems= [];
-    fatTab('fila', document.getElementById('fat-btn-fila'));
   }catch(e){
     console.error(e);
-    toast('Erro: ' + e.message);
+    toast('Erro ao fechar pedido: ' + e.message);
+    // Reabilita botão em caso de erro
+    if(btnFinal){ btnFinal.disabled = false; btnFinal.textContent = '✅ Finalizar e Fechar Pedido'; }
+  } finally {
+    fatFinalizando = false;
   }
 }
 
@@ -10839,25 +10912,32 @@ function renderFaturistas(){
   const tbody = document.getElementById('fat-faturistas-tbody');
   if(!tbody) return;
   if(!allFaturistas.length){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px">Nenhum faturista cadastrado.</td></tr>';
     return;
   }
-  tbody.innerHTML = allFaturistas.map(f => `<tr>
+  tbody.innerHTML = allFaturistas.map(f => {
+    const rLabel = fatRoleLabel(f.role);
+    const rBg    = fatRoleBg(f.role);
+    const rColor = fatRoleColor(f.role);
+    return `<tr>
     <td style="font-family:monospace;font-size:12px">${f.username||'—'}</td>
     <td>${f.nome||''} ${f.sobrenome||''}</td>
     <td style="font-size:12px;color:#666">${(f.cpf||'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')}</td>
+    <td><span style="background:${rBg};color:${rColor};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${rLabel}</span></td>
     <td><span style="background:${f.ativo!==false?'#E8F5E9':'#FFEBEE'};color:${f.ativo!==false?'#1B5E20':'#B71C1C'};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${f.ativo!==false?'Ativo':'Inativo'}</span></td>
     <td style="display:flex;gap:6px">
       <button class="btn btn-sm" style="${f.ativo!==false?'background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A':'background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7'}" onclick="toggleFaturista('${f.id}',${f.ativo!==false})">${f.ativo!==false?'Desativar':'Ativar'}</button>
       <button class="btn btn-sm btn-danger" onclick="excluirFaturista('${f.id}','${(f.nome||'')+' '+(f.sobrenome||'')}')">🗑️</button>
     </td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 async function salvarFaturista(){
   const nome     = (document.getElementById('fat-new-nome')?.value      || '').trim();
   const sobrenome= (document.getElementById('fat-new-sobrenome')?.value || '').trim();
   const cpf      = (document.getElementById('fat-new-cpf')?.value       || '').replace(/\D/g,'');
+  const role     = (document.getElementById('fat-new-role')?.value      || 'expedicao');
   if(!nome || !sobrenome){ toast('Informe nome e sobrenome.'); return; }
   if(cpf.length < 5){ toast('CPF precisa ter pelo menos 5 dígitos.'); return; }
   const username = (nome + '.' + sobrenome).toLowerCase()
@@ -10868,11 +10948,12 @@ async function salvarFaturista(){
     toast('Já existe um faturista com esse nome de usuário: ' + username); return;
   }
   try{
-    await db.collection('faturistas').add({nome, sobrenome, cpf, username, senha, ativo:true, criadoEm: new Date().toISOString()});
-    toast(`✅ Faturista cadastrado. Login: ${username} · Senha: ${senha}`);
+    await db.collection('faturistas').add({nome, sobrenome, cpf, username, senha, role, ativo:true, criadoEm: new Date().toISOString()});
+    toast(`✅ Cadastrado. Login: ${username} · Senha: ${senha} · Perfil: ${fatRoleLabel(role)}`);
     document.getElementById('fat-new-nome').value = '';
     document.getElementById('fat-new-sobrenome').value = '';
     document.getElementById('fat-new-cpf').value = '';
+    document.getElementById('fat-new-role').value = 'faturista';
   }catch(e){ toast('Erro: ' + e.message); }
 }
 
