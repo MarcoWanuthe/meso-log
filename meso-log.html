@@ -9807,7 +9807,7 @@ function renderFilaPedidos(){
     const canExp      = ['pagamento_verificado','aguardando_expedicao','em_separacao'].includes(p.status);
     const canNF       = p.status === 'pre_separado';
     const canAnexo    = p.status === 'faturado';
-    const canFech     = ['pre_separado','faturado','nf_anexada'].includes(p.status);
+    const canFech     = p.status === 'nf_anexada'; // só quando NF + Etiqueta estão anexadas
     const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
     const pagVerifBy  = p.pagamentoVerificado ? `<span style="font-size:10px;color:#1B5E20;font-weight:600">💳 Pag. verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '';
@@ -9894,42 +9894,71 @@ async function salvarRegistroNF(){
 
   const nfFile  = document.getElementById('modal-nf-file')?.files[0];
   const etqFile = document.getElementById('modal-etq-file')?.files[0];
-  const MAX_SIZE = 3 * 1024 * 1024; // 3MB limit for localStorage
+  // Limite menor para caber no Firestore (1MB por doc; base64 +33% overhead)
+  // DANFE típico: 150-400KB — esse limite cobre 99% dos casos reais
+  const MAX_SIZE = 700 * 1024; // 700KB → ~950KB base64, seguro no Firestore
+
+  let nfData  = null;
+  let etqData = null;
 
   try{
     if(nfFile){
-      if(nfFile.size > MAX_SIZE){ toast('⚠️ NF PDF muito grande (máx 3MB). Reduza o arquivo e tente novamente.'); return; }
-      const nfData = await readAsDataURL(nfFile);
-      try{ localStorage.setItem('meso_nf_' + id, nfData); }
-      catch(e){ toast('⚠️ Sem espaço no navegador para salvar NF. Limpe o armazenamento.'); return; }
+      if(nfFile.size > MAX_SIZE){ toast('⚠️ NF PDF muito grande (máx 700KB). Comprima o arquivo e tente novamente.'); return; }
+      nfData = await readAsDataURL(nfFile);
+      try{ localStorage.setItem('meso_nf_' + id, nfData); }catch(e){}
     }
     if(etqFile){
-      if(etqFile.size > MAX_SIZE){ toast('⚠️ Etiqueta muito grande (máx 3MB).'); return; }
-      const etqData = await readAsDataURL(etqFile);
-      try{ localStorage.setItem('meso_etq_' + id, etqData); }
-      catch(e){ toast('⚠️ Sem espaço no navegador para salvar Etiqueta.'); return; }
+      if(etqFile.size > MAX_SIZE){ toast('⚠️ Etiqueta muito grande (máx 700KB).'); return; }
+      etqData = await readAsDataURL(etqFile);
+      try{ localStorage.setItem('meso_etq_' + id, etqData); }catch(e){}
     }
 
-    const hasNf  = !!localStorage.getItem('meso_nf_'  + id);
-    const hasEtq = !!localStorage.getItem('meso_etq_' + id);
+    // Determina status baseado nos arquivos disponíveis (localStorage + recém-lidos)
+    const hasNf  = !!(nfData  || localStorage.getItem('meso_nf_'  + id));
+    const hasEtq = !!(etqData || localStorage.getItem('meso_etq_' + id));
     const newStatus = (hasNf && hasEtq) ? 'nf_anexada' : 'faturado';
 
+    // Salva metadados no documento principal
     await db.collection('pedidosFaturamento').doc(id).update({
-      status:            newStatus,
+      status:          newStatus,
       nfNumero,
       nfChave,
       nfObs,
-      nfAnexada:         hasNf,
-      etiquetaAnexada:   hasEtq,
-      faturadoEm:        new Date().toISOString(),
-      faturadoPor:       (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
-      atualizadoEm:      new Date().toISOString()
+      nfAnexada:       hasNf,
+      etiquetaAnexada: hasEtq,
+      faturadoEm:      new Date().toISOString(),
+      faturadoPor:     (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
+      atualizadoEm:    new Date().toISOString()
     });
+
+    // Salva arquivos em Firestore (sub-collection) para acesso cross-browser
+    // Qualquer computador pode baixar esses arquivos — não fica preso no localStorage
+    const arquivosUpdate = {};
+    if(nfData)  arquivosUpdate.nfData  = nfData;
+    if(etqData) arquivosUpdate.etqData = etqData;
+    if(Object.keys(arquivosUpdate).length > 0){
+      try{
+        await db.collection('pedidosArquivos').doc(id).set(arquivosUpdate, {merge:true});
+        console.log('[MESO-LOG] Arquivos sincronizados no Firestore para pedido', id);
+      }catch(e){
+        console.warn('[MESO-LOG] Arquivo salvo apenas localmente (Firestore falhou):', e.message);
+      }
+    }
+
+    // Atualiza array local imediatamente
+    const localIdx = allPedidosFat.findIndex(x => x.id === id);
+    if(localIdx !== -1){
+      allPedidosFat[localIdx] = {
+        ...allPedidosFat[localIdx],
+        status: newStatus, nfNumero, nfChave, nfObs,
+        nfAnexada: hasNf, etiquetaAnexada: hasEtq
+      };
+    }
 
     closeModal('modal-registro-nf');
     const msg = newStatus === 'nf_anexada'
-      ? `🧾 NF ${nfNumero} registrada com arquivos anexados! Pedido pronto para fechar caixa.`
-      : `🧾 NF ${nfNumero} registrada. Anexe os arquivos (NF PDF + Etiqueta) para prosseguir ao fechamento.`;
+      ? `🧾 NF ${nfNumero} registrada! NF-e e Etiqueta anexadas — pedido pronto para Fechar Caixa.`
+      : `🧾 NF ${nfNumero} registrada. Anexe também a Etiqueta dos Correios para liberar o Fechamento.`;
     toast(msg);
   }catch(e){ toast('Erro: ' + e.message); }
 }
@@ -9956,30 +9985,75 @@ function _autoPrintFromStorage(storageKey, janelaTitulo){
   }catch(e){ console.error('[MESO-LOG] Erro ao imprimir', storageKey, e); return false; }
 }
 
-// Modal de impressão pós-fechamento — aberto via _abrirModalImpressao()
-// Os botões dentro do modal acionam window.open() por click do usuário → sem bloqueio de popup
-function _abrirModalImpressao(pedidoId){
+// Dados dos arquivos em memória — pré-carregados antes do modal abrir
+// Isso garante que o botão do modal usa dados síncronos → window.open não é bloqueado pelo browser
+let _fatImpFiles = {nf: null, etq: null};
+
+// Modal de impressão pós-fechamento
+// Busca arquivos: localStorage (mesmo browser) → Firestore (qualquer browser/computador)
+// Os arquivos são pré-carregados ANTES de mostrar o modal para que o click do botão seja síncrono
+async function _abrirModalImpressao(pedidoId){
   _fatImpPedidoId = pedidoId;
-  const hasNf  = !!localStorage.getItem('meso_nf_'  + pedidoId);
-  const hasEtq = !!localStorage.getItem('meso_etq_' + pedidoId);
+  _fatImpFiles    = {nf: null, etq: null};
+
+  // 1. Tenta localStorage primeiro (mesmo computador, rápido)
+  const nfLocal  = localStorage.getItem('meso_nf_'  + pedidoId);
+  const etqLocal = localStorage.getItem('meso_etq_' + pedidoId);
+  if(nfLocal)  _fatImpFiles.nf  = nfLocal;
+  if(etqLocal) _fatImpFiles.etq = etqLocal;
+
+  // 2. Se faltou algum arquivo, tenta Firestore (cross-browser)
+  if(!_fatImpFiles.nf || !_fatImpFiles.etq){
+    try{
+      const doc = await db.collection('pedidosArquivos').doc(pedidoId).get();
+      if(doc.exists){
+        const arqs = doc.data();
+        if(!_fatImpFiles.nf  && arqs.nfData)  _fatImpFiles.nf  = arqs.nfData;
+        if(!_fatImpFiles.etq && arqs.etqData) _fatImpFiles.etq = arqs.etqData;
+        // Salva no localStorage local como cache
+        if(_fatImpFiles.nf  && !nfLocal)  try{ localStorage.setItem('meso_nf_'  + pedidoId, _fatImpFiles.nf);  }catch(e){}
+        if(_fatImpFiles.etq && !etqLocal) try{ localStorage.setItem('meso_etq_' + pedidoId, _fatImpFiles.etq); }catch(e){}
+      }
+    }catch(e){
+      console.warn('[MESO-LOG] Erro ao buscar arquivos do Firestore:', e.message);
+    }
+  }
+
+  // 3. Abre modal com os botões disponíveis
+  const hasNf  = !!_fatImpFiles.nf;
+  const hasEtq = !!_fatImpFiles.etq;
   const nfRow   = document.getElementById('fat-imp-nf-row');
   const etqRow  = document.getElementById('fat-imp-etq-row');
   const noneRow = document.getElementById('fat-imp-none-row');
   if(nfRow)   nfRow.style.display   = hasNf  ? '' : 'none';
   if(etqRow)  etqRow.style.display  = hasEtq ? '' : 'none';
   if(noneRow) noneRow.style.display = (!hasNf && !hasEtq) ? '' : 'none';
-  if(!hasNf && !hasEtq) return; // nada para imprimir, não mostra modal
+  if(!hasNf && !hasEtq) return; // nada para imprimir
   const modal = document.getElementById('modal-fat-impressao');
   if(modal) modal.classList.add('open');
 }
 
-// Chamada pelos botões do modal — click do usuário garante que window.open não é bloqueado
+// Chamada pelos botões do modal (click do usuário) → window.open não é bloqueado
+// Usa dados pré-carregados em _fatImpFiles (síncrono)
 function _fatImprimirDoc(tipo){
-  if(!_fatImpPedidoId){ toast('⚠️ Pedido não identificado.'); return; }
-  const key = tipo === 'nf' ? 'meso_nf_' + _fatImpPedidoId : 'meso_etq_' + _fatImpPedidoId;
-  const label = tipo === 'nf' ? 'NF-e' : 'Etiqueta Correios';
-  const ok = _autoPrintFromStorage(key, label);
-  if(!ok) toast('⚠️ Arquivo não encontrado ou popup bloqueado. Permita popups neste site.');
+  const data = tipo === 'nf' ? _fatImpFiles.nf : _fatImpFiles.etq;
+  if(!data){ toast('⚠️ Arquivo não disponível. Verifique se foi anexado pelo Faturista.'); return; }
+  try{
+    const byteStr = atob(data.split(',')[1]);
+    const mime    = data.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteStr.length);
+    const ia = new Uint8Array(ab);
+    for(let i=0; i<byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([ab], {type: mime});
+    const url  = URL.createObjectURL(blob);
+    const w    = window.open(url, '_blank', 'width=900,height=700,toolbar=1,location=0,menubar=1');
+    if(w){
+      w.addEventListener('load', ()=>{ setTimeout(()=>{ try{ w.print(); }catch(e){} }, 500); });
+      setTimeout(()=> URL.revokeObjectURL(url), 60000);
+    } else {
+      toast('⚠️ Popup bloqueado. Clique no ícone de popup na barra de endereço para permitir.');
+    }
+  }catch(e){ console.error('[MESO-LOG] Erro ao imprimir:', e); toast('Erro ao abrir arquivo.'); }
 }
 
 // ─── NOVO PEDIDO ──────────────────────────────────────────────────────────────
@@ -10542,19 +10616,33 @@ async function salvarExpedicao(){
   });
 
   try{
-    await db.collection('pedidosFaturamento').doc(fatPedidoExp).update({
+    const expId = fatPedidoExp;
+    await db.collection('pedidosFaturamento').doc(expId).update({
       itens: itensAtualizados,
       status: 'pre_separado',
       responsavelExpedicao: responsavel,
       dataPreSeparacao: new Date().toISOString(),
       atualizadoEm: new Date().toISOString()
     });
+    // Atualiza array local imediatamente (sem esperar Firestore snapshot)
+    // Evita que a Fila renderize com dados antigos ao voltar
+    const localIdx = allPedidosFat.findIndex(x => x.id === expId);
+    if(localIdx !== -1){
+      allPedidosFat[localIdx] = {
+        ...allPedidosFat[localIdx],
+        itens: itensAtualizados,
+        status: 'pre_separado',
+        responsavelExpedicao: responsavel,
+        dataPreSeparacao: new Date().toISOString(),
+        atualizadoEm: new Date().toISOString()
+      };
+    }
     toast('✅ Pré-separação salva!');
-    setTimeout(() => imprimirComanda(fatPedidoExp), 400);
     fatTab('fila', document.getElementById('fat-btn-fila'));
+    setTimeout(() => imprimirComanda(expId), 400);
   }catch(e){
     console.error(e);
-    toast('Erro: ' + e.message);
+    toast('Erro ao salvar pré-separação: ' + e.message);
   }
 }
 
