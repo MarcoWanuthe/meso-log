@@ -10983,8 +10983,8 @@ function fatConfirmarMultiplicar(){
   renderFechamento();
 }
 
-async function finalizarFechamento(){
-  // Guard: impede duplo clique enquanto Firestore processa
+function finalizarFechamento(){
+  // Guard: impede duplo clique
   if(fatFinalizando){ toast('⏳ Aguarde, processando...'); return; }
   const p = allPedidosFat.find(x => x.id === fatFechId);
   if(!p){ toast('❌ Pedido não encontrado. Volte à Fila e reabra.'); return; }
@@ -10997,73 +10997,55 @@ async function finalizarFechamento(){
   const closingId  = fatFechId;
   const closingNum = p.numeroPedidoMesoLog;
   const closingPor = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
+  const closingTs  = new Date().toISOString();
 
-  // Countdown visual no botão: 6s → mostra progresso para o usuário saber que está processando
-  const btn = document.querySelector('[onclick="finalizarFechamento()"]');
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ Fechando... 6s'; }
-  let _secs = 5;
-  const _countInterval = setInterval(()=>{
-    const b = document.querySelector('[onclick="finalizarFechamento()"]');
-    if(b && b.disabled) b.textContent = '⏳ Fechando... ' + _secs + 's';
-    _secs--;
-    if(_secs < 0) clearInterval(_countInterval);
-  }, 1000);
+  // Captura dados de bipagem ANTES de limpar o array
+  const bipData = fatBipItems.map(it => ({
+    codigo:      String(it.codigo || ''),
+    qtdEsperada: Number(it.qtdEsperada) || 0,
+    bipados:     Number(it.bipados) || 0
+  }));
 
-  try{
-    // Promise.race: Firestore update vs timeout de 6s com mensagem clara de erro
-    await Promise.race([
-      db.collection('pedidosFaturamento').doc(closingId).update({
-        status:       'fechado',
-        fechadoEm:    new Date().toISOString(),
-        fechadoPor:   closingPor,
-        bipagem:      fatBipItems.map(it => ({
-          codigo:       String(it.codigo || ''),
-          qtdEsperada:  Number(it.qtdEsperada) || 0,
-          bipados:      Number(it.bipados) || 0
-        })),
-        atualizadoEm: new Date().toISOString()
-      }),
-      new Promise((_,rej) => setTimeout(()=>rej(new Error(
-        'Timeout (6s): servidor não respondeu. Verifique a conexão e tente novamente.'
-      )), 6000))
-    ]);
-
-    // ✅ SUCESSO
-    clearInterval(_countInterval);
-    fatFechId      = null;
-    fatBipItems    = [];
-    fatFinalizando = false;
-    fatTab('fila', document.getElementById('fat-btn-fila'));
-    toast('✅ Pedido ' + closingNum + ' FECHADO por ' + closingPor + '!');
-    // Abre modal de impressão (async — catch próprio para não afetar fluxo principal)
-    _abrirModalImpressao(closingId).catch(e => console.warn('[MESO-LOG] Modal impressão:', e));
-
-  }catch(e){
-    clearInterval(_countInterval);
-    console.error('[MESO-LOG] finalizarFechamento erro:', e);
-    // Re-renderiza fechamento para restaurar botão fresco (evita referência DOM stale)
-    renderFechamento();
-    // Painel de erro persistente (não some como toast)
-    setTimeout(()=>{
-      const cont = document.getElementById('fat-fech-content');
-      if(cont){
-        const div = document.createElement('div');
-        div.style.cssText = 'background:#FFEBEE;color:#B71C1C;padding:16px 18px;border-radius:8px;margin-top:12px;border:2px solid #EF9A9A;font-size:13px;line-height:1.6';
-        div.innerHTML = `<strong>❌ Falha ao fechar o pedido</strong><br>
-          <span style="font-size:12px">${e.message}</span><br>
-          <small style="color:#C62828;display:block;margin-top:6px">
-            Possíveis causas: sem conexão com a internet, ou sessão expirada.<br>
-            Clique "Finalizar" novamente após verificar a conexão.
-          </small>`;
-        cont.appendChild(div);
-        div.scrollIntoView({behavior:'smooth', block:'nearest'});
-      }
-    }, 50);
-
-  }finally{
-    clearInterval(_countInterval);
-    fatFinalizando = false;
+  // ── OPTIMISTIC UPDATE ── atualiza estado local imediatamente
+  const localIdx = allPedidosFat.findIndex(x => x.id === closingId);
+  if(localIdx !== -1){
+    allPedidosFat[localIdx] = {
+      ...allPedidosFat[localIdx],
+      status:      'fechado',
+      fechadoEm:   closingTs,
+      fechadoPor:  closingPor,
+      bipagem:     bipData,
+      atualizadoEm: closingTs
+    };
   }
+
+  // UI responde imediatamente — sem esperar Firestore
+  fatFechId      = null;
+  fatBipItems    = [];
+  fatFinalizando = false;
+  fatTab('fila', document.getElementById('fat-btn-fila'));
+  toast('✅ Pedido ' + closingNum + ' FECHADO por ' + closingPor + '!');
+
+  // Abre modal de impressão (async — falha silenciosa)
+  _abrirModalImpressao(closingId).catch(e => console.warn('[MESO-LOG] Modal impressão:', e));
+
+  // ── SINCRONIZAÇÃO FIRESTORE em background (não bloqueia UI) ──
+  db.collection('pedidosFaturamento').doc(closingId).update({
+    status:       'fechado',
+    fechadoEm:    closingTs,
+    fechadoPor:   closingPor,
+    bipagem:      bipData,
+    atualizadoEm: closingTs
+  }).then(() => {
+    console.log('[MESO-LOG] Pedido ' + closingId + ' sincronizado com Firestore.');
+  }).catch(e => {
+    console.error('[MESO-LOG] Erro sync Firestore:', e);
+    // Reverte estado local se a sincronização falhar
+    const idx = allPedidosFat.findIndex(x => x.id === closingId);
+    if(idx !== -1) allPedidosFat[idx].status = 'nf_anexada';
+    toast('⚠️ Erro ao sincronizar: ' + e.message + '. Pedido revertido — tente novamente.');
+    renderFilaPedidos();
+  });
 }
 
 function verDetalhesPedido(pedidoId){
