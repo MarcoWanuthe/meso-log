@@ -3380,17 +3380,15 @@ function startListeners(){
   }, err=>console.warn('empresas:', err));
 
   if(unsubPedidosFat) unsubPedidosFat();
-  unsubPedidosFat = db.collection('pedidosFaturamento').orderBy('criadoEm','desc').onSnapshot(snap=>{
-    allPedidosFat = snap.docs.map(d=>({id:d.id,...d.data()}));
+  // Sem orderBy: evita exclusão de docs sem campo criadoEm (Firestore omite docs que não têm o campo ordenado)
+  // Ordenação feita localmente, após receber todos os documentos
+  unsubPedidosFat = db.collection('pedidosFaturamento').onSnapshot(snap=>{
+    allPedidosFat = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
     if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
     if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
-  }, err=>{
-    db.collection('pedidosFaturamento').onSnapshot(snap2=>{
-      allPedidosFat = snap2.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
-      if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
-      if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
-    });
-  });
+  }, err=>{ console.error('[MESO-LOG] pedidosFaturamento onSnapshot erro:', err); });
 }
 
 // ==============================
@@ -9679,9 +9677,9 @@ async function admExcluirUsuario(id,nome){
 // ─── CONTROLE DE ROLES ────────────────────────────────────────────────────────
 const FAT_ROLES = {
   faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#E3F2FD',
-    perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda'] },
+    perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda','cancelar_pedido'] },
   financeiro: { label: '💳 Financeiro', color: '#2E7D32', bg: '#E8F5E9',
-    perms: ['ver_fila','verificar_pagamento','ver_detalhes'] },
+    perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido'] },
   expedicao:  { label: '📦 Expedição',  color: '#6A1B9A', bg: '#F3E5F5',
     perms: ['ver_fila','pre_separacao','bipagem','fechamento','reimprimir_comanda','ver_detalhes'] },
 };
@@ -9820,7 +9818,14 @@ function renderFilaPedidos(){
   else pedidos = pedidos.filter(p => !['fechado','cancelado'].includes(p.status));
 
   if(!pedidos.length){
-    container.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:#aaa">Nenhum pedido encontrado.</div>';
+    const totalFechados = allPedidosFat.filter(p => p.status === 'fechado').length;
+    const msgExtra = totalFechados > 0
+      ? `<div style="font-size:12px;color:#888;margin-top:8px">📂 ${totalFechados} pedido(s) fechado(s) disponível(is) no <strong>Histórico</strong>.</div>`
+      : '';
+    container.innerHTML = `<div class="card" style="text-align:center;padding:32px;color:#aaa">
+      <div style="font-size:32px;margin-bottom:8px">📋</div>
+      Nenhum pedido ativo na fila.${msgExtra}
+    </div>`;
     return;
   }
 
@@ -9833,6 +9838,7 @@ function renderFilaPedidos(){
     const canAnexo    = p.status === 'faturado';
     const canFech     = p.status === 'nf_anexada'; // só quando NF + Etiqueta estão anexadas
     const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
+    const canCancel   = ['pendente','pagamento_verificado','pre_separado','faturado','nf_anexada'].includes(p.status);
     const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
     const pagVerifBy  = p.pagamentoVerificado ? `<span style="font-size:10px;color:#1B5E20;font-weight:600">💳 Pag. verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '';
     const pagLabel    = p.pagamentoVerificado ? ' 💳' : '';
@@ -9860,6 +9866,7 @@ function renderFilaPedidos(){
             ${canFech     && fatUserCan('bipagem')             ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
             ${canRePrint  && fatUserCan('reimprimir_comanda')  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
             ${fatUserCan('ver_detalhes') ? `<button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>` : ''}
+            ${canCancel && fatUserCan('cancelar_pedido') ? `<button class="btn btn-sm" style="background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A" onclick="cancelarPedido('${p.id}','${(p.numeroPedidoMesoLog||'').replace(/'/g,'')}')" title="Cancelar pedido">✖ Cancelar</button>` : ''}
           </div>
         </div>
       </div>
@@ -9868,21 +9875,44 @@ function renderFilaPedidos(){
 }
 
 // ─── VERIFICAR PAGAMENTO ──────────────────────────────────────────────────────
-async function verificarPagamento(id){
+function verificarPagamento(id){
   if(!fatUserCan('verificar_pagamento')){ toast('⛔ Seu perfil não tem permissão para verificar pagamentos.'); return; }
   const p = allPedidosFat.find(x => x.id === id);
   if(!p) return;
   if(!confirm(`Confirmar que o pagamento foi verificado para:\n\nPedido: ${p.numeroPedidoMesoLog}\nCliente: ${p.clienteNome}\n\nO pedido poderá seguir para Pré-Separação após esta confirmação.`)) return;
-  try{
-    await db.collection('pedidosFaturamento').doc(id).update({
+
+  const ts  = new Date().toISOString();
+  const por = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
+
+  // Optimistic update — resposta imediata no UI
+  const localIdx = allPedidosFat.findIndex(x => x.id === id);
+  if(localIdx !== -1){
+    allPedidosFat[localIdx] = {
+      ...allPedidosFat[localIdx],
       status: 'pagamento_verificado',
       pagamentoVerificado: true,
-      pagamentoVerificadoEm: new Date().toISOString(),
-      pagamentoVerificadoPor: (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim(),
-      atualizadoEm: new Date().toISOString()
-    });
-    toast('💳 Pagamento verificado! Pedido liberado para Pré-Separação.');
-  }catch(e){ toast('Erro: ' + e.message); }
+      pagamentoVerificadoEm: ts,
+      pagamentoVerificadoPor: por,
+      atualizadoEm: ts
+    };
+  }
+  renderFilaPedidos();
+  toast('💳 Pagamento verificado! Pedido liberado para Pré-Separação.');
+
+  // Sync Firestore em background
+  db.collection('pedidosFaturamento').doc(id).update({
+    status: 'pagamento_verificado',
+    pagamentoVerificado: true,
+    pagamentoVerificadoEm: ts,
+    pagamentoVerificadoPor: por,
+    atualizadoEm: ts
+  }).catch(e => {
+    console.error('[MESO-LOG] verificarPagamento sync error:', e);
+    // Reverte se falhar
+    if(localIdx !== -1) allPedidosFat[localIdx].status = 'pendente';
+    renderFilaPedidos();
+    toast('⚠️ Erro ao sincronizar: ' + e.message);
+  });
 }
 
 // ─── REGISTRO DE NF + ANEXO DE ARQUIVOS ───────────────────────────────────────
@@ -9894,8 +9924,9 @@ function abrirRegistroNF(id){
   document.getElementById('modal-nf-numero').value  = p.nfNumero || '';
   document.getElementById('modal-nf-chave').value   = p.nfChave  || '';
   document.getElementById('modal-nf-obs').value     = p.nfObs    || '';
-  const hasNf  = !!localStorage.getItem('meso_nf_'  + id);
-  const hasEtq = !!localStorage.getItem('meso_etq_' + id);
+  // Verifica localStorage E flags do Firestore (cross-browser: outro computador pode ter anexado)
+  const hasNf  = !!(localStorage.getItem('meso_nf_'  + id) || p.nfAnexada);
+  const hasEtq = !!(localStorage.getItem('meso_etq_' + id) || p.etiquetaAnexada);
   document.getElementById('modal-nf-file-status').innerHTML =
     `<span style="color:${hasNf  ?'#1B5E20':'#888'}">📄 NF PDF: ${hasNf  ?'✅ Salva':'Não anexada'}</span>&nbsp;&nbsp;` +
     `<span style="color:${hasEtq ?'#1B5E20':'#888'}">📦 Etiqueta: ${hasEtq?'✅ Salva':'Não anexada'}</span>`;
@@ -9941,10 +9972,12 @@ async function salvarRegistroNF(){
       try{ localStorage.setItem('meso_etq_' + id, etqData); }catch(e){}
     }
 
-    // Determina status baseado nos arquivos disponíveis (localStorage + recém-lidos)
-    const hasNf  = !!(nfData  || localStorage.getItem('meso_nf_'  + id));
-    const hasEtq = !!(etqData || localStorage.getItem('meso_etq_' + id));
-    const newStatus = (hasNf && hasEtq) ? 'nf_anexada' : 'faturado';
+    // Determina status: verifica localStorage, arquivo recém-lido E flags já salvos no Firestore
+    // Isso garante que o status seja correto mesmo em cenário cross-browser
+    const pedidoLocal = allPedidosFat.find(x => x.id === id);
+    const hasNf  = !!(nfData  || localStorage.getItem('meso_nf_'  + id) || pedidoLocal?.nfAnexada);
+    const hasEtq = !!(etqData || localStorage.getItem('meso_etq_' + id) || pedidoLocal?.etiquetaAnexada);
+    const newStatus = (hasNf && hasEtq) ? 'nf_anexada' : (hasNf ? 'faturado' : 'pre_separado');
 
     // Salva metadados no documento principal
     await db.collection('pedidosFaturamento').doc(id).update({
@@ -10613,7 +10646,7 @@ function sugerirLotesFIFO(codigo, qtdNeeded){
     .slice(0, 5); // top 5 lots by expiry
 }
 
-async function salvarExpedicao(){
+function salvarExpedicao(){
   const p = allPedidosFat.find(x => x.id === fatPedidoExp);
   if(!p){ toast('Pedido não encontrado.'); return; }
 
@@ -10643,35 +10676,36 @@ async function salvarExpedicao(){
     return {...it, lotesSelecionados: lotes};
   });
 
-  try{
-    const expId = fatPedidoExp;
-    await db.collection('pedidosFaturamento').doc(expId).update({
+  const expId = fatPedidoExp;
+  const expTs = new Date().toISOString();
+
+  // Optimistic update — UI responde imediatamente
+  const localIdx = allPedidosFat.findIndex(x => x.id === expId);
+  if(localIdx !== -1){
+    allPedidosFat[localIdx] = {
+      ...allPedidosFat[localIdx],
       itens: itensAtualizados,
       status: 'pre_separado',
       responsavelExpedicao: responsavel,
-      dataPreSeparacao: new Date().toISOString(),
-      atualizadoEm: new Date().toISOString()
-    });
-    // Atualiza array local imediatamente (sem esperar Firestore snapshot)
-    // Evita que a Fila renderize com dados antigos ao voltar
-    const localIdx = allPedidosFat.findIndex(x => x.id === expId);
-    if(localIdx !== -1){
-      allPedidosFat[localIdx] = {
-        ...allPedidosFat[localIdx],
-        itens: itensAtualizados,
-        status: 'pre_separado',
-        responsavelExpedicao: responsavel,
-        dataPreSeparacao: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString()
-      };
-    }
-    toast('✅ Pré-separação salva!');
-    fatTab('fila', document.getElementById('fat-btn-fila'));
-    setTimeout(() => imprimirComanda(expId), 400);
-  }catch(e){
-    console.error(e);
-    toast('Erro ao salvar pré-separação: ' + e.message);
+      dataPreSeparacao: expTs,
+      atualizadoEm: expTs
+    };
   }
+  toast('✅ Pré-separação salva!');
+  fatTab('fila', document.getElementById('fat-btn-fila'));
+  setTimeout(() => imprimirComanda(expId), 400);
+
+  // Sync Firestore em background
+  db.collection('pedidosFaturamento').doc(expId).update({
+    itens: itensAtualizados,
+    status: 'pre_separado',
+    responsavelExpedicao: responsavel,
+    dataPreSeparacao: expTs,
+    atualizadoEm: expTs
+  }).catch(e => {
+    console.error('[MESO-LOG] salvarExpedicao sync error:', e);
+    toast('⚠️ Erro ao sincronizar pré-separação: ' + e.message);
+  });
 }
 
 // ─── COMANDA TÉRMICA ──────────────────────────────────────────────────────────
@@ -11038,6 +11072,9 @@ function finalizarFechamento(){
     atualizadoEm: closingTs
   }).then(() => {
     console.log('[MESO-LOG] Pedido ' + closingId + ' sincronizado com Firestore.');
+    // Garante que a Fila reflita o estado confirmado (onSnapshot pode ter chegado antes do write)
+    if(document.getElementById('fview-fila')?.style.display !== 'none') renderFilaPedidos();
+    if(document.getElementById('fview-historico')?.style.display !== 'none') renderHistorico();
   }).catch(e => {
     console.error('[MESO-LOG] Erro sync Firestore:', e);
     // Reverte estado local se a sincronização falhar
@@ -11080,6 +11117,7 @@ function verDetalhesPedido(pedidoId){
     </div>
     ${p.observacoes?`<div style="background:#FFF3E0;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px"><b>Obs.:</b> ${p.observacoes}</div>`:''}
     ${p.nfObs?`<div style="background:#E8F5E9;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px"><b>Obs. NF:</b> ${p.nfObs}</div>`:''}
+    ${p.motivoCancelamento?`<div style="background:#FFEBEE;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px;border-left:3px solid #EF9A9A"><b>❌ Motivo do cancelamento:</b> ${p.motivoCancelamento}<br><small style="color:#888">por ${p.canceladoPor||'?'} em ${(p.canceladoEm||'').slice(0,16).replace('T',' ')}</small></div>`:''}
     ${itensHTML}`;
   document.getElementById('modal-title').textContent = 'Pedido ' + p.numeroPedidoMesoLog;
   document.getElementById('modal-actions').innerHTML = `
@@ -11113,7 +11151,7 @@ function renderHistorico(){
     (p.fechadoPor||'').toLowerCase().includes(q)
   );
 
-  if(de)  pedidos = pedidos.filter(p => (p.fechadoEm||p.atualizadoEm||'') >= de);
+  if(de)  pedidos = pedidos.filter(p => (p.fechadoEm||p.atualizadoEm||'').slice(0,10) >= de);
   if(ate) pedidos = pedidos.filter(p => (p.fechadoEm||p.atualizadoEm||'').slice(0,10) <= ate);
 
   // Ordena por fechadoEm DESC (mais recentes primeiro)
@@ -11169,6 +11207,47 @@ function renderHistorico(){
         </div>
       </div>`;
     }).join('')}`;
+}
+
+// ─── CANCELAR PEDIDO ─────────────────────────────────────────────────────────
+function cancelarPedido(id, numPedido){
+  if(!fatUserCan('cancelar_pedido')){ toast('⛔ Seu perfil não tem permissão para cancelar pedidos.'); return; }
+  const motivo = prompt(`Cancelar pedido ${numPedido}?\n\nInforme o motivo do cancelamento (obrigatório):`);
+  if(motivo === null) return; // usuário clicou Cancelar no prompt
+  if(!motivo.trim()){ toast('⚠️ Motivo do cancelamento é obrigatório.'); return; }
+
+  const ts  = new Date().toISOString();
+  const por = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
+
+  // Optimistic update
+  const localIdx = allPedidosFat.findIndex(x => x.id === id);
+  const statusAnterior = localIdx !== -1 ? allPedidosFat[localIdx].status : 'pendente';
+  if(localIdx !== -1){
+    allPedidosFat[localIdx] = {
+      ...allPedidosFat[localIdx],
+      status: 'cancelado',
+      canceladoEm: ts,
+      canceladoPor: por,
+      motivoCancelamento: motivo.trim(),
+      atualizadoEm: ts
+    };
+  }
+  renderFilaPedidos();
+  toast('❌ Pedido ' + numPedido + ' cancelado.');
+
+  // Sync Firestore em background
+  db.collection('pedidosFaturamento').doc(id).update({
+    status: 'cancelado',
+    canceladoEm: ts,
+    canceladoPor: por,
+    motivoCancelamento: motivo.trim(),
+    atualizadoEm: ts
+  }).catch(e => {
+    console.error('[MESO-LOG] cancelarPedido sync error:', e);
+    if(localIdx !== -1) allPedidosFat[localIdx].status = statusAnterior;
+    renderFilaPedidos();
+    toast('⚠️ Erro ao cancelar: ' + e.message);
+  });
 }
 
 // ─── FATURISTAS ───────────────────────────────────────────────────────────────
