@@ -1168,38 +1168,58 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="pagination" id="adm-pagination"></div>
           </div>
         </div>
-        <!-- PRODUTOS ADM -->
+        <!-- CATÁLOGO DE PRODUTOS (banco unificado) -->
         <div id="adm-produtos" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">➕ Adicionar Produto</h3>
-            <div class="form-row-3">
-              <div class="form-group"><label>Código Interno</label><input type="text" id="new-prod-cod" placeholder="T-XXXX0000"></div>
-              <div class="form-group"><label>Descrição</label><input type="text" id="new-prod-desc" placeholder="Nome do produto"></div>
-              <div class="form-group"><label>Grupo</label>
-                <select id="new-prod-grupo"><option value="X Prof">X Prof</option><option value="C Prof">C Prof</option><option value="Agulha">Agulha</option><option value="Outros" selected>Outros</option></select>
+
+          <!-- Barra de ações -->
+          <div class="card" style="margin-bottom:14px;padding:14px 16px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+              <input type="text" id="cat-search" placeholder="🔍 Código, descrição, barcode ou categoria..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" oninput="renderCatalogo()">
+              <select id="cat-filter-cat" style="padding:8px 12px;border:1px solid #d0d7de;border-radius:6px;font-size:13px" onchange="renderCatalogo()">
+                <option value="">Todas as Categorias</option>
+              </select>
+              <button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;font-weight:600" onclick="catToggleFormNovo()">➕ Novo Produto</button>
+              <button class="btn btn-sm" style="background:#EDE7F6;color:#4527A0;border:1px solid #CE93D8;font-weight:600" onclick="migrarCatalogoCentralizado()" title="Sincroniza STOCK_SEED com Firestore (rodar uma vez)">🔄 Sincronizar Catálogo</button>
+            </div>
+            <!-- Stats -->
+            <div id="cat-stats" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+          </div>
+
+          <!-- Formulário novo produto (oculto por padrão) -->
+          <div id="cat-form-novo" style="display:none;margin-bottom:14px">
+            <div class="card" style="border-left:4px solid #4CAF50">
+              <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">➕ Novo Produto / Novo Lote</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-group"><label>Código Interno *</label><input type="text" id="cnp-cod" placeholder="T-XXXX0000" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Descrição *</label><input type="text" id="cnp-desc" placeholder="Nome do produto" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Categoria</label><input type="text" id="cnp-cat" placeholder="Ex: Age Element, Bodyshock..." style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px" list="cat-datalist"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-group"><label>Código de Barras (EAN)</label><input type="text" id="cnp-barcode" placeholder="Ex: 8436024750195" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Preço de Custo (R$)</label><input type="number" id="cnp-preco" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Unidade</label>
+                  <select id="cnp-unidade" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px">
+                    <option value="fracionado">Fracionado (Frasco/Ampola)</option>
+                    <option value="unidade">Unidade (Caixa/Kit)</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="cnp-minimo" placeholder="0" min="0" step="1" value="0" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+                <div class="form-group"><label>Lote</label><input type="text" id="cnp-lote" placeholder="Ex: 18262" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Data de Validade</label><input type="text" id="cnp-validade" placeholder="01/mm/aaaa" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+                <div class="form-group"><label>Quantidade Inicial</label><input type="number" id="cnp-qtd" placeholder="0" min="0" step="1" value="0" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-success" onclick="catSalvarNovo()">💾 Salvar Produto</button>
+                <button class="btn btn-outline" onclick="catToggleFormNovo()">Cancelar</button>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group"><label>Tipo de Unidade</label>
-                <select id="new-prod-um"><option value="fracionado">Fracionado (Frasco/Ampola/Fracionada)</option><option value="unidade">Unidade</option></select>
-              </div>
-              <div class="form-group"><label>Lote</label><input type="text" id="new-prod-lote" placeholder="Ex: 18.262"></div>
-            </div>
-            <button class="btn btn-success" onclick="addProductDB()">➕ Adicionar ao Catálogo</button>
           </div>
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <h3 style="font-size:13px;color:#002050;font-weight:700">Catálogo Atual</h3>
-              <input type="text" id="adm-prod-search" placeholder="Buscar..." style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px" oninput="renderAdmProds()">
-            </div>
-            <div id="adm-prods-loader" class="loader"><div class="spinner"></div>Carregando...</div>
-            <div style="overflow-x:auto">
-              <table class="prod-table">
-                <thead><tr><th>Código</th><th>Descrição</th><th>Grupo</th><th>Unidade</th><th>Lote</th><th>Ações</th></tr></thead>
-                <tbody id="adm-prods-tbody"></tbody>
-              </table>
-            </div>
-          </div>
+          <datalist id="cat-datalist"></datalist>
+
+          <!-- Lista de produtos -->
+          <div id="cat-lista"><div class="loader"><div class="spinner"></div>Carregando catálogo...</div></div>
         </div>
       </div>
         <!-- CONFIGURAÇÕES ADM -->
@@ -3019,6 +3039,50 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- MODAL CATÁLOGO — Editar Produto/Lote -->
+<div class="modal-overlay" id="modal-cat-edit">
+  <div class="modal" style="max-width:600px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;color:#002050">✏️ Editar Produto / Lote</h3>
+      <button onclick="closeModal('modal-cat-edit')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
+    </div>
+    <div style="background:#E3F2FD;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1565C0">
+      ℹ️ Alterações em <b>Descrição, Categoria, Barcode e Preço</b> serão aplicadas a <u>todos os lotes</u> deste produto.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group"><label>Código Interno</label><input type="text" id="ce-cod" readonly style="background:#f5f5f5;padding:8px;border:1px solid #ddd;border-radius:6px;width:100%"></div>
+      <div class="form-group"><label>Categoria</label><input type="text" id="ce-cat" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px" list="cat-datalist"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px"><label>Descrição</label><input type="text" id="ce-desc" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group"><label>Código de Barras (EAN)</label><input type="text" id="ce-barcode" placeholder="8436024750195" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+      <div class="form-group"><label>Preço de Custo (R$)</label><input type="number" id="ce-preco" min="0" step="0.01" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group"><label>Unidade</label>
+        <select id="ce-unidade" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px">
+          <option value="fracionado">Fracionado (Frasco/Ampola)</option>
+          <option value="unidade">Unidade (Caixa/Kit)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Estoque Mínimo</label><input type="number" id="ce-minimo" min="0" step="1" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+    </div>
+    <div style="border-top:1px solid #e0e0e0;margin:12px 0;padding-top:12px">
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px">DADOS DO LOTE ESPECÍFICO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group"><label>Lote</label><input type="text" id="ce-lote" placeholder="Ex: 18262" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+        <div class="form-group"><label>Data de Validade</label><input type="text" id="ce-validade" placeholder="01/mm/aaaa" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+        <div class="form-group"><label>Quantidade em Estoque</label><input type="number" id="ce-qtd" min="0" step="1" style="padding:8px;border:1px solid #ccc;border-radius:6px;width:100%;font-size:13px"></div>
+      </div>
+    </div>
+    <input type="hidden" id="ce-docid">
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-success" style="flex:2" onclick="catSalvarEdicao()">💾 Salvar Alterações</button>
+      <button class="btn btn-danger" style="flex:1" onclick="catExcluirLote(document.getElementById('ce-docid').value)">🗑️ Excluir Lote</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -4055,37 +4119,350 @@ function filterAdmTable(){
   renderPagination('adm-pagination',pages,admPage,p=>{admPage=p;filterAdmTable();});
 }
 
-function renderAdmProds(){
-  const loader=document.getElementById('adm-prods-loader');
-  if(loader)loader.style.display='none';
-  const q=(document.getElementById('adm-prod-search')?.value||'').toLowerCase();
-  const prods=(allProducts.length?allProducts:PRODUCTS_DEFAULT).filter(p=>!q||p.codigo.toLowerCase().includes(q)||p.descricao.toLowerCase().includes(q));
-  document.getElementById('adm-prods-tbody').innerHTML=prods.map(p=>`
-    <tr>
-      <td><code style="font-size:11px;background:#f5f5f5;padding:1px 5px;border-radius:3px">${p.codigo}</code></td>
-      <td>${p.descricao}</td>
-      <td><span class="badge-grupo ${grupoClass(p.grupo)}">${p.grupo}</span></td>
-      <td style="font-size:12px">${getUMLabel(p)}</td>
-      <td style="font-size:12px">${p.lote||'—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteProductDB('${p.codigo||p.id}')">🗑️</button></td>
-    </tr>`).join()||'<tr><td colspan="6" style="text-align:center;padding:20px;color:#aaa">Nenhum produto.</td></tr>';
+// ─── CATÁLOGO DE PRODUTOS (banco unificado) ───────────────────────────────────
+
+// Compatibilidade: renderAdmProds agora chama renderCatalogo
+function renderAdmProds(){ renderCatalogo(); }
+
+function catToggleFormNovo(){
+  const f = document.getElementById('cat-form-novo');
+  if(f) f.style.display = f.style.display === 'none' ? '' : 'none';
 }
 
-async function addProductDB(){
-  const cod=document.getElementById('new-prod-cod').value.trim();
-  const desc=document.getElementById('new-prod-desc').value.trim();
-  const grupo=document.getElementById('new-prod-grupo').value;
-  const um=document.getElementById('new-prod-um').value;
-  const lote=document.getElementById('new-prod-lote').value.trim();
-  if(!cod||!desc){alert('Código e descrição são obrigatórios.');return;}
-  await db.collection('products').doc(cod).set({codigo:cod,descricao:desc,grupo,tipoUnidade:um,lote});
-  ['new-prod-cod','new-prod-desc','new-prod-lote'].forEach(id=>document.getElementById(id).value='');
-  toast('✅ Produto adicionado!');
+function renderCatalogo(){
+  const q    = (document.getElementById('cat-search')?.value || '').toLowerCase();
+  const catF = document.getElementById('cat-filter-cat')?.value || '';
+
+  // Base: allStock (Firestore live) + itens do STOCK_SEED ainda não em allStock
+  const stockCodes = new Set(allStock.map(s => s.codigo));
+  const seedExtra  = STOCK_SEED.filter(s => !stockCodes.has(s.codigo));
+  const base       = [...allStock, ...seedExtra];
+
+  // Filtro
+  let items = base.filter(s => {
+    const matchQ = !q ||
+      (s.codigo||'').toLowerCase().includes(q) ||
+      (s.descricao||'').toLowerCase().includes(q) ||
+      (s.barcode||'').includes(q) ||
+      (s.categoria||'').toLowerCase().includes(q) ||
+      (s.lote||'').toLowerCase().includes(q);
+    const matchCat = !catF || (s.categoria||'') === catF;
+    return matchQ && matchCat;
+  });
+
+  // Agrupar por codigo
+  const grouped = {};
+  items.forEach(s => {
+    const cod = s.codigo || '—';
+    if(!grouped[cod]) grouped[cod] = [];
+    grouped[cod].push(s);
+  });
+
+  // Preencher datalist de categorias
+  const cats = [...new Set(base.map(s => s.categoria).filter(Boolean))].sort();
+  const catSel = document.getElementById('cat-filter-cat');
+  if(catSel){
+    const prev = catSel.value;
+    catSel.innerHTML = '<option value="">Todas as Categorias</option>' +
+      cats.map(c => `<option value="${c}"${c===prev?' selected':''}>${c}</option>`).join('');
+  }
+  const catDl = document.getElementById('cat-datalist');
+  if(catDl) catDl.innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+
+  // Stats
+  const totalUnicos = Object.keys(grouped).length;
+  const totalLotes  = base.length;
+  const semBarcode  = base.filter(s => !s.barcode).length;
+  const totalQtd    = allStock.reduce((a,s)=>a+(Number(s.quantidade)||0),0);
+  const statsEl = document.getElementById('cat-stats');
+  if(statsEl) statsEl.innerHTML = `
+    <div style="background:#E3F2FD;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1565C0">${totalUnicos}</div><div style="color:#555">Produtos únicos</div></div>
+    <div style="background:#E8F5E9;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1B5E20">${totalLotes}</div><div style="color:#555">Total de lotes</div></div>
+    <div style="background:#${semBarcode>0?'FFEBEE':'E8F5E9'};border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#${semBarcode>0?'B71C1C':'1B5E20'}">${semBarcode}</div><div style="color:#555">Sem barcode</div></div>
+    <div style="background:#F3E5F5;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#6A1B9A">${totalQtd}</div><div style="color:#555">Unid. em estoque</div></div>`;
+
+  // Render lista
+  const lista = document.getElementById('cat-lista');
+  if(!lista) return;
+
+  const codigos = Object.keys(grouped).sort();
+  if(!codigos.length){
+    lista.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:#aaa"><div style="font-size:32px;margin-bottom:8px">📦</div>Nenhum produto encontrado.</div>';
+    return;
+  }
+
+  lista.innerHTML = codigos.map(cod => {
+    const lotes = grouped[cod];
+    const ref   = lotes[0]; // dados de produto vêm do primeiro lote
+    const totalQ = lotes.reduce((a,l)=>a+(Number(l.quantidade)||0),0);
+    const semBc  = !ref.barcode;
+    const qBadge = totalQ === 0
+      ? `<span style="background:#FFEBEE;color:#B71C1C;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">Sem estoque</span>`
+      : `<span style="background:#E8F5E9;color:#1B5E20;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${totalQ} un.</span>`;
+
+    const lotsHTML = lotes.map(l => {
+      const docId = l.id || cleanDocId(l.codigo, l.lote||'');
+      const qtdColor = (Number(l.quantidade)||0) <= (Number(l.estoqueMinimo)||0) && (Number(l.estoqueMinimo)||0) > 0 ? '#B71C1C' : '#002050';
+      return `<tr style="font-size:12px">
+        <td style="font-family:monospace;padding:5px 8px">${l.lote||'—'}</td>
+        <td style="padding:5px 8px">${l.dataValidade||'—'}</td>
+        <td style="padding:5px 8px;text-align:center;font-weight:700;color:${qtdColor}">${l.quantidade||0}</td>
+        <td style="padding:5px 8px;text-align:center;color:#888">${l.estoqueMinimo||0}</td>
+        <td style="padding:5px 8px">
+          <button class="btn btn-sm btn-outline" style="font-size:11px;padding:3px 8px" onclick="catAbrirEdicao('${docId}')">✏️ Editar</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;flex-wrap:wrap;cursor:pointer" onclick="catToggleLotes('cat-lotes-${cod.replace(/[^a-z0-9]/gi,'_')}')">
+        <div style="flex:0 0 auto">
+          <code style="background:#E3F2FD;color:#002050;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700">${cod}</code>
+        </div>
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:13px;font-weight:600;color:#111">${ref.descricao||'—'}</div>
+          <div style="font-size:11px;color:#888;margin-top:1px">${ref.categoria||'—'}</div>
+        </div>
+        <div style="flex:0 0 auto;text-align:center;min-width:90px">
+          ${semBc ? `<span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:8px;font-size:11px">⚠️ Sem EAN</span>` : `<code style="font-size:11px;color:#555">${ref.barcode}</code>`}
+        </div>
+        <div style="flex:0 0 auto;min-width:70px;text-align:right">
+          <div style="font-size:11px;color:#888">R$ ${Number(ref.precoCusto||0).toFixed(2).replace('.',',')}</div>
+        </div>
+        <div style="flex:0 0 auto">${qBadge}</div>
+        <div style="flex:0 0 auto;font-size:11px;color:#aaa">${lotes.length} lote(s) ▾</div>
+      </div>
+      <div id="cat-lotes-${cod.replace(/[^a-z0-9]/gi,'_')}" style="display:none;border-top:1px solid #f0f0f0">
+        <table style="width:100%;border-collapse:collapse">
+          <thead style="background:#F5F5F5">
+            <tr style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.3px">
+              <th style="padding:5px 8px;font-weight:600;text-align:left">Lote</th>
+              <th style="padding:5px 8px;font-weight:600;text-align:left">Validade</th>
+              <th style="padding:5px 8px;font-weight:600;text-align:center">Qtd</th>
+              <th style="padding:5px 8px;font-weight:600;text-align:center">Mín.</th>
+              <th style="padding:5px 8px;font-weight:600"></th>
+            </tr>
+          </thead>
+          <tbody>${lotsHTML}</tbody>
+        </table>
+        <div style="padding:8px 14px;background:#FAFAFA;border-top:1px solid #f0f0f0">
+          <button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;font-size:11px" onclick="catAdicionarLote('${cod}','${(ref.descricao||'').replace(/'/g,'')}','${ref.categoria||''}','${ref.barcode||''}','${ref.precoCusto||0}','${ref.tipoUnidade||ref.unidade||'fracionado'}')">➕ Novo Lote</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
+function catToggleLotes(id){
+  const el = document.getElementById(id);
+  if(el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function catAbrirEdicao(docId){
+  const item = allStock.find(s => s.id === docId);
+  if(!item){
+    // Pode ser do STOCK_SEED (ainda não em Firestore)
+    const seed = STOCK_SEED.find(s => cleanDocId(s.codigo, s.lote||'') === docId);
+    if(!seed){ toast('Item não encontrado no Firestore. Clique em Sincronizar Catálogo primeiro.'); return; }
+    // Preenche com dados do seed
+    document.getElementById('ce-cod').value       = seed.codigo||'';
+    document.getElementById('ce-desc').value      = seed.descricao||'';
+    document.getElementById('ce-cat').value       = seed.categoria||'';
+    document.getElementById('ce-barcode').value   = seed.barcode||'';
+    document.getElementById('ce-preco').value     = seed.precoCusto||0;
+    document.getElementById('ce-unidade').value   = 'fracionado';
+    document.getElementById('ce-minimo').value    = seed.estoqueMinimo||0;
+    document.getElementById('ce-lote').value      = seed.lote||'';
+    document.getElementById('ce-validade').value  = seed.dataValidade||'';
+    document.getElementById('ce-qtd').value       = seed.quantidade||0;
+    document.getElementById('ce-docid').value     = docId;
+    document.getElementById('modal-cat-edit').classList.add('open');
+    return;
+  }
+  document.getElementById('ce-cod').value       = item.codigo||'';
+  document.getElementById('ce-desc').value      = item.descricao||'';
+  document.getElementById('ce-cat').value       = item.categoria||'';
+  document.getElementById('ce-barcode').value   = item.barcode||'';
+  document.getElementById('ce-preco').value     = item.precoCusto||0;
+  document.getElementById('ce-unidade').value   = item.tipoUnidade||item.unidade||'fracionado';
+  document.getElementById('ce-minimo').value    = item.estoqueMinimo||0;
+  document.getElementById('ce-lote').value      = item.lote||'';
+  document.getElementById('ce-validade').value  = item.dataValidade||'';
+  document.getElementById('ce-qtd').value       = item.quantidade||0;
+  document.getElementById('ce-docid').value     = docId;
+  document.getElementById('modal-cat-edit').classList.add('open');
+}
+
+async function catSalvarEdicao(){
+  const docId   = document.getElementById('ce-docid').value;
+  const codigo  = document.getElementById('ce-cod').value.trim();
+  const desc    = document.getElementById('ce-desc').value.trim();
+  const cat     = document.getElementById('ce-cat').value.trim();
+  const barcode = document.getElementById('ce-barcode').value.trim();
+  const preco   = Number(document.getElementById('ce-preco').value)||0;
+  const unidade = document.getElementById('ce-unidade').value;
+  const minimo  = Number(document.getElementById('ce-minimo').value)||0;
+  const lote    = document.getElementById('ce-lote').value.trim();
+  const validade= document.getElementById('ce-validade').value.trim();
+  const qtd     = Number(document.getElementById('ce-qtd').value)||0;
+  if(!codigo){ toast('Código obrigatório.'); return; }
+
+  try{
+    // Atualiza este lote
+    await db.collection('stock').doc(docId).set({
+      codigo, descricao:desc, categoria:cat, barcode, precoCusto:preco,
+      tipoUnidade:unidade, estoqueMinimo:minimo, lote, dataValidade:validade, quantidade:qtd
+    }, {merge:true});
+
+    // Propaga barcode/desc/cat/preco/unidade para todos os outros lotes do mesmo código
+    const outrosLotes = allStock.filter(s => s.codigo === codigo && s.id !== docId);
+    if(outrosLotes.length){
+      const batch = db.batch();
+      outrosLotes.forEach(s => {
+        batch.update(db.collection('stock').doc(s.id), {
+          descricao:desc, categoria:cat, barcode, precoCusto:preco, tipoUnidade:unidade
+        });
+      });
+      await batch.commit();
+    }
+    toast('✅ Produto atualizado!');
+    closeModal('modal-cat-edit');
+  }catch(e){ toast('❌ Erro: '+e.message); }
+}
+
+async function catExcluirLote(docId){
+  if(!confirm('Excluir este lote do catálogo? Esta ação não pode ser desfeita.')) return;
+  try{
+    await db.collection('stock').doc(docId).delete();
+    toast('Lote excluído.');
+    closeModal('modal-cat-edit');
+  }catch(e){ toast('Erro: '+e.message); }
+}
+
+function catAdicionarLote(cod, desc, cat, barcode, preco, unidade){
+  // Preenche o form de novo produto com os dados do produto existente
+  document.getElementById('cnp-cod').value      = cod;
+  document.getElementById('cnp-desc').value     = desc;
+  document.getElementById('cnp-cat').value      = cat;
+  document.getElementById('cnp-barcode').value  = barcode;
+  document.getElementById('cnp-preco').value    = preco;
+  document.getElementById('cnp-unidade').value  = unidade||'fracionado';
+  document.getElementById('cnp-lote').value     = '';
+  document.getElementById('cnp-validade').value = '';
+  document.getElementById('cnp-qtd').value      = '0';
+  document.getElementById('cat-form-novo').style.display = '';
+  document.getElementById('cat-form-novo').scrollIntoView({behavior:'smooth'});
+}
+
+async function catSalvarNovo(){
+  const cod     = document.getElementById('cnp-cod').value.trim().toUpperCase();
+  const desc    = document.getElementById('cnp-desc').value.trim();
+  const cat     = document.getElementById('cnp-cat').value.trim();
+  const barcode = document.getElementById('cnp-barcode').value.trim();
+  const preco   = Number(document.getElementById('cnp-preco').value)||0;
+  const unidade = document.getElementById('cnp-unidade').value;
+  const minimo  = Number(document.getElementById('cnp-minimo').value)||0;
+  const lote    = document.getElementById('cnp-lote').value.trim();
+  const validade= document.getElementById('cnp-validade').value.trim();
+  const qtd     = Number(document.getElementById('cnp-qtd').value)||0;
+  if(!cod||!desc){ toast('⚠️ Código e Descrição são obrigatórios.'); return; }
+  const docId = cleanDocId(cod, lote||'0');
+  try{
+    await db.collection('stock').doc(docId).set({
+      codigo:cod, descricao:desc, categoria:cat, barcode, precoCusto:preco,
+      tipoUnidade:unidade, estoqueMinimo:minimo, lote:lote||'0', dataValidade:validade, quantidade:qtd,
+      criadoEm: new Date().toISOString()
+    }, {merge:true});
+    // Também salva em products (compatibilidade)
+    await db.collection('products').doc(cod).set({
+      codigo:cod, descricao:desc, grupo:cat||'Outros', tipoUnidade:unidade, lote:lote||''
+    }, {merge:true});
+    toast('✅ Produto salvo no catálogo!');
+    document.getElementById('cat-form-novo').style.display = 'none';
+    ['cnp-cod','cnp-desc','cnp-cat','cnp-barcode','cnp-lote','cnp-validade'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+  }catch(e){ toast('❌ Erro: '+e.message); }
+}
+
+// ─── MIGRAÇÃO: STOCK_SEED + PRODUCTS_DEFAULT → Firestore stock ───────────────
+async function migrarCatalogoCentralizado(){
+  if(!confirm(
+    'Sincronizar Catálogo?\n\n' +
+    'Isso irá:\n' +
+    '• Gravar barcode, precoCusto e categoria em todos os docs do Firestore que estiverem faltando\n' +
+    '• Criar docs para produtos do STOCK_SEED que ainda não existem no Firestore\n\n' +
+    'A quantidade em estoque NUNCA será sobrescrita. Confirmar?'
+  )) return;
+
+  toast('⏳ Sincronizando catálogo... aguarde.');
+
+  // Mapa do STOCK_SEED por cleanDocId
+  const seedMap = {};
+  STOCK_SEED.forEach(s => {
+    const id = cleanDocId(s.codigo, s.lote||'');
+    seedMap[id] = s;
+  });
+
+  // Mapa de tipoUnidade do PRODUCTS_DEFAULT por codigo
+  const prodMap = {};
+  PRODUCTS_DEFAULT.forEach(p => { prodMap[p.codigo] = p; });
+
+  // Buscar todos os docs do stock
+  let snap;
+  try{ snap = await db.collection('stock').get(); }
+  catch(e){ toast('❌ Erro ao buscar estoque: '+e.message); return; }
+
+  const firestoreIds = new Set(snap.docs.map(d=>d.id));
+  const batch1 = db.batch();
+  let atualizados = 0;
+
+  // 1. Atualizar docs existentes com campos faltando
+  snap.docs.forEach(doc => {
+    const data = doc.data();
+    const seed = seedMap[doc.id];
+    const prod = prodMap[data.codigo];
+    const upd  = {};
+    if(seed){
+      if(!data.barcode    && seed.barcode)    upd.barcode    = String(seed.barcode);
+      if(!data.precoCusto && seed.precoCusto) upd.precoCusto = seed.precoCusto;
+      if(!data.categoria  && seed.categoria)  upd.categoria  = seed.categoria;
+      if(!data.descricao  && seed.descricao)  upd.descricao  = seed.descricao;
+    }
+    if(prod && !data.tipoUnidade && prod.tipoUnidade) upd.tipoUnidade = prod.tipoUnidade;
+    if(Object.keys(upd).length){ batch1.update(doc.ref, upd); atualizados++; }
+  });
+
+  // 2. Criar docs para itens do STOCK_SEED que não existem no Firestore
+  let criados = 0;
+  Object.entries(seedMap).forEach(([id, s]) => {
+    if(!firestoreIds.has(id)){
+      const docRef = db.collection('stock').doc(id);
+      batch1.set(docRef, {
+        codigo: s.codigo, descricao: s.descricao, lote: s.lote||'',
+        dataValidade: s.dataValidade||'', categoria: s.categoria||'',
+        barcode: s.barcode ? String(s.barcode) : '',
+        precoCusto: s.precoCusto||0, quantidade: 0,
+        tipoUnidade: prodMap[s.codigo]?.tipoUnidade || 'fracionado',
+        origemMigracao: true, criadoEm: new Date().toISOString()
+      }, {merge:true});
+      criados++;
+    }
+  });
+
+  try{
+    await batch1.commit();
+    toast(`✅ Sincronização concluída! ${atualizados} docs atualizados, ${criados} docs criados.`);
+  }catch(e){ toast('❌ Erro na sincronização: '+e.message); }
+}
+
+// Compatibilidade com chamadas antigas
+async function addProductDB(){ catToggleFormNovo(); }
 async function deleteProductDB(cod){
-  if(!confirm('Remover este produto do catálogo?'))return;
-  await db.collection('products').doc(cod).delete();
+  if(!confirm('Remover TODOS os lotes deste produto?')) return;
+  const batch = db.batch();
+  allStock.filter(s=>s.codigo===cod).forEach(s=>batch.delete(db.collection('stock').doc(s.id)));
+  await batch.commit();
   toast('Produto removido.');
 }
 
@@ -9845,6 +10222,12 @@ function renderFilaPedidos(){
     const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const canCancel   = ['pendente','pagamento_verificado','pre_separado','faturado','nf_anexada'].includes(p.status);
     const canDevolver = ['pre_separado','faturado','nf_anexada'].includes(p.status);
+
+    // Badge 48h — pedido parado na pré-separação
+    const horasEmPreSep = p.status === 'pre_separado' && p.dataPreSeparacao
+      ? Math.floor((Date.now() - new Date(p.dataPreSeparacao).getTime()) / 3600000)
+      : 0;
+    const atrasado48h = horasEmPreSep >= 48;
     const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
     const pagVerifBy  = p.pagamentoVerificado ? `<span style="font-size:10px;color:#1B5E20;font-weight:600">💳 Pag. verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '';
     const pagLabel    = p.pagamentoVerificado ? ' 💳' : '';
@@ -9859,10 +10242,12 @@ function renderFilaPedidos(){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span style="background:${s.bg};color:${s.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${s.label}</span>
+          ${atrasado48h ? `<span style="background:#B71C1C;color:#fff;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;animation:pulse 1.5s infinite">⚠️ ATRASADO ${horasEmPreSep}h</span>` : ''}
           ${p.status === 'pagamento_verificado' ? `<div style="font-size:10px;color:#1565C0;font-weight:600;text-align:right">📦 Aguardando Pré-Separação</div>` : ''}
           ${p.status === 'pre_separado'         ? `<div style="font-size:10px;color:#6A1B9A;font-weight:600;text-align:right">🧾 Aguardando Faturista registrar NF</div>` : ''}
           ${p.status === 'faturado'             ? `<div style="font-size:10px;color:#E65100;font-weight:600;text-align:right">📎 Aguardando NF + Etiqueta dos Correios</div>` : ''}
           ${p.status === 'nf_anexada'           ? `<div style="font-size:10px;color:#2E7D32;font-weight:600;text-align:right">✅ Pronto — Fechar Caixa disponível</div>` : ''}
+          ${atrasado48h && fatUserCan('devolver_pedido') ? `<div style="font-size:10px;color:#B71C1C;font-weight:600;text-align:right;margin-top:2px">Pedido parado há ${horasEmPreSep}h · Verifique ou devolva os itens ao estoque</div>` : ''}
           <div style="font-size:10px;color:#aaa">${(p.criadoEm||'').slice(0,10)} · ${p.faturistaNome||'ADM'}</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
             ${canPagVerif && fatUserCan('verificar_pagamento') ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
@@ -10818,10 +11203,122 @@ function salvarExpedicao(){
     responsavelExpedicao: responsavel,
     dataPreSeparacao: expTs,
     atualizadoEm: expTs
+  }).then(() => {
+    // Bloco 1: reserva de estoque em background após confirmar gravação do pedido
+    _fatReservarEstoque(expId, itensAtualizados, p, responsavel, expTs);
   }).catch(e => {
     console.error('[MESO-LOG] salvarExpedicao sync error:', e);
     toast('⚠️ Erro ao sincronizar pré-separação: ' + e.message);
   });
+}
+
+// ─── RESERVA DE ESTOQUE (Bloco 1) ─────────────────────────────────────────────
+async function _fatReservarEstoque(pedidoId, itens, pedido, operador, ts){
+  try{
+    const batch = db.batch();
+    const numeroPedido = pedido.numeroPedidoMesoLog || pedidoId;
+    const clienteNome  = pedido.clienteNome || '—';
+    const movimentos   = [];
+
+    for(const it of itens){
+      const lotes = it.lotesSelecionados || [];
+      for(const l of lotes){
+        if(!l.lote || !l.quantidade) continue;
+        const docId  = cleanDocId(it.codigo, l.lote);
+        const stockDoc = allStock.find(s => s.id === docId);
+        const qtdReservar = Number(l.quantidade)||0;
+
+        if(stockDoc){
+          // Lote existe — decrementar quantidade
+          const novaQtd = Math.max(-999, (Number(stockDoc.quantidade)||0) - qtdReservar);
+          batch.update(db.collection('stock').doc(docId), {
+            quantidade: novaQtd, atualizadoEm: ts
+          });
+          movimentos.push({
+            tipo: 'reserva_faturamento', pedidoId, numeroPedido, clienteNome,
+            codigo: it.codigo, descricao: it.descricao||'', lote: l.lote,
+            dataValidade: l.dataValidade||'', quantidade: qtdReservar,
+            operador, criadoEm: ts, origemManual: false
+          });
+        } else {
+          // Lote não existe — entrada manual da expedição
+          // Cria o doc com quantidade negativa (saída sem entrada prévia)
+          const seedRef = STOCK_SEED.find(s => s.codigo===it.codigo && String(s.lote)===String(l.lote));
+          batch.set(db.collection('stock').doc(docId), {
+            codigo: it.codigo, descricao: it.descricao||seedRef?.descricao||'',
+            lote: l.lote, dataValidade: l.dataValidade||seedRef?.dataValidade||'',
+            categoria: seedRef?.categoria||'', barcode: seedRef?.barcode||'',
+            precoCusto: seedRef?.precoCusto||0,
+            tipoUnidade: seedRef ? 'fracionado' : 'fracionado',
+            quantidade: -qtdReservar, estoqueMinimo: 0,
+            criadoEm: ts, atualizadoEm: ts
+          }, {merge:true});
+          movimentos.push({
+            tipo: 'reserva_faturamento', pedidoId, numeroPedido, clienteNome,
+            codigo: it.codigo, descricao: it.descricao||'', lote: l.lote,
+            dataValidade: l.dataValidade||'', quantidade: qtdReservar,
+            operador, criadoEm: ts, origemManual: true
+          });
+          // Registrar entrada manual separada para relatório
+          const entradaRef = db.collection('entradas_manuais_expedicao').doc();
+          batch.set(entradaRef, {
+            pedidoId, numeroPedido, clienteNome,
+            codigo: it.codigo, descricao: it.descricao||'', lote: l.lote,
+            dataValidade: l.dataValidade||'', quantidade: qtdReservar,
+            operador, criadoEm: ts,
+            obs: 'Lote informado manualmente na Pré-Separação — não estava cadastrado no estoque'
+          });
+        }
+      }
+    }
+
+    // Salvar movimentos
+    movimentos.forEach(m => {
+      const ref = db.collection('movimentos_estoque').doc();
+      batch.set(ref, m);
+    });
+
+    await batch.commit();
+    console.log('[MESO-LOG] Reserva de estoque concluída:', movimentos.length, 'movimentos.');
+  }catch(e){
+    console.error('[MESO-LOG] _fatReservarEstoque erro:', e);
+    // Não exibe toast ao usuário — é background. Logar apenas.
+  }
+}
+
+// ─── ESTORNO DE RESERVA (cancelamento / devolução) ────────────────────────────
+async function _fatEstornarReserva(pedidoId, itens, motivo, operador){
+  try{
+    const ts    = new Date().toISOString();
+    const batch = db.batch();
+
+    for(const it of itens){
+      const lotes = it.lotesSelecionados || [];
+      for(const l of lotes){
+        if(!l.lote || !l.quantidade) continue;
+        const docId   = cleanDocId(it.codigo, l.lote);
+        const stockDoc = allStock.find(s => s.id === docId);
+        const qtd     = Number(l.quantidade)||0;
+        if(stockDoc){
+          batch.update(db.collection('stock').doc(docId), {
+            quantidade: (Number(stockDoc.quantidade)||0) + qtd, atualizadoEm: ts
+          });
+        }
+        // Registro de estorno
+        const ref = db.collection('movimentos_estoque').doc();
+        batch.set(ref, {
+          tipo: 'estorno_faturamento', pedidoId, motivo,
+          codigo: it.codigo, descricao: it.descricao||'', lote: l.lote,
+          dataValidade: l.dataValidade||'', quantidade: qtd,
+          operador, criadoEm: ts
+        });
+      }
+    }
+    await batch.commit();
+    console.log('[MESO-LOG] Estorno de reserva concluído para pedido', pedidoId);
+  }catch(e){
+    console.error('[MESO-LOG] _fatEstornarReserva erro:', e);
+  }
 }
 
 // ─── COMANDA TÉRMICA ──────────────────────────────────────────────────────────
@@ -11363,6 +11860,12 @@ function cancelarPedido(id, numPedido){
     canceladoPor: por,
     motivoCancelamento: motivo.trim(),
     atualizadoEm: ts
+  }).then(() => {
+    // Se pedido já tinha pré-separação, estornar reserva de estoque
+    if(['pre_separado','faturado','nf_anexada'].includes(statusAnterior)){
+      const pLocal = allPedidosFat.find(x => x.id === id);
+      if(pLocal?.itens?.length) _fatEstornarReserva(id, pLocal.itens, 'cancelamento', por);
+    }
   }).catch(e => {
     console.error('[MESO-LOG] cancelarPedido sync error:', e);
     if(localIdx !== -1) allPedidosFat[localIdx].status = statusAnterior;
@@ -11414,6 +11917,12 @@ function devolverPedido(id, numPedido, statusAtual){
     devolvidoPor: por,
     motivoDevolucao: motivo.trim(),
     atualizadoEm: ts
+  }).then(() => {
+    // Se havia reserva de estoque (pré-separação já feita), estornar
+    if(['faturado','nf_anexada'].includes(statusAtual)){
+      const pLocal = allPedidosFat.find(x => x.id === id);
+      if(pLocal?.itens?.length) _fatEstornarReserva(id, pLocal.itens, 'devolucao_pedido', por);
+    }
   }).catch(e => {
     console.error('[MESO-LOG] devolverPedido sync error:', e);
     if(localIdx !== -1) allPedidosFat[localIdx].status = statusAtual;
