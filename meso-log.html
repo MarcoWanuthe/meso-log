@@ -2935,6 +2935,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <div id="fat-imp-none-row" style="display:none;color:#888;font-size:13px;padding:10px;text-align:center;margin-bottom:10px">
       ℹ️ Nenhum arquivo PDF/Etiqueta anexado a este pedido.
     </div>
+    <div style="margin-bottom:10px">
+      <button class="btn" style="width:100%;padding:14px;font-size:14px;font-weight:700;background:#F3E5F5;color:#6A1B9A;border:1px solid #CE93D8" onclick="_fatImprimirResumo(_fatImpPedidoId)">
+        📋 Imprimir Resumo Final do Pedido
+      </button>
+    </div>
     <button class="btn btn-outline" onclick="closeModal('modal-fat-impressao')" style="width:100%;margin-top:6px">Fechar sem imprimir</button>
   </div>
 </div>
@@ -9677,9 +9682,9 @@ async function admExcluirUsuario(id,nome){
 // ─── CONTROLE DE ROLES ────────────────────────────────────────────────────────
 const FAT_ROLES = {
   faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#E3F2FD',
-    perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda','cancelar_pedido'] },
+    perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda','cancelar_pedido','devolver_pedido'] },
   financeiro: { label: '💳 Financeiro', color: '#2E7D32', bg: '#E8F5E9',
-    perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido'] },
+    perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido','devolver_pedido'] },
   expedicao:  { label: '📦 Expedição',  color: '#6A1B9A', bg: '#F3E5F5',
     perms: ['ver_fila','pre_separacao','bipagem','fechamento','reimprimir_comanda','ver_detalhes'] },
 };
@@ -9839,6 +9844,7 @@ function renderFilaPedidos(){
     const canFech     = p.status === 'nf_anexada'; // só quando NF + Etiqueta estão anexadas
     const canRePrint  = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const canCancel   = ['pendente','pagamento_verificado','pre_separado','faturado','nf_anexada'].includes(p.status);
+    const canDevolver = ['pre_separado','faturado','nf_anexada'].includes(p.status);
     const nfLabel     = p.nfNumero ? ` · NF: ${p.nfNumero}` : '';
     const pagVerifBy  = p.pagamentoVerificado ? `<span style="font-size:10px;color:#1B5E20;font-weight:600">💳 Pag. verificado por ${p.pagamentoVerificadoPor||'?'}</span>` : '';
     const pagLabel    = p.pagamentoVerificado ? ' 💳' : '';
@@ -9866,6 +9872,7 @@ function renderFilaPedidos(){
             ${canFech     && fatUserCan('bipagem')             ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
             ${canRePrint  && fatUserCan('reimprimir_comanda')  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
             ${fatUserCan('ver_detalhes') ? `<button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>` : ''}
+            ${canDevolver && fatUserCan('devolver_pedido') ? `<button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80" onclick="devolverPedido('${p.id}','${(p.numeroPedidoMesoLog||'').replace(/'/g,'')}','${p.status}')" title="Devolver pedido para etapa anterior">↩ Devolver</button>` : ''}
             ${canCancel && fatUserCan('cancelar_pedido') ? `<button class="btn btn-sm" style="background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A" onclick="cancelarPedido('${p.id}','${(p.numeroPedidoMesoLog||'').replace(/'/g,'')}')" title="Cancelar pedido">✖ Cancelar</button>` : ''}
           </div>
         </div>
@@ -10115,6 +10122,115 @@ function _fatImprimirDoc(tipo){
       toast('⚠️ Popup bloqueado. Clique no ícone de popup na barra de endereço para permitir.');
     }
   }catch(e){ console.error('[MESO-LOG] Erro ao imprimir:', e); toast('Erro ao abrir arquivo.'); }
+}
+
+// ─── RESUMO FINAL DO PEDIDO ───────────────────────────────────────────────────
+function _fatImprimirResumo(pedidoId){
+  const p = allPedidosFat.find(x => x.id === (pedidoId || _fatImpPedidoId));
+  if(!p){ toast('Pedido não encontrado.'); return; }
+
+  const fmt = iso => {
+    if(!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',
+      day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  };
+
+  const itensHTML = (p.itens||[]).map(it => {
+    const lotes = it.lotesSelecionados || [];
+    const bipRow = (p.bipagem||[]).find(b => b.codigo === it.codigo);
+    return `<tr>
+      <td>${it.codigo}</td>
+      <td>${it.descricao||'—'}</td>
+      <td style="text-align:center">${it.quantidade} ${it.unidade||''}</td>
+      <td>${lotes.length ? lotes.map(l=>`${l.lote} (${l.quantidade}${it.unidade||''})`).join('<br>') : '—'}</td>
+      <td style="text-align:center">${bipRow ? bipRow.bipados+'/'+bipRow.qtdEsperada : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const FAT_STATUS_LABEL = {
+    pendente:'Pendente', pagamento_verificado:'Pgto Verificado',
+    pre_separado:'Pré-Separado', faturado:'Faturado',
+    nf_anexada:'NF Anexada', fechado:'Fechado', cancelado:'Cancelado'
+  };
+
+  const w = window.open('','_blank','width=900,height=700');
+  if(!w){ toast('Permita popups para imprimir.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Resumo Final — ${p.numeroPedidoMesoLog}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}
+    h1{font-size:18px;color:#002050;border-bottom:3px solid #002050;padding-bottom:8px;margin-bottom:16px}
+    h2{font-size:13px;color:#002050;background:#E3F2FD;padding:6px 10px;margin:16px 0 8px;border-left:4px solid #1565C0}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:4px}
+    .row{display:flex;gap:6px;margin-bottom:3px}
+    .lbl{font-weight:700;min-width:140px;color:#555}
+    .val{color:#111}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{background:#002050;color:#fff;padding:6px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #e0e0e0}
+    tr:nth-child(even) td{background:#f9f9f9}
+    .badge{display:inline-block;padding:2px 10px;border-radius:8px;font-weight:700;font-size:11px;background:#E8F5E9;color:#1B5E20}
+    .footer{margin-top:20px;border-top:2px solid #002050;padding-top:10px;font-size:11px;color:#888;text-align:center}
+    @media print{body{padding:10px}.no-print{display:none}}
+  </style></head><body>
+  <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#002050;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir</button>
+  <h1>📋 RESUMO FINAL DO PEDIDO — ${p.numeroPedidoMesoLog}</h1>
+
+  <h2>Identificação</h2>
+  <div class="grid">
+    <div class="row"><span class="lbl">Nº MESO-LOG:</span><span class="val"><b>${p.numeroPedidoMesoLog||'—'}</b></span></div>
+    <div class="row"><span class="lbl">Nº Mercus:</span><span class="val">${p.numeroPedidoMercus||'—'}</span></div>
+    <div class="row"><span class="lbl">ERP:</span><span class="val">${p.pedidoErp||'—'}</span></div>
+    <div class="row"><span class="lbl">Status:</span><span class="val"><span class="badge">${FAT_STATUS_LABEL[p.status]||p.status}</span></span></div>
+    <div class="row"><span class="lbl">Empresa:</span><span class="val">${p.empresaNome||'—'} (${p.empresaSigla||'—'})</span></div>
+    <div class="row"><span class="lbl">Tipo Entrega:</span><span class="val">${(p.tipoEntrega||'').toUpperCase()||'—'}</span></div>
+  </div>
+
+  <h2>Cliente</h2>
+  <div class="grid">
+    <div class="row"><span class="lbl">Nome:</span><span class="val">${p.clienteNome||'—'}</span></div>
+    <div class="row"><span class="lbl">CNPJ:</span><span class="val">${p.clienteCNPJ||'—'}</span></div>
+    <div class="row"><span class="lbl">Vendedor:</span><span class="val">${p.vendedor||'—'}</span></div>
+    <div class="row"><span class="lbl">Cond. Pagamento:</span><span class="val">${p.condicaoPagamento||'—'}</span></div>
+  </div>
+
+  <h2>Documentos Fiscais</h2>
+  <div class="grid">
+    <div class="row"><span class="lbl">Nº NF:</span><span class="val"><b>${p.nfNumero||'—'}</b></span></div>
+    <div class="row"><span class="lbl">Série NF:</span><span class="val">${p.nfSerie||'—'}</span></div>
+    <div class="row"><span class="lbl">NF Anexada:</span><span class="val">${p.nfAnexada?'✅ Sim':'❌ Não'}</span></div>
+    <div class="row"><span class="lbl">Etiqueta Anexada:</span><span class="val">${p.etiquetaAnexada?'✅ Sim':'❌ Não'}</span></div>
+  </div>
+
+  <h2>Itens, Lotes e Bipagem</h2>
+  <table>
+    <thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th><th>Lotes</th><th>Bipagem</th></tr></thead>
+    <tbody>${itensHTML}</tbody>
+  </table>
+
+  ${p.observacoes?`<h2>Observações</h2><p style="padding:0 4px;color:#555">${p.observacoes}</p>`:''}
+
+  <h2>Rastreio do Processo</h2>
+  <div class="grid">
+    <div class="row"><span class="lbl">Criado em:</span><span class="val">${fmt(p.criadoEm)}</span></div>
+    <div class="row"><span class="lbl">Faturista:</span><span class="val">${p.faturistaNome||'—'}</span></div>
+    <div class="row"><span class="lbl">Pgto verificado em:</span><span class="val">${fmt(p.pagamentoVerificadoEm)}</span></div>
+    <div class="row"><span class="lbl">Verificado por:</span><span class="val">${p.pagamentoVerificadoPor||'—'}</span></div>
+    <div class="row"><span class="lbl">Pré-separação em:</span><span class="val">${fmt(p.dataPreSeparacao)}</span></div>
+    <div class="row"><span class="lbl">Resp. Expedição:</span><span class="val">${p.responsavelExpedicao||'—'}</span></div>
+    <div class="row"><span class="lbl">NF registrada em:</span><span class="val">${fmt(p.nfRegistradaEm||p.faturadoEm)}</span></div>
+    <div class="row"><span class="lbl">NF por:</span><span class="val">${p.nfRegistradaPor||p.faturadoPor||'—'}</span></div>
+    <div class="row"><span class="lbl">Fechado em:</span><span class="val">${fmt(p.fechadoEm)}</span></div>
+    <div class="row"><span class="lbl">Fechado por:</span><span class="val">${p.fechadoPor||'—'}</span></div>
+    ${p.devolvidoEm?`<div class="row"><span class="lbl">Devolvido em:</span><span class="val">${fmt(p.devolvidoEm)}</span></div><div class="row"><span class="lbl">Motivo devolução:</span><span class="val">${p.motivoDevolucao||'—'}</span></div>`:''}
+    ${p.canceladoEm?`<div class="row"><span class="lbl">Cancelado em:</span><span class="val">${fmt(p.canceladoEm)}</span></div><div class="row"><span class="lbl">Motivo cancelamento:</span><span class="val">${p.motivoCancelamento||'—'}</span></div>`:''}
+  </div>
+
+  <div class="footer">Impresso em ${new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · MESO-LOG</div>
+  </body></html>`);
+  w.document.close();
 }
 
 // ─── NOVO PEDIDO ──────────────────────────────────────────────────────────────
@@ -10762,7 +10878,7 @@ function imprimirComanda(pedidoId){
   ${p.observacoes?`<div class="section"><div class="sec-title">Obs.</div><div style="font-size:7.5px">${p.observacoes}</div></div>`:''}
   <div class="ftr">Cond. Pagamento: ${p.condicaoPagamento||'—'}</div>
   <div class="assin">_________________________<br>Assinatura do Responsável</div>
-  <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1000)}<\/script>
+  <script>window.onload=()=>{setTimeout(()=>{window.print();},400)}<\/script>
   </body></html>`);
   w.document.close();
 }
@@ -10927,7 +11043,9 @@ function processarBipagem(code){
   if(idx === -1){
     console.warn('[BIP] Não encontrado:', codeNorm,
       '| Itens esperados:', fatBipItems.map(it => it.codigo + '=' + it.codigoBarras));
-    _bipAssociarEAN(codeNorm);
+    toast('❌ Código ' + codeNorm + ' não reconhecido — produto não confirmado. Verifique o item e tente novamente.');
+    // Vibração de erro (mobile)
+    try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){}
     return;
   }
   _bipRegistrar(idx);
@@ -11184,8 +11302,10 @@ function renderHistorico(){
     </div>
     ${pedidos.map(p => {
       const s = FAT_STATUS_BADGE[p.status] || {bg:'#f5f5f5',color:'#666',label:p.status};
-      const dataFech = (p.fechadoEm||p.atualizadoEm||'').slice(0,10);
-      const horaFech = (p.fechadoEm||p.atualizadoEm||'').slice(11,16);
+      const _tsRef = p.fechadoEm||p.atualizadoEm||'';
+      const _dtObj = _tsRef ? new Date(_tsRef) : null;
+      const dataFech = _dtObj ? _dtObj.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) : '';
+      const horaFech = _dtObj ? _dtObj.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}) : '';
       const nItens = (p.itens||[]).length;
       return `<div class="card" style="margin-bottom:8px;padding:12px 16px;border-left:4px solid ${s.color}">
         <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
@@ -11202,6 +11322,7 @@ function renderHistorico(){
             <div style="margin-top:4px">
               <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver Detalhes</button>
               ${(p.nfAnexada||p.etiquetaAnexada) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;margin-left:6px" onclick="_abrirModalImpressao('${p.id}').catch(()=>{})">🖨️ Imprimir</button>` : ''}
+              <button class="btn btn-sm" style="background:#F3E5F5;color:#6A1B9A;border:1px solid #CE93D8;margin-left:6px" onclick="_fatImprimirResumo('${p.id}')">📋 Resumo</button>
             </div>
           </div>
         </div>
@@ -11247,6 +11368,57 @@ function cancelarPedido(id, numPedido){
     if(localIdx !== -1) allPedidosFat[localIdx].status = statusAnterior;
     renderFilaPedidos();
     toast('⚠️ Erro ao cancelar: ' + e.message);
+  });
+}
+
+// ─── DEVOLVER PEDIDO ─────────────────────────────────────────────────────────
+function devolverPedido(id, numPedido, statusAtual){
+  if(!fatUserCan('devolver_pedido')){ toast('⛔ Seu perfil não tem permissão para devolver pedidos.'); return; }
+
+  // Determina status de destino (etapa anterior)
+  const destMap = {
+    'pre_separado' : 'pagamento_verificado',
+    'faturado'     : 'pre_separado',
+    'nf_anexada'   : 'pre_separado',
+  };
+  const novoStatus = destMap[statusAtual];
+  if(!novoStatus){ toast('⚠️ Este pedido não pode ser devolvido a partir do status atual.'); return; }
+
+  const labelAtual = { pre_separado:'Pré-Separação', faturado:'Faturado', nf_anexada:'NF Anexada' }[statusAtual] || statusAtual;
+  const labelDest  = { pagamento_verificado:'Pgto Verificado', pre_separado:'Pré-Separação' }[novoStatus] || novoStatus;
+
+  const motivo = prompt(`↩ Devolver pedido ${numPedido}?\n\nEtapa atual: ${labelAtual} → Retorna para: ${labelDest}\n\nInforme o motivo da devolução (obrigatório):`);
+  if(motivo === null) return;
+  if(!motivo.trim()){ toast('⚠️ Motivo da devolução é obrigatório.'); return; }
+
+  const ts  = new Date().toISOString();
+  const por = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
+
+  const localIdx = allPedidosFat.findIndex(x => x.id === id);
+  if(localIdx !== -1){
+    allPedidosFat[localIdx] = {
+      ...allPedidosFat[localIdx],
+      status: novoStatus,
+      devolvidoEm: ts,
+      devolvidoPor: por,
+      motivoDevolucao: motivo.trim(),
+      atualizadoEm: ts
+    };
+  }
+  renderFilaPedidos();
+  toast(`↩ Pedido ${numPedido} devolvido para ${labelDest} por ${por}.`);
+
+  db.collection('pedidosFaturamento').doc(id).update({
+    status: novoStatus,
+    devolvidoEm: ts,
+    devolvidoPor: por,
+    motivoDevolucao: motivo.trim(),
+    atualizadoEm: ts
+  }).catch(e => {
+    console.error('[MESO-LOG] devolverPedido sync error:', e);
+    if(localIdx !== -1) allPedidosFat[localIdx].status = statusAtual;
+    renderFilaPedidos();
+    toast('⚠️ Erro ao devolver: ' + e.message);
   });
 }
 
