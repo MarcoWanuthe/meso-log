@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MESO-LOG AURORA v4.0 2026-07-20 | Auditoria completa + Faturamento & Expedição -->
+<!-- MESO-LOG Alvorada System 2026-08-14 | Quarentena + Relatórios Faturamento + Auditoria completa -->
 <html lang="pt-BR">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -575,6 +575,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <span class="guide-flow-arrow">→</span>
             <span class="guide-flow-step" style="background:rgba(245,158,11,.75)">PDV / Eventos</span>
             <span class="guide-flow-arrow">→</span>
+            <span class="guide-flow-step" style="background:rgba(13,148,136,.75)">🧾 Faturamento</span>
+            <span class="guide-flow-arrow">→</span>
             <span class="guide-flow-step" style="background:rgba(168,85,247,.75)">Relatórios &amp; Mercus</span>
           </div>
         </div>
@@ -668,8 +670,62 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="guide-step"><div class="guide-step-num" style="background:#A855F7">1</div><div class="guide-step-text">Na aba <strong>Comparativo</strong>, selecione dois eventos e visualize side-by-side os produtos mais vendidos, volumes totais e desempenho de cada vendedor.</div></div>
           </div>
         </div>
+        <!-- MÓDULO FATURAMENTO -->
+        <div class="guide-module" style="margin-top:16px">
+          <div class="guide-module-header" style="background:linear-gradient(135deg,#0F766E,#2DD4BF)">
+            <div class="mod-icon">🧾</div>
+            <div><h4>Faturamento — Módulo Comercial</h4><p>Gestão completa de pedidos B2B: do recebimento à expedição, quarentena e relatórios.</p></div>
+          </div>
+          <div class="guide-module-body">
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">1</div>
+              <div class="guide-step-text"><strong>Login de Faturamento:</strong> acesse pelo menu <strong>Faturamento</strong> e insira seu login <code>nome.sobrenome</code> e senha (5 primeiros dígitos do CPF). Cada perfil tem permissões específicas: <em>Financeiro</em> verifica pagamentos, <em>Expedição</em> separa e fecha pedidos, <em>ADM</em> acessa tudo.</div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">2</div>
+              <div class="guide-step-text"><strong>Fluxo de pedido B2B:</strong>
+                <span style="display:inline-block;margin-top:6px;line-height:2">
+                  ⏳ <strong>Pendente</strong> → 💳 <strong>Pag. Verificado</strong> → 📦 <strong>Pré-Separação</strong> (LOT + VALIDADE) → 🧾 <strong>Faturado</strong> (NF registrada) → 📎 <strong>NF Anexada</strong> → ✅ <strong>Fechado</strong>
+                </span>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">3</div>
+              <div class="guide-step-text"><strong>➕ Novo Pedido:</strong> importe o PDF do Mercus para extrair automaticamente os dados do pedido (cliente, itens, valores) ou preencha manualmente. Selecione Empresa, Tipo de Entrega e Condição de Pagamento. Clique em <em>✅ Criar Pedido</em>.</div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">4</div>
+              <div class="guide-step-text"><strong>📋 Fila:</strong> acompanhe todos os pedidos em tempo real. Use busca por Nº Mercus, MESO-LOG ou cliente. Cada card exibe status, empresa, tipo de entrega e ação rápida disponível para seu perfil.</div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">5</div>
+              <div class="guide-step-text"><strong>🔬 Quarentena de Devoluções:</strong> quando um cliente devolve mercadorias, acesse o <strong>Histórico</strong>, localize o pedido fechado e clique em <em>↩️ Dev. Cliente</em>. Os itens entram em <strong>Quarentena</strong> (status: aguardando) e só retornam ao estoque físico após aprovação de um responsável com permissão <em>aprovar_quarentena</em>. Rejeições ficam registradas com motivo para auditoria.</div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">6</div>
+              <div class="guide-step-text"><strong>📊 Relatórios de Faturamento (ADM / Financeiro):</strong> filtre por período e empresa. Visualize 5 KPIs (total de pedidos, fechados, cancelados, taxa de cancelamento, ciclo médio em horas) e 4 gráficos interativos: pedidos por dia, distribuição de status, top 10 clientes e top 10 produtos. Tabela de cancelamentos com motivos. Exporte em Excel com 3 planilhas (KPIs, Pedidos Detalhados, Itens Faturados).</div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num" style="background:#0D9488">7</div>
+              <div class="guide-step-text"><strong>👥 Faturistas &amp; 🏢 Empresas (ADM):</strong> cadastre faturistas (login = <code>nome.sobrenome</code>, senha = 5 primeiros dígitos do CPF) e gerencie as empresas de faturamento (JPG, MESOESTETIC etc.).</div>
+            </div>
+            <!-- Fluxo recomendado -->
+            <div style="background:#F0FDFA;border-left:4px solid #0D9488;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:8px;font-size:13px;color:#134E4A">
+              <strong>Fluxo completo:</strong><br>
+              <span style="display:block;margin-top:6px;line-height:2">
+                📥 PDF Mercus → ➕ <strong>Novo Pedido</strong> → 📋 <strong>Fila</strong> (acompanha) → 💳 Verifica pag. → 📦 <strong>Pré-Separação</strong> → 🧾 <strong>Faturado</strong> → 📎 NF Anexada → ✅ <strong>Fechado</strong>
+                <br>↩️ Devolução → 🔬 <strong>Quarentena</strong> (aprovação) → estoque restaurado
+                <br>📊 <strong>Relatórios</strong> → KPIs + gráficos + exportação Excel
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div class="guide-warning">
           ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
+        </div>
+        <div class="guide-warning" style="margin-top:10px;border-color:#0D9488;color:#134E4A;background:#F0FDFA">
+          🧾 <strong>Faturamento:</strong> senhas de faturistas são geradas pelos 5 primeiros dígitos do CPF. Devoluções em Quarentena aguardam aprovação antes de retornar ao estoque. Pedidos cancelados ficam registrados para auditoria.
         </div>
       </div>
     </div>
@@ -2445,14 +2501,57 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 </div>
               </div>
 
+              <!-- QUARENTENA -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">8</div>
+                <div class="guide-step-text">
+                  <strong>🔬 Quarentena de Devoluções — Devolução de cliente:</strong><br>
+                  Quando um cliente devolve mercadorias de um pedido já fechado:
+                  <ol style="margin:8px 0 0 18px;font-size:13px;line-height:1.7">
+                    <li>Vá à aba <strong>📋 Histórico</strong> e localize o pedido fechado.</li>
+                    <li>Clique em <strong>↩️ Dev. Cliente</strong> (visível para perfis com permissão <em>quarentena</em>).</li>
+                    <li>Informe o <em>motivo da devolução</em>. Os itens são registrados na coleção <code>quarentena</code> com status <em>aguardando</em>.</li>
+                    <li>Na aba <strong>🔬 Quarentena</strong>, um responsável com permissão <em>aprovar_quarentena</em> (Financeiro ou ADM) analisa os itens:
+                      <ul style="margin:4px 0 0 16px">
+                        <li><strong>✅ Aprovar:</strong> os itens retornam ao estoque físico com movimento <em>entrada_quarentena</em>.</li>
+                        <li><strong>❌ Rejeitar:</strong> informe o motivo; o registro fica como rejeitado para auditoria.</li>
+                      </ul>
+                    </li>
+                  </ol>
+                  <div style="margin-top:8px;font-size:12px;color:#777">Permissões por perfil: <em>Financeiro</em> — verifica e aprova; <em>Expedição</em> — registra devolução mas não aprova; <em>ADM</em> — acesso total.</div>
+                </div>
+              </div>
+
+              <!-- RELATÓRIOS -->
+              <div class="guide-step">
+                <div class="guide-step-num" style="background:#0D9488">9</div>
+                <div class="guide-step-text">
+                  <strong>📊 Relatórios de Faturamento (ADM / Financeiro):</strong><br>
+                  <ol style="margin:8px 0 0 18px;font-size:13px;line-height:1.7">
+                    <li><strong>Filtros:</strong> selecione o período (<em>De / Até</em>) e a empresa. Clique em <em>🔍 Aplicar</em>. O padrão é os últimos 30 dias.</li>
+                    <li><strong>KPIs:</strong> 5 cartões — Total de Pedidos, Fechados (%), Cancelados (taxa%), Ciclo Médio (horas, min/max) e Total de Itens Faturados.</li>
+                    <li><strong>Gráficos interativos:</strong>
+                      <ul style="margin:4px 0 0 16px">
+                        <li>📊 Pedidos por dia (barras)</li>
+                        <li>🍩 Distribuição de status (donut)</li>
+                        <li>🏆 Top 10 Clientes por pedidos fechados (barras horizontais)</li>
+                        <li>📦 Top 10 Produtos faturados (barras horizontais)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Tabela de Cancelamentos:</strong> lista todos os pedidos cancelados com motivo e data.</li>
+                    <li><strong>Exportar Excel:</strong> clique em <em>📥 Exportar Excel</em> para gerar um arquivo com 3 planilhas: <em>KPIs</em> (resumo do período), <em>Pedidos Detalhados</em> (15 colunas) e <em>Itens Faturados</em> (9 colunas com código, descrição, quantidade e valor).</li>
+                  </ol>
+                </div>
+              </div>
+
               <!-- FLUXO RECOMENDADO -->
               <div style="background:#F0FDFA;border-left:4px solid #0D9488;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:8px;font-size:13px;color:#134E4A">
-                <strong>Fluxo recomendado por pedido:</strong><br>
+                <strong>Fluxo completo de faturamento:</strong><br>
                 <span style="display:block;margin-top:6px;line-height:2">
-                  📥 Recebe PDF Mercus → ➕ <strong>Novo Pedido</strong> (importa PDF) → revisa dados → cria pedido →
-                  📋 <strong>Fila</strong> (acompanha progresso, atualiza status) →
-                  📦 <strong>Expedição</strong> (confirma saída física + NF) →
-                  ✅ <strong>Fechamento</strong> (encerra formalmente)
+                  📥 PDF Mercus → ➕ <strong>Novo Pedido</strong> → 📋 <strong>Fila</strong> (acompanha + atualiza status) →
+                  📦 <strong>Expedição</strong> (confirma saída + NF) → ✅ <strong>Fechamento</strong> (encerra formalmente)<br>
+                  ↩️ Devolução → 🔬 <strong>Quarentena</strong> (aprovação) → estoque restaurado com rastreabilidade<br>
+                  📊 <strong>Relatórios</strong> → KPIs + gráficos + exportação Excel em 3 planilhas
                 </span>
               </div>
 
@@ -2461,7 +2560,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- AVISO FINAL GERAL -->
           <div class="guide-warning" style="margin-top:16px;border-color:#0D9488;color:#134E4A;background:#F0FDFA">
-            🧾 <strong>Faturamento:</strong> senhas de faturistas são geradas pelos primeiros 5 dígitos do CPF. Nunca compartilhe. Em caso de perda, o ADM pode recriar o cadastro. Pedidos cancelados ficam registrados para auditoria.
+            🧾 <strong>Faturamento:</strong> senhas geradas pelos 5 primeiros dígitos do CPF — nunca compartilhe. Devoluções em Quarentena aguardam aprovação antes de retornar ao estoque. Pedidos cancelados ficam registrados para auditoria. Em caso de perda de senha, o ADM pode recriar o cadastro.
           </div>
         </div>
 
@@ -7793,6 +7892,7 @@ function pdvCalcPagamentos(){
   }
 }
 
+// [LEGACY - orphan function, não chamada pelo HTML atual - comprovante agora usa pdvExpComprovanteChange]
 function pdvComprovanteSelecionado(input){
   if(!input.files||!input.files[0])return;
   const file=input.files[0];
