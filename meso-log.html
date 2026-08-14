@@ -351,6 +351,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body onload="init()">
 
@@ -2732,6 +2733,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="fatTab('fechamento',this)" id="fat-btn-fechamento">✅ Fechamento</button>
           <button onclick="fatTab('historico',this)" id="fat-btn-historico">📂 Histórico</button>
           <button onclick="fatTab('quarentena',this)" id="fat-btn-quarentena" style="display:none">🔬 Quarentena</button>
+          <button onclick="fatTab('relatorios',this)" id="fat-btn-relatorios" style="display:none">📊 Relatórios</button>
           <button onclick="fatTab('faturistas',this)" id="fat-btn-faturistas" style="display:none">👥 Faturistas</button>
           <button onclick="fatTab('empresas',this)" id="fat-btn-empresas" style="display:none">🏢 Empresas</button>
         </div>
@@ -2859,6 +2861,56 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <table class="prod-table"><thead><tr><th>Empresa</th><th>Sigla</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody id="fat-empresas-tbody"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px">Carregando empresas...</td></tr></tbody></table>
           </div>
+        </div>
+
+        <!-- TAB RELATÓRIOS -->
+        <div id="fview-relatorios" style="display:none">
+          <!-- filtros -->
+          <div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div>
+              <label style="font-size:11px;color:#555;font-weight:700;display:block;margin-bottom:3px">De</label>
+              <input type="date" id="fat-rel-de" style="padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#555;font-weight:700;display:block;margin-bottom:3px">Até</label>
+              <input type="date" id="fat-rel-ate" style="padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#555;font-weight:700;display:block;margin-bottom:3px">Empresa</label>
+              <select id="fat-rel-empresa" style="padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:13px">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="renderRelatoriosFat()">🔍 Aplicar</button>
+            <button class="btn btn-sm btn-outline" onclick="fatRelResetFiltros()">↺ Limpar</button>
+            <button class="btn btn-sm" style="background:#217346;color:#fff;margin-left:auto" onclick="exportRelatoriosFatXlsx()">📥 Exportar Excel</button>
+          </div>
+          <!-- KPIs -->
+          <div id="fat-rel-kpis" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px"></div>
+          <!-- gráficos linha + donut -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="card" style="flex:2;min-width:280px;padding:14px">
+              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📈 Pedidos por Dia (criados vs fechados)</div>
+              <canvas id="fat-chart-linha" style="max-height:200px"></canvas>
+            </div>
+            <div class="card" style="flex:1;min-width:220px;padding:14px;display:flex;flex-direction:column;align-items:center">
+              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px;align-self:flex-start">🔵 Distribuição por Status</div>
+              <canvas id="fat-chart-donut" style="max-height:200px;max-width:200px"></canvas>
+            </div>
+          </div>
+          <!-- gráficos clientes + produtos -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="card" style="flex:1;min-width:280px;padding:14px">
+              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">🏆 Top 10 Clientes (pedidos fechados)</div>
+              <canvas id="fat-chart-clientes" style="max-height:260px"></canvas>
+            </div>
+            <div class="card" style="flex:1;min-width:280px;padding:14px">
+              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📦 Top 10 Produtos (qtd solicitada)</div>
+              <canvas id="fat-chart-produtos" style="max-height:260px"></canvas>
+            </div>
+          </div>
+          <!-- tabela cancelamentos -->
+          <div id="fat-rel-cancelamentos"></div>
         </div>
 
         <!-- TAB QUARENTENA -->
@@ -10168,10 +10220,12 @@ function fatEnterMain(nomeDisplay){
   const canFechTab = fatUserCan('bipagem') || fatUserCan('fechamento');
   const isAdm      = admLoggedIn;
   const canQuar = fatUserCan('quarentena');
+  const canRel  = admLoggedIn || (fatUser?.role === 'financeiro');
   const bNovo = document.getElementById('fat-btn-novo');
   const bExp  = document.getElementById('fat-btn-expedicao');
   const bFech = document.getElementById('fat-btn-fechamento');
   const bQuar = document.getElementById('fat-btn-quarentena');
+  const bRel  = document.getElementById('fat-btn-relatorios');
   const bHist = document.getElementById('fat-btn-historico');
   const bFat  = document.getElementById('fat-btn-faturistas');
   const bEmp  = document.getElementById('fat-btn-empresas');
@@ -10179,6 +10233,7 @@ function fatEnterMain(nomeDisplay){
   if(bExp)  bExp.style.display  = canExp      ? '' : 'none';
   if(bFech) bFech.style.display = canFechTab  ? '' : 'none';
   if(bQuar) bQuar.style.display = canQuar     ? '' : 'none';
+  if(bRel)  bRel.style.display  = canRel      ? '' : 'none';
   if(bHist) bHist.style.display = '';          // visível para todos os perfis
   if(bFat)  bFat.style.display  = isAdm       ? '' : 'none';
   if(bEmp)  bEmp.style.display  = isAdm       ? '' : 'none';
@@ -10214,7 +10269,7 @@ function fatLogout(){
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function fatTab(tab, btn){
-  ['fila','novo','expedicao','fechamento','quarentena','historico','faturistas','empresas'].forEach(t=>{
+  ['fila','novo','expedicao','fechamento','relatorios','quarentena','historico','faturistas','empresas'].forEach(t=>{
     const el = document.getElementById('fview-'+t);
     if(el) el.style.display = (t === tab ? '' : 'none');
   });
@@ -10222,6 +10277,7 @@ function fatTab(tab, btn){
   if(btn) btn.classList.add('active');
   if(tab === 'fila')        renderFilaPedidos();
   if(tab === 'novo')        fatIniciarNovo();
+  if(tab === 'relatorios')  renderRelatoriosFat();
   if(tab === 'quarentena')  renderQuarentena();
   if(tab === 'historico')   renderHistorico();
   if(tab === 'faturistas')  renderFaturistas();
@@ -11877,6 +11933,318 @@ function renderHistorico(){
         </div>
       </div>`;
     }).join('')}`;
+}
+
+// ─── RELATÓRIOS FATURAMENTO ───────────────────────────────────────────────────
+let _fatRelChartLinha    = null;
+let _fatRelChartDonut    = null;
+let _fatRelChartClientes = null;
+let _fatRelChartProdutos = null;
+
+function _fatRelDestroyCharts(){
+  [_fatRelChartLinha, _fatRelChartDonut, _fatRelChartClientes, _fatRelChartProdutos].forEach(c=>{ try{ if(c) c.destroy(); }catch(e){} });
+  _fatRelChartLinha = _fatRelChartDonut = _fatRelChartClientes = _fatRelChartProdutos = null;
+}
+
+function fatRelResetFiltros(){
+  const hoje = new Date();
+  const d30  = new Date(hoje); d30.setDate(hoje.getDate() - 29);
+  const fmt  = d => d.toISOString().slice(0,10);
+  const de  = document.getElementById('fat-rel-de');
+  const ate = document.getElementById('fat-rel-ate');
+  const emp = document.getElementById('fat-rel-empresa');
+  if(de)  de.value  = fmt(d30);
+  if(ate) ate.value = fmt(hoje);
+  if(emp) emp.value = '';
+  renderRelatoriosFat();
+}
+
+function _fatRelPopulateEmpresaSelect(){
+  const sel = document.getElementById('fat-rel-empresa');
+  if(!sel) return;
+  const emps = [...new Set(allPedidosFat.map(p=>p.empresaSigla||'').filter(Boolean))].sort();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas</option>' + emps.map(e=>'<option value="'+e+'">'+(e)+'</option>').join('');
+  if(cur) sel.value = cur;
+}
+
+function renderRelatoriosFat(){
+  if(typeof Chart === 'undefined'){ setTimeout(renderRelatoriosFat, 300); return; }
+  _fatRelDestroyCharts();
+  _fatRelPopulateEmpresaSelect();
+
+  const de  = document.getElementById('fat-rel-de')?.value  || '';
+  const ate = document.getElementById('fat-rel-ate')?.value || '';
+  const empFil = document.getElementById('fat-rel-empresa')?.value || '';
+
+  // Inicializar datas padrão se vazias
+  if(!de || !ate){
+    fatRelResetFiltros();
+    return;
+  }
+
+  // Filtrar pedidos pelo período (criadoEm) e empresa
+  let pedidos = allPedidosFat.filter(p=>{
+    const dt = (p.criadoEm||'').slice(0,10);
+    if(de  && dt < de)  return false;
+    if(ate && dt > ate) return false;
+    if(empFil && (p.empresaSigla||'') !== empFil) return false;
+    return true;
+  });
+
+  // ── KPIs ─────────────────────────────────────────────────────────────────
+  const total       = pedidos.length;
+  const fechados    = pedidos.filter(p=>p.status==='fechado');
+  const cancelados  = pedidos.filter(p=>p.status==='cancelado');
+  const nFechados   = fechados.length;
+  const nCancelados = cancelados.length;
+  const taxaCanc    = total > 0 ? ((nCancelados / total) * 100).toFixed(1) : '0.0';
+
+  // Tempo médio de ciclo (criadoEm → fechadoEm), em horas
+  const ciclos = fechados
+    .filter(p => p.criadoEm && p.fechadoEm)
+    .map(p => (new Date(p.fechadoEm) - new Date(p.criadoEm)) / 3600000);
+  const cicloMedio = ciclos.length > 0
+    ? (ciclos.reduce((a,b)=>a+b,0) / ciclos.length).toFixed(1)
+    : null;
+  const cicloMin = ciclos.length > 0 ? Math.min(...ciclos).toFixed(1) : null;
+  const cicloMax = ciclos.length > 0 ? Math.max(...ciclos).toFixed(1) : null;
+
+  // Total de itens faturados (soma quantidadePedida dos pedidos fechados)
+  const totalItens = fechados.reduce((acc,p)=>acc+(p.itens||[]).reduce((s,it)=>s+Number(it.quantidadePedida||it.quantidade||0),0),0);
+
+  const kpiEl = document.getElementById('fat-rel-kpis');
+  if(kpiEl){
+    const kpiCard = (icon, label, val, sub, bg, col) =>
+      '<div class="card" style="padding:10px 16px;min-width:140px;flex:1;background:'+bg+'">'+
+        '<div style="font-size:11px;color:'+col+';font-weight:700;margin-bottom:2px">'+icon+' '+label+'</div>'+
+        '<div style="font-size:22px;font-weight:800;color:'+col+'">'+val+'</div>'+
+        (sub ? '<div style="font-size:10px;color:'+col+';opacity:.7;margin-top:2px">'+sub+'</div>' : '')+
+      '</div>';
+    kpiEl.innerHTML =
+      kpiCard('📋','Total Pedidos', total, 'no período', '#F5F5F5','#424242') +
+      kpiCard('✅','Fechados', nFechados, ((total?((nFechados/total)*100).toFixed(1):'0.0'))+'% do total', '#E8F5E9','#1B5E20') +
+      kpiCard('❌','Cancelados', nCancelados, taxaCanc+'% de cancelamento', '#FFEBEE','#B71C1C') +
+      kpiCard('⏱️','Ciclo Médio', cicloMedio ? cicloMedio+'h' : '—',
+        cicloMin && cicloMax ? 'mín '+cicloMin+'h · máx '+cicloMax+'h' : 'pedidos fechados insuficientes', '#E3F2FD','#1565C0') +
+      kpiCard('📦','Itens Faturados', totalItens.toLocaleString('pt-BR'), 'soma de qtd nos pedidos fechados', '#F3E5F5','#6A1B9A');
+  }
+
+  // ── Dados para gráficos ──────────────────────────────────────────────────
+  // Pedidos por dia (últimos dias no range)
+  const dayMap = {};
+  pedidos.forEach(p=>{
+    const dt = (p.criadoEm||'').slice(0,10);
+    if(!dayMap[dt]) dayMap[dt] = {criados:0, fechados:0};
+    dayMap[dt].criados++;
+    if(p.status==='fechado' && p.fechadoEm){
+      const dtF = p.fechadoEm.slice(0,10);
+      if(!dayMap[dtF]) dayMap[dtF] = {criados:0, fechados:0};
+      dayMap[dtF].fechados++;
+    }
+  });
+  const dias = Object.keys(dayMap).sort();
+  const labelsDia = dias.map(d=>{ const [y,m,dd]=d.split('-'); return dd+'/'+m; });
+
+  // Status breakdown (todos no período)
+  const statusCounts = {};
+  pedidos.forEach(p=>{ statusCounts[p.status] = (statusCounts[p.status]||0)+1; });
+  const FAT_STATUS_LABELS_REL = {
+    pendente:'Pendente',pagamento_verificado:'Pag. Verificado',aguardando_expedicao:'Ag. Expedição',
+    em_separacao:'Em Separação',pre_separado:'Pré-Separado',faturado:'Faturado',
+    nf_anexada:'NF Anexada',fechado:'Fechado',cancelado:'Cancelado'
+  };
+  const statusColors = {
+    pendente:'#FFA726',pagamento_verificado:'#66BB6A',aguardando_expedicao:'#42A5F5',
+    em_separacao:'#7E57C2',pre_separado:'#AB47BC',faturado:'#FFCA28',
+    nf_anexada:'#26A69A',fechado:'#78909C',cancelado:'#EF5350'
+  };
+  const donutLabels = Object.keys(statusCounts).map(s=>FAT_STATUS_LABELS_REL[s]||s);
+  const donutData   = Object.keys(statusCounts).map(s=>statusCounts[s]);
+  const donutColors = Object.keys(statusCounts).map(s=>statusColors[s]||'#ccc');
+
+  // Top 10 clientes (pedidos fechados)
+  const clienteMap = {};
+  fechados.forEach(p=>{ const c=p.clienteNome||'Sem nome'; clienteMap[c]=(clienteMap[c]||0)+1; });
+  const topClientes = Object.entries(clienteMap).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+
+  // Top 10 produtos (quantidade pedida, todos os pedidos do período, exceto cancelados)
+  const prodMap = {};
+  pedidos.filter(p=>p.status!=='cancelado').forEach(p=>{
+    (p.itens||[]).forEach(it=>{
+      const chave = (it.codigo||it.codigoProduto||'?') + ' — ' + (it.descricao||it.nomeProduto||'—');
+      prodMap[chave] = (prodMap[chave]||0) + Number(it.quantidadePedida||it.quantidade||0);
+    });
+  });
+  const topProd = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+
+  // ── Renderizar gráficos ──────────────────────────────────────────────────
+  setTimeout(()=>{
+    // Linha: pedidos criados vs fechados por dia
+    const ctxLinha = document.getElementById('fat-chart-linha');
+    if(ctxLinha){
+      _fatRelChartLinha = new Chart(ctxLinha, {
+        type: 'bar',
+        data: {
+          labels: labelsDia,
+          datasets: [
+            { label: 'Criados',  data: dias.map(d=>dayMap[d]?.criados||0),  backgroundColor:'rgba(21,101,192,0.7)', borderRadius:4 },
+            { label: 'Fechados', data: dias.map(d=>dayMap[d]?.fechados||0), backgroundColor:'rgba(27,94,32,0.7)',  borderRadius:4 },
+          ]
+        },
+        options: { responsive:true, plugins:{ legend:{position:'top'} }, scales:{ y:{beginAtZero:true,ticks:{stepSize:1}} } }
+      });
+    }
+    // Donut: status
+    const ctxDonut = document.getElementById('fat-chart-donut');
+    if(ctxDonut && donutData.length){
+      _fatRelChartDonut = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: { labels: donutLabels, datasets:[{ data: donutData, backgroundColor: donutColors, borderWidth:2 }] },
+        options: { responsive:true, plugins:{ legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}} } }
+      });
+    }
+    // Horizontal bar: clientes
+    const ctxCli = document.getElementById('fat-chart-clientes');
+    if(ctxCli && topClientes.length){
+      _fatRelChartClientes = new Chart(ctxCli, {
+        type: 'bar',
+        data: {
+          labels: topClientes.map(c=>c[0].length>28?c[0].slice(0,26)+'…':c[0]),
+          datasets:[{ label:'Pedidos fechados', data:topClientes.map(c=>c[1]),
+            backgroundColor:'rgba(21,101,192,0.75)', borderRadius:4 }]
+        },
+        options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}},
+          scales:{ x:{beginAtZero:true, ticks:{stepSize:1}} } }
+      });
+    }
+    // Horizontal bar: produtos
+    const ctxProd = document.getElementById('fat-chart-produtos');
+    if(ctxProd && topProd.length){
+      _fatRelChartProdutos = new Chart(ctxProd, {
+        type: 'bar',
+        data: {
+          labels: topProd.map(p=>p[0].length>30?p[0].slice(0,28)+'…':p[0]),
+          datasets:[{ label:'Qtd solicitada', data:topProd.map(p=>p[1]),
+            backgroundColor:'rgba(106,27,154,0.75)', borderRadius:4 }]
+        },
+        options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}},
+          scales:{ x:{beginAtZero:true} } }
+      });
+    }
+  }, 80);
+
+  // ── Tabela de cancelamentos ───────────────────────────────────────────────
+  const cancEl = document.getElementById('fat-rel-cancelamentos');
+  if(cancEl){
+    if(!cancelados.length){
+      cancEl.innerHTML = '';
+    } else {
+      const rows = cancelados.sort((a,b)=>(b.canceladoEm||b.atualizadoEm||'').localeCompare(a.canceladoEm||a.atualizadoEm||''))
+        .map(p=>{
+          const dt = p.canceladoEm ? new Date(p.canceladoEm).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) : '—';
+          return '<tr>'+
+            '<td style="padding:6px 10px;font-family:monospace;font-size:12px">'+(p.numeroPedidoMesoLog||p.id)+'</td>'+
+            '<td style="padding:6px 10px;font-size:12px">'+(p.clienteNome||'—')+'</td>'+
+            '<td style="padding:6px 10px;font-size:12px">'+dt+'</td>'+
+            '<td style="padding:6px 10px;font-size:12px;color:#666">'+(p.motivoCancelamento||'—')+'</td>'+
+            '<td style="padding:6px 10px;font-size:12px;color:#888">'+(p.canceladoPor||'—')+'</td>'+
+          '</tr>';
+        }).join('');
+      cancEl.innerHTML =
+        '<div class="card" style="padding:14px 16px;margin-top:12px">'+
+          '<div style="font-size:12px;font-weight:700;color:#B71C1C;margin-bottom:10px">❌ Pedidos Cancelados no Período ('+cancelados.length+')</div>'+
+          '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+            '<thead><tr style="background:#FFEBEE">'+
+              '<th style="padding:6px 10px;text-align:left;color:#B71C1C">Pedido</th>'+
+              '<th style="padding:6px 10px;text-align:left;color:#B71C1C">Cliente</th>'+
+              '<th style="padding:6px 10px;text-align:left;color:#B71C1C">Data</th>'+
+              '<th style="padding:6px 10px;text-align:left;color:#B71C1C">Motivo</th>'+
+              '<th style="padding:6px 10px;text-align:left;color:#B71C1C">Por</th>'+
+            '</tr></thead><tbody>'+rows+'</tbody>'+
+          '</table></div>'+
+        '</div>';
+    }
+  }
+}
+
+function exportRelatoriosFatXlsx(){
+  if(typeof XLSX === 'undefined'){ toast('⚠️ SheetJS não disponível.'); return; }
+
+  const de  = document.getElementById('fat-rel-de')?.value  || '';
+  const ate = document.getElementById('fat-rel-ate')?.value || '';
+  const empFil = document.getElementById('fat-rel-empresa')?.value || '';
+
+  let pedidos = allPedidosFat.filter(p=>{
+    const dt = (p.criadoEm||'').slice(0,10);
+    if(de  && dt < de)  return false;
+    if(ate && dt > ate) return false;
+    if(empFil && (p.empresaSigla||'') !== empFil) return false;
+    return true;
+  });
+
+  const wb = XLSX.utils.book_new();
+
+  // Aba 1: Resumo KPIs
+  const fechados   = pedidos.filter(p=>p.status==='fechado');
+  const cancelados = pedidos.filter(p=>p.status==='cancelado');
+  const ciclos = fechados.filter(p=>p.criadoEm&&p.fechadoEm).map(p=>(new Date(p.fechadoEm)-new Date(p.criadoEm))/3600000);
+  const cicloMedio = ciclos.length ? (ciclos.reduce((a,b)=>a+b,0)/ciclos.length).toFixed(2) : '—';
+  const totalItens = fechados.reduce((acc,p)=>acc+(p.itens||[]).reduce((s,it)=>s+Number(it.quantidadePedida||it.quantidade||0),0),0);
+  const taxaCanc   = pedidos.length ? ((cancelados.length/pedidos.length)*100).toFixed(2)+'%' : '0.00%';
+
+  const wsKpi = XLSX.utils.aoa_to_sheet([
+    ['Relatório de Faturamento MESO-LOG'],
+    ['Período', (de||'—') + ' a ' + (ate||'—')],
+    ['Empresa', empFil||'Todas'],
+    ['Gerado em', new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})],
+    [],
+    ['KPI','Valor'],
+    ['Total de Pedidos no Período', pedidos.length],
+    ['Pedidos Fechados', fechados.length],
+    ['Pedidos Cancelados', cancelados.length],
+    ['Taxa de Cancelamento', taxaCanc],
+    ['Tempo Médio de Ciclo (horas)', cicloMedio],
+    ['Total de Itens Faturados', totalItens],
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsKpi, 'KPIs');
+
+  // Aba 2: Pedidos Detalhados
+  const headerPed = ['ID','Nº Meso-Log','Nº Mercus','Empresa','Cliente','Tipo Entrega','Status','Criado em','Fechado em','Fechado por','Cancelado em','Cancelado por','Motivo Cancelamento','Nº NF','Ciclo (horas)'];
+  const rowsPed = pedidos.map(p=>{
+    const ciclo = (p.criadoEm && p.fechadoEm) ? ((new Date(p.fechadoEm)-new Date(p.criadoEm))/3600000).toFixed(2) : '';
+    return [
+      p.id, p.numeroPedidoMesoLog||'', p.numeroPedidoMercus||'', p.empresaSigla||'',
+      p.clienteNome||'', p.tipoEntrega||'', p.status||'',
+      (p.criadoEm||'').slice(0,16).replace('T',' '),
+      (p.fechadoEm||'').slice(0,16).replace('T',' '),
+      p.fechadoPor||'',
+      (p.canceladoEm||'').slice(0,16).replace('T',' '),
+      p.canceladoPor||'', p.motivoCancelamento||'', p.nfNumero||'', ciclo
+    ];
+  });
+  const wsPed = XLSX.utils.aoa_to_sheet([headerPed, ...rowsPed]);
+  XLSX.utils.book_append_sheet(wb, wsPed, 'Pedidos Detalhados');
+
+  // Aba 3: Itens Faturados
+  const headerIt = ['ID Pedido','Nº Meso-Log','Cliente','Status Pedido','Cód. Produto','Descrição','Lote','Data Validade','Qtd Pedida'];
+  const rowsIt = [];
+  pedidos.forEach(p=>{
+    (p.itens||[]).forEach(it=>{
+      rowsIt.push([
+        p.id, p.numeroPedidoMesoLog||'', p.clienteNome||'', p.status||'',
+        it.codigo||it.codigoProduto||'', it.descricao||it.nomeProduto||'',
+        it.lote||'', it.dataValidade||'',
+        Number(it.quantidadePedida||it.quantidade||0)
+      ]);
+    });
+  });
+  const wsIt = XLSX.utils.aoa_to_sheet([headerIt, ...rowsIt]);
+  XLSX.utils.book_append_sheet(wb, wsIt, 'Itens Faturados');
+
+  const fname = 'relatorio_faturamento_' + (de||'inicio') + '_a_' + (ate||'hoje') + '.xlsx';
+  XLSX.writeFile(wb, fname);
+  toast('📥 Excel gerado: ' + fname);
 }
 
 // ─── QUARENTENA DE DEVOLUÇÕES ─────────────────────────────────────────────────
