@@ -2731,6 +2731,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="fatTab('expedicao',this)" id="fat-btn-expedicao">📦 Expedição</button>
           <button onclick="fatTab('fechamento',this)" id="fat-btn-fechamento">✅ Fechamento</button>
           <button onclick="fatTab('historico',this)" id="fat-btn-historico">📂 Histórico</button>
+          <button onclick="fatTab('quarentena',this)" id="fat-btn-quarentena" style="display:none">🔬 Quarentena</button>
           <button onclick="fatTab('faturistas',this)" id="fat-btn-faturistas" style="display:none">👥 Faturistas</button>
           <button onclick="fatTab('empresas',this)" id="fat-btn-empresas" style="display:none">🏢 Empresas</button>
         </div>
@@ -2858,6 +2859,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <table class="prod-table"><thead><tr><th>Empresa</th><th>Sigla</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody id="fat-empresas-tbody"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px">Carregando empresas...</td></tr></tbody></table>
           </div>
+        </div>
+
+        <!-- TAB QUARENTENA -->
+        <div id="fview-quarentena" style="display:none">
+          <div class="card" style="padding:14px 18px;margin-bottom:14px;background:#FFF8E1;border-left:4px solid #F9A825">
+            <div style="font-size:13px;font-weight:700;color:#E65100;margin-bottom:4px">🔬 Quarentena de Devoluções</div>
+            <div style="font-size:12px;color:#666">Itens retornados por clientes aguardam aprovação antes de voltar ao estoque físico e ao sistema.</div>
+          </div>
+          <div id="fat-quar-lista"><div class="card" style="text-align:center;padding:40px;color:#aaa">Carregando...</div></div>
         </div>
 
         <!-- TAB HISTÓRICO -->
@@ -3118,6 +3128,8 @@ let allPedidosFat = [];
 let unsubFaturistas = null;
 let unsubEmpresas = null;
 let unsubPedidosFat = null;
+let unsubQuarentena = null;
+let allQuarentena = [];
 let fatUser = null;
 let fatItens = [];
 let fatPedidoExp = null;
@@ -3482,6 +3494,12 @@ function startListeners(){
       }
     }
   }, err=>{ console.error('[MESO-LOG] pedidosFaturamento onSnapshot erro:', err); });
+
+  if(unsubQuarentena) unsubQuarentena();
+  unsubQuarentena = db.collection('quarentena').orderBy('criadoEm','desc').onSnapshot(snap=>{
+    allQuarentena = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('fview-quarentena')?.style.display!=='none') renderQuarentena();
+  }, err=>console.warn('[MESO-LOG] quarentena onSnapshot:', err));
 }
 
 // ==============================
@@ -10085,9 +10103,9 @@ const FAT_ROLES = {
   faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#E3F2FD',
     perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda','cancelar_pedido','devolver_pedido'] },
   financeiro: { label: '💳 Financeiro', color: '#2E7D32', bg: '#E8F5E9',
-    perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido','devolver_pedido'] },
+    perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido','devolver_pedido','quarentena','aprovar_quarentena'] },
   expedicao:  { label: '📦 Expedição',  color: '#6A1B9A', bg: '#F3E5F5',
-    perms: ['ver_fila','pre_separacao','bipagem','fechamento','reimprimir_comanda','ver_detalhes'] },
+    perms: ['ver_fila','pre_separacao','bipagem','fechamento','reimprimir_comanda','ver_detalhes','quarentena'] },
 };
 
 function fatUserCan(action){
@@ -10149,15 +10167,18 @@ function fatEnterMain(nomeDisplay){
   const canExp     = fatUserCan('pre_separacao');
   const canFechTab = fatUserCan('bipagem') || fatUserCan('fechamento');
   const isAdm      = admLoggedIn;
+  const canQuar = fatUserCan('quarentena');
   const bNovo = document.getElementById('fat-btn-novo');
   const bExp  = document.getElementById('fat-btn-expedicao');
   const bFech = document.getElementById('fat-btn-fechamento');
+  const bQuar = document.getElementById('fat-btn-quarentena');
   const bHist = document.getElementById('fat-btn-historico');
   const bFat  = document.getElementById('fat-btn-faturistas');
   const bEmp  = document.getElementById('fat-btn-empresas');
   if(bNovo) bNovo.style.display = canNovo     ? '' : 'none';
   if(bExp)  bExp.style.display  = canExp      ? '' : 'none';
   if(bFech) bFech.style.display = canFechTab  ? '' : 'none';
+  if(bQuar) bQuar.style.display = canQuar     ? '' : 'none';
   if(bHist) bHist.style.display = '';          // visível para todos os perfis
   if(bFat)  bFat.style.display  = isAdm       ? '' : 'none';
   if(bEmp)  bEmp.style.display  = isAdm       ? '' : 'none';
@@ -10193,17 +10214,18 @@ function fatLogout(){
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function fatTab(tab, btn){
-  ['fila','novo','expedicao','fechamento','historico','faturistas','empresas'].forEach(t=>{
+  ['fila','novo','expedicao','fechamento','quarentena','historico','faturistas','empresas'].forEach(t=>{
     const el = document.getElementById('fview-'+t);
     if(el) el.style.display = (t === tab ? '' : 'none');
   });
   document.querySelectorAll('#fat-tab-bar button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  if(tab === 'fila')       renderFilaPedidos();
-  if(tab === 'novo')       fatIniciarNovo();
-  if(tab === 'historico')  renderHistorico();
-  if(tab === 'faturistas') renderFaturistas();
-  if(tab === 'empresas')   renderEmpresas();
+  if(tab === 'fila')        renderFilaPedidos();
+  if(tab === 'novo')        fatIniciarNovo();
+  if(tab === 'quarentena')  renderQuarentena();
+  if(tab === 'historico')   renderHistorico();
+  if(tab === 'faturistas')  renderFaturistas();
+  if(tab === 'empresas')    renderEmpresas();
 }
 
 // ─── FILA ─────────────────────────────────────────────────────────────────────
@@ -11849,11 +11871,192 @@ function renderHistorico(){
               <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver Detalhes</button>
               ${(p.nfAnexada||p.etiquetaAnexada) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;margin-left:6px" onclick="_abrirModalImpressao('${p.id}').catch(()=>{})">🖨️ Imprimir</button>` : ''}
               <button class="btn btn-sm" style="background:#F3E5F5;color:#6A1B9A;border:1px solid #CE93D8;margin-left:6px" onclick="_fatImprimirResumo('${p.id}')">📋 Resumo</button>
+              ${p.status === 'fechado' && fatUserCan('quarentena') ? `<button class="btn btn-sm" style="background:#FFF8E1;color:#E65100;border:1px solid #FFCC02;margin-left:6px" onclick="registrarDevolucaoCliente('${p.id}')">↩️ Dev. Cliente</button>` : ''}
             </div>
           </div>
         </div>
       </div>`;
     }).join('')}`;
+}
+
+// ─── QUARENTENA DE DEVOLUÇÕES ─────────────────────────────────────────────────
+function renderQuarentena(){
+  const container = document.getElementById('fat-quar-lista');
+  if(!container) return;
+
+  if(!allQuarentena.length){
+    container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:#aaa"><div style="font-size:32px;margin-bottom:8px">🔬</div>Nenhuma devolução em quarentena.</div>';
+    return;
+  }
+
+  const aguardando = allQuarentena.filter(q=>q.status==='aguardando').length;
+  const aprovados  = allQuarentena.filter(q=>q.status==='aprovado').length;
+  const rejeitados = allQuarentena.filter(q=>q.status==='rejeitado').length;
+  const canAprovar = fatUserCan('aprovar_quarentena');
+
+  container.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="card" style="padding:10px 16px;flex:1;min-width:100px;text-align:center;background:#FFF8E1">
+        <div style="font-size:20px;font-weight:700;color:#E65100">${aguardando}</div>
+        <div style="font-size:11px;color:#888">⏳ Aguardando</div>
+      </div>
+      <div class="card" style="padding:10px 16px;flex:1;min-width:100px;text-align:center;background:#E8F5E9">
+        <div style="font-size:20px;font-weight:700;color:#1B5E20">${aprovados}</div>
+        <div style="font-size:11px;color:#388E3C">✅ Aprovados</div>
+      </div>
+      <div class="card" style="padding:10px 16px;flex:1;min-width:100px;text-align:center;background:#FFEBEE">
+        <div style="font-size:20px;font-weight:700;color:#B71C1C">${rejeitados}</div>
+        <div style="font-size:11px;color:#C62828">❌ Rejeitados</div>
+      </div>
+    </div>
+    ${allQuarentena.map(q=>{
+      const dtObj = q.criadoEm ? new Date(q.criadoEm) : null;
+      const dt = dtObj ? dtObj.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' + dtObj.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}) : '—';
+      const statusCfg = {
+        aguardando: {bg:'#FFF8E1',color:'#E65100',label:'⏳ Aguardando'},
+        aprovado:   {bg:'#E8F5E9',color:'#1B5E20',label:'✅ Aprovado'},
+        rejeitado:  {bg:'#FFEBEE',color:'#B71C1C',label:'❌ Rejeitado'},
+      }[q.status] || {bg:'#f5f5f5',color:'#666',label:q.status};
+      return `<div class="card" style="margin-bottom:10px;padding:14px 16px;border-left:4px solid ${statusCfg.color}">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:14px;font-weight:700;color:#002050">Pedido: ${q.numeroPedido||'—'}</div>
+            <div style="font-size:12px;color:#666;margin-top:2px">Cliente: ${q.clienteNome||'—'}</div>
+            <div style="font-size:12px;color:#666;margin-top:2px">Motivo: <em>${q.motivoDevolucao||'—'}</em></div>
+            <div style="font-size:11px;color:#999;margin-top:2px">Registrado em ${dt} por ${q.operador||'—'}</div>
+            ${q.itens&&q.itens.length ? `<details style="margin-top:8px"><summary style="font-size:12px;color:#555;cursor:pointer">${q.itens.length} item(s) devolvido(s)</summary>
+              <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
+                ${q.itens.map(it=>`<div style="background:#f9f9f9;border-radius:4px;padding:6px 10px;font-size:12px">
+                  <strong>${it.codigo||'—'}</strong> — ${it.descricao||'—'}<br>
+                  <span style="color:#888">Lote: ${it.lote||'—'} · Val: ${it.dataValidade||'—'} · Qtd: <strong>${it.quantidade||0}</strong></span>
+                </div>`).join('')}
+              </div>
+            </details>` : ''}
+            ${q.status==='aprovado'&&q.obsAprovacao ? `<div style="font-size:11px;color:#388E3C;margin-top:4px">✅ Obs: ${q.obsAprovacao}</div>` : ''}
+            ${q.status==='rejeitado'&&q.obsAprovacao ? `<div style="font-size:11px;color:#B71C1C;margin-top:4px">❌ Obs: ${q.obsAprovacao}</div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span style="background:${statusCfg.bg};color:${statusCfg.color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${statusCfg.label}</span>
+            ${q.status==='aguardando' && canAprovar ? `
+              <button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="aprovarQuarentena('${q.id}')">✅ Aprovar + Retornar Estoque</button>
+              <button class="btn btn-sm" style="background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A" onclick="rejeitarQuarentena('${q.id}')">❌ Rejeitar</button>
+            ` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function registrarDevolucaoCliente(pedidoId){
+  if(!fatUserCan('quarentena')){ toast('⛔ Sem permissão para registrar devoluções.'); return; }
+  const pedido = allPedidosFat.find(p=>p.id===pedidoId);
+  if(!pedido){ toast('⚠️ Pedido não encontrado.'); return; }
+  if(pedido.status !== 'fechado'){ toast('⚠️ Só é possível registrar devolução de pedidos fechados.'); return; }
+
+  const motivo = prompt(`Devolução do pedido ${pedido.numeroPedidoMesoLog||pedidoId}\nCliente: ${pedido.clienteNome||'—'}\n\nInforme o motivo da devolução:`);
+  if(motivo === null) return;
+  if(!motivo.trim()){ toast('⚠️ Motivo obrigatório.'); return; }
+
+  const operador = admLoggedIn ? 'ADM' : ((fatUser?.nome||'')+ ' ' +(fatUser?.sobrenome||'')).trim() || 'Operador';
+  const doc = {
+    pedidoId:       pedidoId,
+    numeroPedido:   pedido.numeroPedidoMesoLog || pedidoId,
+    clienteNome:    pedido.clienteNome || '—',
+    itens:          (pedido.itens || []).map(it=>({
+      codigo:       it.codigo || it.codigoProduto || '—',
+      descricao:    it.descricao || it.nomeProduto || '—',
+      lote:         it.lote || '—',
+      dataValidade: it.dataValidade || '—',
+      quantidade:   Number(it.quantidadePedida || it.quantidade || 0),
+    })),
+    motivoDevolucao: motivo.trim(),
+    status:          'aguardando',
+    operador:        operador,
+    criadoEm:        new Date().toISOString(),
+    aprovadoEm:      null,
+    aprovadoPor:     null,
+    obsAprovacao:    null,
+  };
+
+  db.collection('quarentena').add(doc)
+    .then(()=>{
+      toast('🔬 Devolução registrada em Quarentena!');
+      fatTab('quarentena', document.getElementById('fat-btn-quarentena'));
+    })
+    .catch(err=>{ console.error(err); toast('❌ Erro ao registrar devolução.'); });
+}
+
+function aprovarQuarentena(qId){
+  if(!fatUserCan('aprovar_quarentena')){ toast('⛔ Sem permissão para aprovar quarentena.'); return; }
+  const obs = prompt('Observação para aprovação (opcional):') ?? '';
+
+  const aprovadoPor = admLoggedIn ? 'ADM' : ((fatUser?.nome||'')+ ' ' +(fatUser?.sobrenome||'')).trim() || 'Operador';
+  const qDoc = allQuarentena.find(q=>q.id===qId);
+  if(!qDoc){ toast('⚠️ Registro não encontrado.'); return; }
+
+  // Optimistic update
+  const idx = allQuarentena.findIndex(q=>q.id===qId);
+  if(idx>=0) allQuarentena[idx] = {...allQuarentena[idx], status:'aprovado', aprovadoEm:new Date().toISOString(), aprovadoPor, obsAprovacao:obs.trim()||null};
+  renderQuarentena();
+
+  // Devolve itens ao estoque
+  const batch = db.batch();
+  (qDoc.itens||[]).forEach(it=>{
+    if(!it.codigo || !it.lote || !it.quantidade) return;
+    const stockRef = db.collection('stock').doc(it.codigo + '_' + it.lote);
+    batch.set(stockRef, {
+      codigoProduto: it.codigo,
+      lote:          it.lote,
+      dataValidade:  it.dataValidade||'',
+      quantidade:    firebase.firestore.FieldValue.increment(Number(it.quantidade)),
+    }, {merge:true});
+    // Movimento
+    const movRef = db.collection('movimentos_estoque').doc();
+    batch.set(movRef, {
+      tipo:           'entrada_quarentena',
+      codigoProduto:  it.codigo,
+      descricao:      it.descricao||'',
+      lote:           it.lote,
+      quantidade:     Number(it.quantidade),
+      operador:       aprovadoPor,
+      pedidoRef:      qDoc.pedidoId||'',
+      quarentenaId:   qId,
+      data:           new Date().toISOString(),
+    });
+  });
+  batch.update(db.collection('quarentena').doc(qId), {
+    status:       'aprovado',
+    aprovadoEm:   new Date().toISOString(),
+    aprovadoPor:  aprovadoPor,
+    obsAprovacao: obs.trim()||null,
+  });
+  batch.commit()
+    .then(()=> toast('✅ Quarentena aprovada — itens devolvidos ao estoque!'))
+    .catch(err=>{ console.error(err); toast('❌ Erro ao aprovar quarentena.'); });
+}
+
+function rejeitarQuarentena(qId){
+  if(!fatUserCan('aprovar_quarentena')){ toast('⛔ Sem permissão.'); return; }
+  const obs = prompt('Motivo da rejeição (obrigatório):');
+  if(obs === null) return;
+  if(!obs.trim()){ toast('⚠️ Motivo obrigatório.'); return; }
+
+  const rejeitadoPor = admLoggedIn ? 'ADM' : ((fatUser?.nome||'')+ ' ' +(fatUser?.sobrenome||'')).trim() || 'Operador';
+
+  // Optimistic update
+  const idx = allQuarentena.findIndex(q=>q.id===qId);
+  if(idx>=0) allQuarentena[idx] = {...allQuarentena[idx], status:'rejeitado', aprovadoEm:new Date().toISOString(), aprovadoPor:rejeitadoPor, obsAprovacao:obs.trim()};
+  renderQuarentena();
+
+  db.collection('quarentena').doc(qId).update({
+    status:       'rejeitado',
+    aprovadoEm:   new Date().toISOString(),
+    aprovadoPor:  rejeitadoPor,
+    obsAprovacao: obs.trim(),
+  })
+  .then(()=> toast('❌ Devolução rejeitada.'))
+  .catch(err=>{ console.error(err); toast('❌ Erro ao rejeitar.'); });
 }
 
 // ─── CANCELAR PEDIDO ─────────────────────────────────────────────────────────
