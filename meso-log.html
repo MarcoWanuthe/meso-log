@@ -3457,6 +3457,17 @@ function startListeners(){
       .sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
     if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
     if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
+    // Auto-redirect: se o pedido em Fechamento foi fechado/cancelado, volta pra Fila automaticamente
+    if(fatFechId){
+      const pedFech = allPedidosFat.find(x => x.id === fatFechId);
+      if(!pedFech || ['fechado','cancelado'].includes(pedFech.status)){
+        fatFechId = null; fatBipItems = [];
+        const fview = document.getElementById('fview-fechamento');
+        if(fview && fview.style.display !== 'none'){
+          fatTab('fila', document.getElementById('fat-btn-fila'));
+        }
+      }
+    }
   }, err=>{ console.error('[MESO-LOG] pedidosFaturamento onSnapshot erro:', err); });
 }
 
@@ -11672,6 +11683,8 @@ function finalizarFechamento(){
   fatFechId      = null;
   fatBipItems    = [];
   fatFinalizando = false;
+  const _fchEl = document.getElementById('fat-fech-content');
+  if(_fchEl) _fchEl.innerHTML = '';           // limpa view imediatamente
   fatTab('fila', document.getElementById('fat-btn-fila'));
   toast('✅ Pedido ' + closingNum + ' FECHADO por ' + closingPor + '!');
 
