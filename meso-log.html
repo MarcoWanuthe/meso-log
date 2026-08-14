@@ -3468,6 +3468,19 @@ function startListeners(){
         }
       }
     }
+    // Auto-redirect: se o pedido em Expedição avançou de status, volta pra Fila automaticamente
+    if(fatPedidoExp){
+      const pedExp = allPedidosFat.find(x => x.id === fatPedidoExp);
+      if(!pedExp || !['pagamento_verificado','pendente'].includes(pedExp.status)){
+        fatPedidoExp = null;
+        const fviewExp = document.getElementById('fview-expedicao');
+        if(fviewExp && fviewExp.style.display !== 'none'){
+          const _expEl = document.getElementById('fat-exp-content');
+          if(_expEl) _expEl.innerHTML = '';
+          fatTab('fila', document.getElementById('fat-btn-fila'));
+        }
+      }
+    }
   }, err=>{ console.error('[MESO-LOG] pedidosFaturamento onSnapshot erro:', err); });
 }
 
@@ -11204,6 +11217,9 @@ function salvarExpedicao(){
     };
   }
   toast('✅ Pré-separação salva!');
+  fatPedidoExp = null;
+  const _expEl = document.getElementById('fat-exp-content');
+  if(_expEl) _expEl.innerHTML = '';           // limpa view imediatamente
   fatTab('fila', document.getElementById('fat-btn-fila'));
   setTimeout(() => imprimirComanda(expId), 400);
 
