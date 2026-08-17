@@ -405,6 +405,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('operacoes')" id="nav-operacoes" style="display:none"><span class="icon">🏭</span><span>Operações</span></a>
     <a onclick="showPage('pdv')" id="nav-pdv" style="display:none"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
     <a onclick="showPage('faturamento')" id="nav-faturamento"><span class="icon">🧾</span><span>Faturamento</span></a>
+    <a onclick="showPage('recepcao')" id="nav-recepcao"><span class="icon">🏪</span><span>Recepção</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -3042,6 +3043,290 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div><!-- end fat-main-panel -->
     </div><!-- end page-faturamento -->
 
+    <!-- PAGE RECEPÇÃO -->
+    <div class="page" id="page-recepcao">
+
+      <!-- LOCK SCREEN -->
+      <div id="rec-lock" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px">
+        <div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);padding:36px 40px;max-width:380px;width:100%;text-align:center">
+          <div style="font-size:40px;margin-bottom:8px">🏪</div>
+          <h2 style="margin:0 0 4px;font-size:20px;font-weight:800">PDV Recepção</h2>
+          <p style="color:#666;font-size:13px;margin:0 0 24px">Digite seu PIN para entrar</p>
+          <div id="rec-pin-display" style="font-size:28px;letter-spacing:12px;height:44px;display:flex;align-items:center;justify-content:center;background:#F8F9FB;border-radius:10px;margin-bottom:18px">——</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+            ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(d=>d===''?'<div></div>':`<button onclick="recPinDigit('${d}')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:${d==='⌫'?'#FFF0F0':'#F0F4F8'};color:${d==='⌫'?'#D13438':'#111'};cursor:pointer;transition:.15s" onmouseover="this.style.background='${d==='⌫'?'#FDD':'#DDE4EE'}'" onmouseout="this.style.background='${d==='⌫'?'#FFF0F0':'#F0F4F8'}'">${d}</button>`).join('')}
+          </div>
+          <button onclick="recPinConfirm()" style="width:100%;padding:12px;background:#0D9488;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px">Entrar →</button>
+          <p id="rec-pin-erro" style="color:#D13438;font-size:12px;margin-top:10px;min-height:18px"></p>
+        </div>
+      </div>
+
+      <!-- PAINEL PRINCIPAL -->
+      <div id="rec-main" style="display:none">
+
+        <!-- USER BAR -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 16px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:#0D9488;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px" id="rec-avatar">?</div>
+            <div>
+              <div style="font-weight:700;font-size:13px" id="rec-user-nome">Atendente</div>
+              <div style="font-size:11px;color:#666" id="rec-user-sub">PDV Recepção</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="rec-badge-retiradas" style="display:none;background:#E65100;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">0 retiradas</div>
+            <button onclick="recLogout()" style="background:#F8F9FB;border:1px solid #ddd;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer">Sair</button>
+          </div>
+        </div>
+
+        <!-- TAB BAR -->
+        <div class="tab-bar" id="rec-tab-bar" style="margin-bottom:16px">
+          <button class="active" onclick="recTab('pdv',this)" id="rec-btn-pdv">🛒 PDV</button>
+          <button onclick="recTab('retiradas',this)" id="rec-btn-retiradas">📋 Retiradas</button>
+          <button onclick="recTab('estoque',this)" id="rec-btn-estoque">📦 Estoque</button>
+          <button onclick="recTab('relatorios',this)" id="rec-btn-relatorios">📊 Relatórios</button>
+          <button onclick="recTab('atendentes',this)" id="rec-btn-atendentes" style="display:none">👥 Atendentes</button>
+          <button onclick="recTab('abastecimento',this)" id="rec-btn-abastecimento" style="display:none">🔄 Abastecimento</button>
+        </div>
+
+        <!-- ABA PDV -->
+        <div id="rec-view-pdv">
+          <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+            <!-- Coluna Esquerda: Busca + Produto -->
+            <div>
+              <div class="card" style="padding:16px;margin-bottom:12px">
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button onclick="recModoBusca('codigo',this)" id="rec-modo-codigo" class="btn btn-primary" style="font-size:12px;padding:5px 12px">📦 Código</button>
+                  <button onclick="recModoBusca('nome',this)" id="rec-modo-nome" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">🔤 Nome</button>
+                </div>
+                <div style="position:relative">
+                  <input type="text" id="rec-scan-input" placeholder="Código / nome do produto..." autofocus
+                    style="width:100%;padding:10px 14px;border:2px solid #0D9488;border-radius:8px;font-size:14px;box-sizing:border-box"
+                    oninput="recScanProduto(this.value)" onkeydown="if(event.key==='Enter')recScanProduto(this.value,true)">
+                  <div id="rec-nome-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:0 0 8px 8px;z-index:100;max-height:260px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+                </div>
+              </div>
+
+              <!-- Card produto encontrado -->
+              <div id="rec-found-card" class="card" style="display:none;padding:16px;margin-bottom:12px">
+                <div style="font-weight:700;font-size:15px;margin-bottom:4px" id="rec-found-nome">—</div>
+                <div style="font-size:12px;color:#666;margin-bottom:14px" id="rec-found-info">—</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                  <div>
+                    <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Tipo</label>
+                    <select id="rec-tipo-saida" class="form-control" style="font-size:12px">
+                      <option value="venda">💰 Venda</option>
+                      <option value="bonificacao">🎁 Bonificação</option>
+                      <option value="consumo">🔬 Consumo Interno</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Quantidade</label>
+                    <input type="number" id="rec-qty" value="1" min="1" class="form-control" style="font-size:14px;font-weight:700" oninput="recCalcPreco()">
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Preço unit. (R$)</label>
+                    <input type="number" id="rec-preco" value="0" min="0" step="0.01" class="form-control" style="font-size:14px" oninput="recCalcPreco()">
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button onclick="recAddCarrinho()" class="btn btn-primary" style="flex:1">+ Adicionar ao Carrinho</button>
+                  <button onclick="document.getElementById('rec-found-card').style.display='none'" class="btn btn-secondary" style="font-size:12px">✕</button>
+                </div>
+              </div>
+
+              <!-- Dados do cliente -->
+              <div class="card" style="padding:16px">
+                <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:10px">CLIENTE (OPCIONAL)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <input type="text" id="rec-cli-nome" placeholder="Nome do cliente" class="form-control" style="font-size:13px">
+                  <input type="text" id="rec-cli-tel" placeholder="Telefone" class="form-control" style="font-size:13px">
+                </div>
+                <div style="margin-top:8px">
+                  <input type="text" id="rec-cli-obs" placeholder="Observação (opcional)" class="form-control" style="font-size:13px">
+                </div>
+              </div>
+            </div>
+
+            <!-- Coluna Direita: Carrinho -->
+            <div>
+              <div class="card" style="padding:16px;position:sticky;top:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                  <div style="font-weight:700;font-size:14px">🛒 Carrinho</div>
+                  <span id="rec-carrinho-count" style="font-size:12px;color:#666">0 itens</span>
+                </div>
+                <div id="rec-carrinho-lista" style="min-height:80px;max-height:320px;overflow-y:auto">
+                  <p style="color:#aaa;font-size:13px;text-align:center;padding:20px">Nenhum item</p>
+                </div>
+                <div id="rec-carrinho-totais" style="display:none;border-top:1px solid #F0F0F0;padding-top:12px;margin-top:12px">
+                  <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:4px">
+                    <span>Subtotal</span><span id="rec-subtotal">R$ 0,00</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;margin-bottom:14px">
+                    <span>Total Venda</span><span id="rec-total" style="color:#0D9488">R$ 0,00</span>
+                  </div>
+                  <!-- Pagamento -->
+                  <div style="margin-bottom:10px">
+                    <label style="font-size:11px;color:#666;display:block;margin-bottom:4px">Forma de Pagamento</label>
+                    <select id="rec-forma-pag" class="form-control" style="font-size:13px">
+                      <option value="dinheiro">💵 Dinheiro</option>
+                      <option value="debito">💳 Débito</option>
+                      <option value="credito">💳 Crédito</option>
+                      <option value="pix">📱 PIX</option>
+                      <option value="cortesia">🎁 Cortesia/Bonificação</option>
+                    </select>
+                  </div>
+                </div>
+                <button onclick="recFinalizarVenda()" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;font-weight:700;margin-top:8px">✅ Finalizar</button>
+                <button onclick="recLimparCarrinho()" class="btn btn-secondary" style="width:100%;font-size:12px;margin-top:6px">🗑 Limpar Carrinho</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA RETIRADAS -->
+        <div id="rec-view-retiradas" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div>
+              <div style="font-weight:800;font-size:16px">📋 Retiradas Pendentes</div>
+              <div style="font-size:12px;color:#666">Pedidos aguardando retirada na recepção</div>
+            </div>
+            <button onclick="recNovaRetirada()" id="rec-btn-nova-retirada" style="display:none" class="btn btn-primary">+ Nova Retirada</button>
+          </div>
+          <!-- Form nova retirada (ADM only) -->
+          <div id="rec-form-retirada" style="display:none" class="card" style="padding:18px;margin-bottom:16px;border-left:4px solid #0D9488">
+            <div style="font-weight:700;font-size:14px;margin-bottom:14px">➕ Registrar Retirada Pendente</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <input type="text" id="ret-cli-nome" placeholder="Nome do cliente *" class="form-control" style="font-size:13px">
+              <input type="text" id="ret-cli-tel" placeholder="Telefone / WhatsApp" class="form-control" style="font-size:13px">
+            </div>
+            <textarea id="ret-itens-desc" placeholder="Descreva os itens (ex: 3x Produto A lote X, 2x Produto B)..." class="form-control" rows="3" style="font-size:13px;margin-bottom:10px;resize:vertical"></textarea>
+            <textarea id="ret-obs" placeholder="Observações (canal de venda, vendedor responsável, prazo...)" class="form-control" rows="2" style="font-size:13px;margin-bottom:12px;resize:vertical"></textarea>
+            <div style="display:flex;gap:8px">
+              <button onclick="recSalvarRetirada()" class="btn btn-primary">💾 Salvar</button>
+              <button onclick="document.getElementById('rec-form-retirada').style.display='none'" class="btn btn-secondary">Cancelar</button>
+            </div>
+          </div>
+          <div id="rec-retiradas-lista"><div class="card" style="text-align:center;padding:40px;color:#aaa">Carregando...</div></div>
+        </div>
+
+        <!-- ABA ESTOQUE -->
+        <div id="rec-view-estoque" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div>
+              <div style="font-weight:800;font-size:16px">📦 Estoque da Recepção</div>
+              <div style="font-size:12px;color:#666">Produtos disponíveis com lote e validade</div>
+            </div>
+          </div>
+          <!-- Alertas -->
+          <div id="rec-alertas-estoque" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
+          <!-- Busca -->
+          <div class="card" style="padding:12px;margin-bottom:14px">
+            <input type="text" id="rec-est-search" placeholder="🔍 Buscar por código, descrição ou lote..." class="form-control" oninput="recRenderEstoque()">
+          </div>
+          <div id="rec-est-lista"><div class="card" style="text-align:center;padding:40px;color:#aaa">Carregando...</div></div>
+        </div>
+
+        <!-- ABA RELATÓRIOS -->
+        <div id="rec-view-relatorios" style="display:none">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px" class="card" style="padding:12px">
+            <label style="font-size:12px;color:#555">De:</label>
+            <input type="date" id="rec-rel-de" class="form-control" style="font-size:12px;width:140px">
+            <label style="font-size:12px;color:#555">Até:</label>
+            <input type="date" id="rec-rel-ate" class="form-control" style="font-size:12px;width:140px">
+            <label style="font-size:12px;color:#555">Atendente:</label>
+            <select id="rec-rel-atendente" class="form-control" style="font-size:12px;width:160px">
+              <option value="">Todos</option>
+            </select>
+            <button onclick="recRenderRelatorios()" class="btn btn-primary" style="font-size:12px;padding:6px 14px">🔍 Aplicar</button>
+            <button onclick="recRelResetFiltros()" class="btn btn-secondary" style="font-size:12px;padding:6px 14px">↺ Limpar</button>
+            <button onclick="recExportarExcel()" class="btn" style="font-size:12px;padding:6px 14px;background:#107C10;color:#fff">📥 Excel</button>
+          </div>
+          <!-- KPIs -->
+          <div id="rec-rel-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
+          <!-- Gráficos -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div class="card" style="padding:16px"><div style="font-weight:700;font-size:13px;margin-bottom:10px">📊 Vendas por Dia</div><canvas id="rec-chart-dias" height="180"></canvas></div>
+            <div class="card" style="padding:16px"><div style="font-weight:700;font-size:13px;margin-bottom:10px">🍩 Por Tipo de Saída</div><canvas id="rec-chart-tipos" height="180"></canvas></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div class="card" style="padding:16px"><div style="font-weight:700;font-size:13px;margin-bottom:10px">🏆 Top Atendentes</div><canvas id="rec-chart-atendentes" height="180"></canvas></div>
+            <div class="card" style="padding:16px"><div style="font-weight:700;font-size:13px;margin-bottom:10px">📦 Top Produtos</div><canvas id="rec-chart-produtos" height="180"></canvas></div>
+          </div>
+          <!-- Histórico tabela -->
+          <div class="card" style="padding:16px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:10px">📋 Histórico de Movimentações</div>
+            <div id="rec-rel-historico" style="max-height:400px;overflow-y:auto"></div>
+          </div>
+        </div>
+
+        <!-- ABA ATENDENTES (ADM) -->
+        <div id="rec-view-atendentes" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-weight:800;font-size:16px">👥 Atendentes da Recepção</div>
+            <button onclick="recShowFormAtendente()" class="btn btn-primary">+ Novo Atendente</button>
+          </div>
+          <!-- Form -->
+          <div id="rec-form-atendente" style="display:none" class="card" style="padding:18px;margin-bottom:16px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:12px">➕ Novo Atendente</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+              <input type="text" id="rec-at-nome" placeholder="Nome completo *" class="form-control" style="font-size:13px">
+              <input type="text" id="rec-at-pin" placeholder="PIN (4–6 dígitos) *" maxlength="6" class="form-control" style="font-size:13px">
+              <select id="rec-at-perfil" class="form-control" style="font-size:13px">
+                <option value="atendente">Atendente</option>
+                <option value="supervisor">Supervisor (ADM rec.)</option>
+              </select>
+            </div>
+            <p id="rec-at-erro" style="color:#D13438;font-size:12px;margin:0 0 8px"></p>
+            <div style="display:flex;gap:8px">
+              <button onclick="recSalvarAtendente()" class="btn btn-primary">💾 Salvar</button>
+              <button onclick="document.getElementById('rec-form-atendente').style.display='none'" class="btn btn-secondary">Cancelar</button>
+            </div>
+          </div>
+          <div id="rec-atendentes-lista"><div class="card" style="text-align:center;padding:40px;color:#aaa">Carregando...</div></div>
+        </div>
+
+        <!-- ABA ABASTECIMENTO (ADM) -->
+        <div id="rec-view-abastecimento" style="display:none">
+          <div style="margin-bottom:16px">
+            <div style="font-weight:800;font-size:16px;margin-bottom:4px">🔄 Abastecimento — Depósito Central → Recepção</div>
+            <div style="font-size:12px;color:#666">Transfira produtos do estoque central para o estoque da recepção. O movimento é rastreado com lote e validade.</div>
+          </div>
+          <!-- Form transferência -->
+          <div class="card" style="padding:18px;margin-bottom:16px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:14px">➕ Nova Transferência</div>
+            <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <div style="flex:2;min-width:200px">
+                <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Produto (Código ou Nome)</label>
+                <div style="position:relative">
+                  <input type="text" id="rec-transf-busca" placeholder="Buscar no depósito central..." class="form-control" style="font-size:13px" oninput="recTransfBuscar(this.value)">
+                  <div id="rec-transf-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:0 0 8px 8px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:120px">
+                <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Quantidade</label>
+                <input type="number" id="rec-transf-qty" value="1" min="1" class="form-control" style="font-size:13px">
+              </div>
+              <div style="flex:1;min-width:140px">
+                <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Produto selecionado</label>
+                <div id="rec-transf-selecionado" style="font-size:12px;color:#0D9488;font-weight:700;padding:6px 0">—</div>
+                <input type="hidden" id="rec-transf-stockid">
+              </div>
+            </div>
+            <button onclick="recAdicionarTransfItem()" class="btn btn-secondary" style="margin-bottom:10px">+ Adicionar à Lista</button>
+            <div id="rec-transf-lista-itens" style="min-height:40px;margin-bottom:10px"></div>
+            <button onclick="recConfirmarTransferencia()" class="btn btn-primary">✅ Confirmar Transferência</button>
+          </div>
+          <!-- Histórico transferências -->
+          <div class="card" style="padding:16px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:10px">📋 Histórico de Transferências</div>
+            <div id="rec-transf-historico"></div>
+          </div>
+        </div>
+
+      </div><!-- /rec-main -->
+    </div><!-- /page-recepcao -->
+
   </div>
 </div>
 
@@ -3705,7 +3990,7 @@ function showPage(p){
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
@@ -3731,6 +4016,11 @@ function showPage(p){
     if(pdvVendedorAtivo){show('pdv-panel');hide('pdv-lock');}
     else if(admLoggedIn){pdvVendedorAtivo={id:'adm',nome:'ADM',perfil:'supervisor'};pdvAbrirPainel();}
     else{show('pdv-lock');hide('pdv-panel');const _tb=document.getElementById('pdv-tab-bar');if(_tb)_tb.style.display='';}
+  }
+  if(p==='recepcao'){
+    if(recAtendente){show('rec-main');hide('rec-lock');}
+    else if(admLoggedIn){recAtendente={id:'adm',nome:'ADM',perfil:'adm'};recEntrarMain();}
+    else{show('rec-lock');hide('rec-main');}
   }
 }
 
@@ -12771,6 +13061,756 @@ async function excluirEmpresa(id, nome){
   try{ await db.collection('empresas').doc(id).delete(); toast('🗑️ Empresa removida.'); }
   catch(e){ toast('Erro: ' + e.message); }
 }
+
+// ============================================================
+// PDV RECEPÇÃO — Módulo completo
+// ============================================================
+
+let recAtendente = null;    // atendente logado
+let recCarrinho  = [];      // itens no carrinho
+let recepFoundItem = null;    // produto escaneado/selecionado
+let recModoBuscaAtual = 'codigo';
+let recNomeDebounce  = null;
+let recTransfItens   = [];  // itens da transferência em montagem
+let _recChartDias = null, _recChartTipos = null, _recChartAtendentes = null, _recChartProdutos = null;
+
+// ---------- PIN LOGIN ----------
+
+let recPinBuffer = '';
+
+function recPinDigit(d){
+  if(d==='⌫'){recPinBuffer=recPinBuffer.slice(0,-1);}
+  else if(recPinBuffer.length<6){recPinBuffer+=d;}
+  const disp=document.getElementById('rec-pin-display');
+  if(disp) disp.textContent=recPinBuffer?'●'.repeat(recPinBuffer.length):'——';
+}
+
+async function recPinConfirm(){
+  const err=document.getElementById('rec-pin-erro');
+  if(!recPinBuffer){if(err)err.textContent='Digite o PIN.';return;}
+  // ADM bypass
+  if(admLoggedIn){
+    recAtendente={id:'adm',nome:'ADM',perfil:'adm'};
+    recEntrarMain();return;
+  }
+  try{
+    const snap=await db.collection('rec_atendentes').where('pin','==',recPinBuffer).where('ativo','==',true).limit(1).get();
+    if(snap.empty){if(err)err.textContent='PIN inválido ou atendente inativo.';recPinBuffer='';const d=document.getElementById('rec-pin-display');if(d)d.textContent='——';return;}
+    const doc=snap.docs[0];
+    recAtendente={id:doc.id,...doc.data()};
+    recEntrarMain();
+  }catch(e){if(err)err.textContent='Erro: '+e.message;}
+}
+
+function recEntrarMain(){
+  hide('rec-lock');show('rec-main');
+  const nEl=document.getElementById('rec-user-nome');if(nEl)nEl.textContent=recAtendente.nome;
+  const sEl=document.getElementById('rec-user-sub');if(sEl)sEl.textContent=recAtendente.perfil==='adm'?'ADM — Acesso Total':recAtendente.perfil==='supervisor'?'Supervisor':'Atendente';
+  const aEl=document.getElementById('rec-avatar');if(aEl)aEl.textContent=(recAtendente.nome||'A')[0].toUpperCase();
+  const isAdm=recAtendente.perfil==='adm'||recAtendente.perfil==='supervisor';
+  const btnAt=document.getElementById('rec-btn-atendentes');if(btnAt)btnAt.style.display=isAdm?'':'none';
+  const btnAb=document.getElementById('rec-btn-abastecimento');if(btnAb)btnAb.style.display=isAdm?'':'none';
+  const btnNR=document.getElementById('rec-btn-nova-retirada');if(btnNR)btnNR.style.display=isAdm?'':'none';
+  recPinBuffer='';
+  recTab('pdv',document.getElementById('rec-btn-pdv'));
+  recAtualizarBadgeRetiradas();
+}
+
+function recLogout(){
+  recAtendente=null;recCarrinho=[];recepFoundItem=null;recTransfItens=[];
+  show('rec-lock');hide('rec-main');
+  const d=document.getElementById('rec-pin-display');if(d)d.textContent='——';
+  const e=document.getElementById('rec-pin-erro');if(e)e.textContent='';
+}
+
+// ---------- TABS ----------
+
+function recTab(tab,btn){
+  ['pdv','retiradas','estoque','relatorios','atendentes','abastecimento'].forEach(t=>{
+    const el=document.getElementById('rec-view-'+t);if(el)el.style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('#rec-tab-bar button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(tab==='pdv'){setTimeout(()=>{const i=document.getElementById('rec-scan-input');if(i)i.focus();},100);}
+  if(tab==='retiradas')recRenderRetiradas();
+  if(tab==='estoque')recRenderEstoque();
+  if(tab==='relatorios')recRenderRelatorios();
+  if(tab==='atendentes')recRenderAtendentes();
+  if(tab==='abastecimento')recRenderTransfHistorico();
+}
+
+// ---------- PDV: BUSCA ----------
+
+function recModoBusca(modo,btn){
+  recModoBuscaAtual=modo;
+  document.getElementById('rec-modo-codigo').classList.toggle('btn-primary',modo==='codigo');
+  document.getElementById('rec-modo-codigo').classList.toggle('btn-secondary',modo!=='codigo');
+  document.getElementById('rec-modo-nome').classList.toggle('btn-primary',modo==='nome');
+  document.getElementById('rec-modo-nome').classList.toggle('btn-secondary',modo!=='nome');
+  const inp=document.getElementById('rec-scan-input');if(inp){inp.value='';inp.focus();}
+  const sug=document.getElementById('rec-nome-sugestoes');if(sug)sug.style.display='none';
+  document.getElementById('rec-found-card').style.display='none';
+}
+
+async function recScanProduto(val,enter){
+  if(recModoBuscaAtual==='nome'){
+    clearTimeout(recNomeDebounce);
+    val=val.trim();
+    const sug=document.getElementById('rec-nome-sugestoes');
+    if(!val||val.length<2){if(sug)sug.style.display='none';return;}
+    recNomeDebounce=setTimeout(()=>recBuscarPorNome(val),350);
+    return;
+  }
+  val=val.trim();
+  if(!enter&&val.length<2) return;
+  if(val.length<2) return;
+  try{
+    let item=null;
+    const s1=await db.collection('rec_estoque').where('codigo','==',val).limit(1).get();
+    if(!s1.empty)item={id:s1.docs[0].id,...s1.docs[0].data()};
+    if(!item){
+      const s2=await db.collection('rec_estoque').where('barcode','==',val).limit(1).get();
+      if(!s2.empty)item={id:s2.docs[0].id,...s2.docs[0].data()};
+    }
+    if(!item){toast('Produto não encontrado no estoque da recepção.');document.getElementById('rec-found-card').style.display='none';return;}
+    recepFoundItem=item;
+    recMostrarProduto(item);
+  }catch(e){toast('Erro na busca: '+e.message);}
+}
+
+async function recBuscarPorNome(termo){
+  const sug=document.getElementById('rec-nome-sugestoes');if(!sug)return;
+  sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Buscando...</div>';
+  sug.style.display='block';
+  try{
+    const snap=await db.collection('rec_estoque').get();
+    const low=termo.toLowerCase();
+    const matches=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(it=>(it.descricao||'').toLowerCase().includes(low)||(it.codigo||'').toLowerCase().includes(low))
+      .slice(0,10);
+    if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto encontrado.</div>';return;}
+    sug.innerHTML=matches.map(it=>{
+      const cor=it.quantidade>0?'#107C10':'#D13438';
+      const status=it.quantidade>0?`🟢 ${it.quantidade} un`:'🔴 Sem estoque';
+      return `<div onclick='recSelecionarNome(${JSON.stringify({id:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||"",dataValidade:it.dataValidade||"",quantidade:it.quantidade||0,barcode:it.barcode||""}).replace(/'/g,"\\'")})'
+        style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px"
+        onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+        <strong>${it.descricao}</strong> <span style="color:#666;font-size:11px">${it.codigo}</span>
+        <span style="font-size:10px;color:${cor};font-weight:700;margin-left:6px">${status}</span>
+      </div>`;
+    }).join('');
+  }catch(e){sug.innerHTML='<div style="padding:8px;color:#D13438;font-size:12px">Erro na busca.</div>';}
+}
+
+function recSelecionarNome(item){
+  const sug=document.getElementById('rec-nome-sugestoes');if(sug)sug.style.display='none';
+  const inp=document.getElementById('rec-scan-input');if(inp)inp.value=item.descricao;
+  recepFoundItem=item;
+  recMostrarProduto(item);
+}
+
+function recMostrarProduto(item){
+  document.getElementById('rec-found-nome').textContent=item.descricao;
+  const venc=item.dataValidade?` · Val: ${item.dataValidade}`:'';
+  const est=item.quantidade>0?`🟢 ${item.quantidade} un disponível`:'🔴 Sem estoque';
+  document.getElementById('rec-found-info').innerHTML=`Cód: ${item.codigo} · Lote: ${item.lote||'—'}${venc} &nbsp; <strong>${est}</strong>`;
+  document.getElementById('rec-qty').value=1;
+  document.getElementById('rec-found-card').style.display='block';
+  recCalcPreco();
+}
+
+function recCalcPreco(){
+  // apenas exibe total no futuro; aqui reservado
+}
+
+// ---------- PDV: CARRINHO ----------
+
+function recAddCarrinho(){
+  if(!recepFoundItem){toast('Selecione um produto primeiro.');return;}
+  const qty=Number(document.getElementById('rec-qty').value)||1;
+  if(qty<=0){toast('Quantidade inválida.');return;}
+  const tipo=document.getElementById('rec-tipo-saida').value;
+  const preco=parseFloat(document.getElementById('rec-preco').value)||0;
+  if(recepFoundItem.quantidade<qty&&tipo!=='consumo'){
+    if(!confirm(`Estoque disponível: ${recepFoundItem.quantidade} un. Deseja continuar com ${qty}?`))return;
+  }
+  const idx=recCarrinho.findIndex(c=>c.id===recepFoundItem.id&&c.tipo===tipo);
+  if(idx>=0){
+    recCarrinho[idx].quantidade+=qty;
+    recCarrinho[idx].subtotal=(recCarrinho[idx].preco||0)*recCarrinho[idx].quantidade;
+  }else{
+    recCarrinho.push({id:recepFoundItem.id,codigo:recepFoundItem.codigo,descricao:recepFoundItem.descricao,lote:recepFoundItem.lote||'',quantidade:qty,tipo,preco,subtotal:preco*qty});
+  }
+  recepFoundItem=null;
+  document.getElementById('rec-found-card').style.display='none';
+  document.getElementById('rec-scan-input').value='';
+  document.getElementById('rec-scan-input').focus();
+  recRenderCarrinho();
+  toast('✅ Adicionado ao carrinho');
+}
+
+function recRenderCarrinho(){
+  const lista=document.getElementById('rec-carrinho-lista');
+  const count=document.getElementById('rec-carrinho-count');
+  const totais=document.getElementById('rec-carrinho-totais');
+  if(!recCarrinho.length){
+    lista.innerHTML='<p style="color:#aaa;font-size:13px;text-align:center;padding:20px">Nenhum item</p>';
+    count.textContent='0 itens';if(totais)totais.style.display='none';return;
+  }
+  count.textContent=recCarrinho.length+' item(s)';
+  lista.innerHTML=recCarrinho.map((it,i)=>{
+    const tipoLabel=it.tipo==='venda'?'💰':it.tipo==='bonificacao'?'🎁':'🔬';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5F5F5;font-size:13px">
+      <div style="flex:1">
+        <div>${tipoLabel} <strong>${it.descricao}</strong></div>
+        <div style="font-size:11px;color:#666">Lote: ${it.lote||'—'} · Qtd: ${it.quantidade}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">R$ ${(it.subtotal||0).toFixed(2).replace('.',',')}</div>
+        <button onclick="recRemoverItem(${i})" style="font-size:10px;color:#D13438;background:none;border:none;cursor:pointer;padding:0">remover</button>
+      </div>
+    </div>`;
+  }).join('');
+  const totalVenda=recCarrinho.filter(c=>c.tipo==='venda').reduce((s,c)=>s+c.subtotal,0);
+  if(totais){
+    totais.style.display='';
+    const sub=document.getElementById('rec-subtotal');if(sub)sub.textContent='R$ '+totalVenda.toFixed(2).replace('.',',');
+    const tot=document.getElementById('rec-total');if(tot)tot.textContent='R$ '+totalVenda.toFixed(2).replace('.',',');
+  }
+}
+
+function recRemoverItem(i){recCarrinho.splice(i,1);recRenderCarrinho();}
+function recLimparCarrinho(){if(!recCarrinho.length)return;if(!confirm('Limpar o carrinho?'))return;recCarrinho=[];recRenderCarrinho();}
+
+async function recFinalizarVenda(){
+  if(!recCarrinho.length){toast('Carrinho vazio.');return;}
+  const cliNome=document.getElementById('rec-cli-nome').value.trim();
+  const cliTel=document.getElementById('rec-cli-tel').value.trim();
+  const cliObs=document.getElementById('rec-cli-obs').value.trim();
+  const formaPag=document.getElementById('rec-forma-pag').value;
+  const totalVenda=recCarrinho.filter(c=>c.tipo==='venda').reduce((s,c)=>s+c.subtotal,0);
+  const venda={
+    atendenteId:recAtendente.id,atendenteNome:recAtendente.nome,
+    clienteNome:cliNome,clienteTel:cliTel,obs:cliObs,
+    formaPagamento:formaPag,totalVenda:parseFloat(totalVenda.toFixed(2)),
+    itens:JSON.parse(JSON.stringify(recCarrinho)),
+    criadoEm:new Date().toISOString(),
+    numero:'REC-'+Date.now().toString(36).toUpperCase()
+  };
+  try{
+    // Debitar estoque da recepção
+    for(const it of recCarrinho){
+      const snap=await db.collection('rec_estoque').doc(it.id).get();
+      if(snap.exists){
+        const nova=Math.max(0,(Number(snap.data().quantidade)||0)-it.quantidade);
+        await db.collection('rec_estoque').doc(it.id).update({quantidade:nova,atualizadoEm:new Date().toISOString()});
+      }
+    }
+    await db.collection('rec_vendas').add(venda);
+    // Limpar formulário
+    recCarrinho=[];recRenderCarrinho();
+    ['rec-cli-nome','rec-cli-tel','rec-cli-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    toast('✅ Venda '+venda.numero+' registrada!');
+    document.getElementById('rec-scan-input').focus();
+  }catch(e){toast('Erro ao finalizar: '+e.message);}
+}
+
+// ---------- RETIRADAS ----------
+
+async function recRenderRetiradas(){
+  const lista=document.getElementById('rec-retiradas-lista');if(!lista)return;
+  lista.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Carregando...</div>';
+  try{
+    const snap=await db.collection('rec_retiradas').get();
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'')>(a.criadoEm||'')?1:-1);
+    const pendentes=docs.filter(r=>r.status==='pendente');
+    const entregues=docs.filter(r=>r.status!=='pendente');
+    // Badge
+    const badge=document.getElementById('rec-badge-retiradas');
+    if(badge){badge.textContent=pendentes.length+' retirada'+(pendentes.length!==1?'s':'');badge.style.display=pendentes.length?'':'none';}
+    if(!docs.length){lista.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#aaa">Nenhuma retirada registrada.</div>';return;}
+    lista.innerHTML=[...pendentes,...entregues].map(r=>{
+      const dt=r.criadoEm?r.criadoEm.substring(0,16).replace('T',' '):'';
+      const isPend=r.status==='pendente';
+      const borderColor=isPend?'#E65100':'#107C10';
+      const statusLabel=isPend?'⏳ Aguardando Retirada':'✅ Entregue';
+      return `<div class="card" style="border-left:4px solid ${borderColor};padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+          <div>
+            <strong style="font-size:14px">${r.clienteNome||'—'}</strong>
+            ${r.clienteTel?`<span style="font-size:11px;color:#666;margin-left:8px">📱 ${r.clienteTel}</span>`:''}
+            <div style="font-size:11px;color:#999;margin-top:2px">Criado em ${dt} por ${r.criadoPor||'—'}</div>
+          </div>
+          <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:${borderColor}20;color:${borderColor};font-weight:700">${statusLabel}</span>
+        </div>
+        <div style="font-size:13px;color:#444;margin-bottom:${isPend?'10px':'0'};white-space:pre-line">${r.itensDesc||''}</div>
+        ${r.obs?`<div style="font-size:12px;color:#666;margin-bottom:8px">💬 ${r.obs}</div>`:''}
+        ${isPend?`<div style="display:flex;gap:8px">
+          <button onclick="recConfirmarEntrega('${r.id}')" class="btn btn-primary" style="font-size:12px;padding:6px 14px">✅ Confirmar Entrega</button>
+          <button onclick="recCancelarRetirada('${r.id}')" class="btn" style="font-size:12px;padding:6px 14px;background:#FFF0F0;color:#D13438;border:1px solid #FCC">❌ Cancelar</button>
+        </div>`:`<div style="font-size:11px;color:#555">Entregue por ${r.entregueAtendente||'—'} em ${(r.entregueEm||'').substring(0,16).replace('T',' ')}</div>`}
+      </div>`;
+    }).join('');
+  }catch(e){lista.innerHTML='<div class="card" style="color:#D13438;padding:16px">Erro: '+e.message+'</div>';}
+}
+
+async function recAtualizarBadgeRetiradas(){
+  try{
+    const snap=await db.collection('rec_retiradas').where('status','==','pendente').get();
+    const badge=document.getElementById('rec-badge-retiradas');
+    if(badge){const n=snap.size;badge.textContent=n+' retirada'+(n!==1?'s':'');badge.style.display=n?'':'none';}
+  }catch(e){}
+}
+
+function recNovaRetirada(){
+  const f=document.getElementById('rec-form-retirada');if(f)f.style.display=f.style.display==='none'||!f.style.display?'block':'none';
+  ['ret-cli-nome','ret-cli-tel','ret-itens-desc','ret-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+async function recSalvarRetirada(){
+  const cliNome=document.getElementById('ret-cli-nome').value.trim();
+  const cliTel=document.getElementById('ret-cli-tel').value.trim();
+  const itensDesc=document.getElementById('ret-itens-desc').value.trim();
+  const obs=document.getElementById('ret-obs').value.trim();
+  if(!cliNome){toast('Informe o nome do cliente.');return;}
+  if(!itensDesc){toast('Descreva os itens da retirada.');return;}
+  try{
+    await db.collection('rec_retiradas').add({
+      clienteNome:cliNome,clienteTel:cliTel,itensDesc,obs,
+      status:'pendente',criadoPor:recAtendente.nome,
+      criadoEm:new Date().toISOString()
+    });
+    toast('✅ Retirada registrada!');
+    document.getElementById('rec-form-retirada').style.display='none';
+    recRenderRetiradas();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function recConfirmarEntrega(id){
+  if(!confirm('Confirmar que o cliente já retirou os produtos?'))return;
+  try{
+    await db.collection('rec_retiradas').doc(id).update({
+      status:'entregue',
+      entregueAtendente:recAtendente.nome,
+      entregueEm:new Date().toISOString()
+    });
+    toast('✅ Entrega confirmada!');
+    recRenderRetiradas();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function recCancelarRetirada(id){
+  if(!confirm('Cancelar esta retirada?'))return;
+  try{
+    await db.collection('rec_retiradas').doc(id).update({status:'cancelado',canceladoEm:new Date().toISOString(),canceladoPor:recAtendente.nome});
+    toast('Retirada cancelada.');recRenderRetiradas();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+// ---------- ESTOQUE ----------
+
+async function recRenderEstoque(){
+  const lista=document.getElementById('rec-est-lista');if(!lista)return;
+  lista.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Carregando...</div>';
+  const search=(document.getElementById('rec-est-search')?.value||'').toLowerCase();
+  try{
+    const snap=await db.collection('rec_estoque').get();
+    let docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(search)docs=docs.filter(it=>(it.descricao||'').toLowerCase().includes(search)||(it.codigo||'').toLowerCase().includes(search)||(it.lote||'').toLowerCase().includes(search));
+    docs.sort((a,b)=>(a.descricao||'').localeCompare(b.descricao||''));
+    // Alertas
+    const hoje=new Date();
+    const v30=new Date(hoje);v30.setDate(v30.getDate()+30);
+    const v60=new Date(hoje);v60.setDate(v60.getDate()+60);
+    const v90=new Date(hoje);v90.setDate(v90.getDate()+90);
+    const venc30=docs.filter(it=>it.dataValidade&&new Date(it.dataValidade)<=v30&&new Date(it.dataValidade)>=hoje);
+    const venc60=docs.filter(it=>it.dataValidade&&new Date(it.dataValidade)>v30&&new Date(it.dataValidade)<=v60);
+    const semEstoque=docs.filter(it=>(it.quantidade||0)<=0);
+    const alertas=document.getElementById('rec-alertas-estoque');
+    if(alertas){
+      alertas.innerHTML=[
+        {label:'⚠️ Vencendo em 30 dias',n:venc30.length,cor:'#D13438',bg:'#FFF5F5'},
+        {label:'🕐 Vencendo em 60 dias',n:venc60.length,cor:'#C07800',bg:'#FFFDF0'},
+        {label:'❌ Sem estoque',n:semEstoque.length,cor:'#555',bg:'#F5F5F5'}
+      ].map(a=>`<div style="background:${a.bg};border-radius:10px;padding:12px 16px;border-left:4px solid ${a.cor}">
+        <div style="font-size:22px;font-weight:800;color:${a.cor}">${a.n}</div>
+        <div style="font-size:11px;color:#666">${a.label}</div>
+      </div>`).join('');
+    }
+    if(!docs.length){lista.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#aaa">Nenhum produto no estoque da recepção.</div>';return;}
+    lista.innerHTML=docs.map(it=>{
+      const qtd=it.quantidade||0;
+      const cor=qtd>10?'#107C10':qtd>0?'#C07800':'#D13438';
+      const dtVal=it.dataValidade?new Date(it.dataValidade):null;
+      const vencLabel=dtVal?`Val: ${it.dataValidade}`:'';
+      const isVencendo=dtVal&&dtVal<=v30;
+      const isAdm=recAtendente&&(recAtendente.perfil==='adm'||recAtendente.perfil==='supervisor');
+      return `<div class="card" style="padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:14px${isVencendo?';border-left:3px solid #D13438':''}">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">${it.descricao}</div>
+          <div style="font-size:11px;color:#666">Cód: ${it.codigo} · Lote: ${it.lote||'—'} ${vencLabel?'· '+vencLabel:''}</div>
+        </div>
+        <div style="text-align:center;min-width:60px">
+          <div style="font-size:22px;font-weight:800;color:${cor}">${qtd}</div>
+          <div style="font-size:10px;color:#999">un</div>
+        </div>
+        ${isAdm?`<button onclick="recAjustarEstoque('${it.id}',${qtd})" class="btn btn-secondary" style="font-size:11px;padding:4px 10px">✏️ Ajustar</button>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){lista.innerHTML='<div class="card" style="color:#D13438;padding:16px">Erro: '+e.message+'</div>';}
+}
+
+async function recAjustarEstoque(id,qtdAtual){
+  const novaStr=prompt('Quantidade atual: '+qtdAtual+'\n\nNova quantidade:');
+  if(novaStr===null)return;
+  const nova=Number(novaStr);
+  if(isNaN(nova)||nova<0){alert('Quantidade inválida.');return;}
+  const motivo=prompt('Motivo do ajuste (obrigatório):');
+  if(!motivo||!motivo.trim()){alert('Informe o motivo.');return;}
+  try{
+    await db.collection('rec_estoque').doc(id).update({quantidade:nova,atualizadoEm:new Date().toISOString()});
+    await db.collection('rec_movimentos').add({tipo:'ajuste',docId:id,qtdAnterior:qtdAtual,qtdNova:nova,motivo,operador:recAtendente.nome,criadoEm:new Date().toISOString()});
+    toast('✅ Estoque ajustado.');recRenderEstoque();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+// ---------- ABASTECIMENTO (Transferência do Depósito Central) ----------
+
+let recTransfDebounce=null;
+
+async function recTransfBuscar(val){
+  clearTimeout(recTransfDebounce);
+  const sug=document.getElementById('rec-transf-sugestoes');if(!sug)return;
+  val=val.trim();
+  if(!val||val.length<2){sug.style.display='none';return;}
+  recTransfDebounce=setTimeout(async()=>{
+    sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Buscando...</div>';
+    sug.style.display='block';
+    try{
+      const snap=await db.collection('stock').get();
+      const low=val.toLowerCase();
+      const matches=snap.docs.map(d=>({id:d.id,...d.data()}))
+        .filter(it=>(it.descricao||'').toLowerCase().includes(low)||(it.codigo||'').toLowerCase().includes(low))
+        .filter(it=>(it.quantidade||0)>0)
+        .slice(0,8);
+      if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto com estoque.</div>';return;}
+      sug.innerHTML=matches.map(it=>`<div onclick='recTransfSelecionar(${JSON.stringify({id:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||"",dataValidade:it.dataValidade||"",quantidade:it.quantidade||0}).replace(/'/g,"\\'")})'
+        style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px"
+        onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+        <strong>${it.descricao}</strong> <span style="color:#666;font-size:11px">${it.codigo}</span>
+        <span style="color:#107C10;font-size:11px;margin-left:6px">${it.quantidade} un · Lote: ${it.lote||'—'}</span>
+      </div>`).join('');
+    }catch(e){sug.innerHTML='<div style="padding:8px;color:#D13438;font-size:12px">Erro.</div>';}
+  },350);
+}
+
+function recTransfSelecionar(item){
+  const sug=document.getElementById('rec-transf-sugestoes');if(sug)sug.style.display='none';
+  const inp=document.getElementById('rec-transf-busca');if(inp)inp.value=item.descricao;
+  const sel=document.getElementById('rec-transf-selecionado');if(sel)sel.textContent=item.descricao+' ('+item.quantidade+' disponível)';
+  const sid=document.getElementById('rec-transf-stockid');if(sid)sid.value=item.id;
+  // Guarda dados temporários
+  recTransfSelItem=item;
+}
+
+let recTransfSelItem=null;
+let recTransfListaItens=[];
+
+function recAdicionarTransfItem(){
+  if(!recTransfSelItem){toast('Selecione um produto.');return;}
+  const qty=Number(document.getElementById('rec-transf-qty').value)||1;
+  if(qty<=0){toast('Quantidade inválida.');return;}
+  if(qty>recTransfSelItem.quantidade){toast('Quantidade maior que o estoque disponível ('+recTransfSelItem.quantidade+' un).');return;}
+  recTransfListaItens.push({...recTransfSelItem,qtdTransf:qty});
+  recTransfSelItem=null;
+  document.getElementById('rec-transf-busca').value='';
+  document.getElementById('rec-transf-selecionado').textContent='—';
+  document.getElementById('rec-transf-stockid').value='';
+  document.getElementById('rec-transf-qty').value=1;
+  recRenderTransfItens();
+}
+
+function recRenderTransfItens(){
+  const el=document.getElementById('rec-transf-lista-itens');if(!el)return;
+  if(!recTransfListaItens.length){el.innerHTML='';return;}
+  el.innerHTML=`<div style="background:#F0FDFA;border-radius:8px;padding:12px;margin-bottom:4px">
+    ${recTransfListaItens.map((it,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px solid #D0F4EE">
+      <span><strong>${it.descricao}</strong> <span style="color:#666;font-size:11px">Lote: ${it.lote||'—'}</span></span>
+      <span style="font-weight:700;color:#0D9488">${it.qtdTransf} un <button onclick="recTransfListaItens.splice(${i},1);recRenderTransfItens()" style="background:none;border:none;color:#D13438;cursor:pointer;font-size:11px;margin-left:6px">✕</button></span>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function recConfirmarTransferencia(){
+  if(!recTransfListaItens.length){toast('Adicione ao menos um produto.');return;}
+  if(!confirm('Confirmar transferência de '+recTransfListaItens.length+' produto(s) do depósito central para a Recepção?'))return;
+  try{
+    const batch=db.batch();
+    for(const it of recTransfListaItens){
+      // Debitar do estoque central
+      const stockRef=db.collection('stock').doc(it.id);
+      const stockSnap=await stockRef.get();
+      if(stockSnap.exists){
+        const atual=Number(stockSnap.data().quantidade)||0;
+        batch.update(stockRef,{quantidade:Math.max(0,atual-it.qtdTransf)});
+      }
+      // Verificar se já existe no rec_estoque (mesmo codigo+lote)
+      const recSnap=await db.collection('rec_estoque').where('codigo','==',it.codigo).where('lote','==',it.lote||'').limit(1).get();
+      if(!recSnap.empty){
+        const recRef=db.collection('rec_estoque').doc(recSnap.docs[0].id);
+        const recAtual=Number(recSnap.docs[0].data().quantidade)||0;
+        batch.update(recRef,{quantidade:recAtual+it.qtdTransf,atualizadoEm:new Date().toISOString()});
+      }else{
+        const novoRef=db.collection('rec_estoque').doc();
+        batch.set(novoRef,{codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',dataValidade:it.dataValidade||'',barcode:it.barcode||'',quantidade:it.qtdTransf,quantidadeInicial:it.qtdTransf,criadoEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+      }
+    }
+    // Registrar transferência
+    await db.collection('rec_transferencias').add({
+      itens:recTransfListaItens.map(it=>({codigo:it.codigo,descricao:it.descricao,lote:it.lote||'',quantidade:it.qtdTransf})),
+      operador:recAtendente.nome,criadoEm:new Date().toISOString()
+    });
+    await batch.commit();
+    recTransfListaItens=[];recRenderTransfItens();
+    toast('✅ Transferência concluída! Estoque da recepção atualizado.');
+    recRenderTransfHistorico();
+  }catch(e){toast('Erro na transferência: '+e.message);}
+}
+
+async function recRenderTransfHistorico(){
+  const el=document.getElementById('rec-transf-historico');if(!el)return;
+  el.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:10px">Carregando...</p>';
+  try{
+    const snap=await db.collection('rec_transferencias').get();
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'')>(a.criadoEm||'')?1:-1).slice(0,20);
+    if(!docs.length){el.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:10px">Nenhuma transferência registrada.</p>';return;}
+    el.innerHTML=docs.map(t=>{
+      const dt=t.criadoEm?t.criadoEm.substring(0,16).replace('T',' '):'';
+      return `<div style="border:1px solid #E0E4EC;border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <strong>🔄 Transferência</strong>
+          <span style="font-size:11px;color:#666">${dt} · ${t.operador||'—'}</span>
+        </div>
+        ${(t.itens||[]).map(it=>`<div style="font-size:12px;color:#555">• ${it.descricao} · Lote: ${it.lote||'—'} · <strong>${it.quantidade} un</strong></div>`).join('')}
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<p style="color:#D13438;font-size:12px;padding:10px">Erro: '+e.message+'</p>';}
+}
+
+// ---------- ATENDENTES ----------
+
+async function recRenderAtendentes(){
+  const lista=document.getElementById('rec-atendentes-lista');if(!lista)return;
+  lista.innerHTML='<div class="card" style="text-align:center;padding:30px;color:#aaa">Carregando...</div>';
+  try{
+    const snap=await db.collection('rec_atendentes').orderBy('nome').get();
+    if(snap.empty){lista.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#aaa">Nenhum atendente cadastrado.</div>';return;}
+    lista.innerHTML=`<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#F0F4F8">
+        <th style="padding:8px;text-align:left;font-size:12px;color:#555">Nome</th>
+        <th style="padding:8px;text-align:left;font-size:12px;color:#555">Perfil</th>
+        <th style="padding:8px;text-align:center;font-size:12px;color:#555">Status</th>
+        <th style="padding:8px;text-align:center;font-size:12px;color:#555">Ações</th>
+      </tr></thead>
+      <tbody>${snap.docs.map(d=>{
+        const v=d.data();
+        return `<tr style="border-bottom:1px solid #F0F0F0">
+          <td style="padding:8px;font-size:13px"><strong>${v.nome}</strong></td>
+          <td style="padding:8px;font-size:12px;color:#555;text-transform:capitalize">${v.perfil||'atendente'}</td>
+          <td style="padding:8px;text-align:center">
+            <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${v.ativo?'#D4EDDA':'#F8D7DA'};color:${v.ativo?'#155724':'#721C24'}">${v.ativo?'Ativo':'Inativo'}</span>
+          </td>
+          <td style="padding:8px;text-align:center;display:flex;gap:6px;justify-content:center">
+            <button onclick="recToggleAtendente('${d.id}',${v.ativo})" class="btn" style="font-size:11px;padding:3px 8px;background:${v.ativo?'#D13438':'#107C10'};color:#fff">${v.ativo?'Desativar':'Ativar'}</button>
+            <button onclick="recRedefinirPin('${d.id}')" class="btn btn-secondary" style="font-size:11px;padding:3px 8px">PIN</button>
+            <button onclick="recExcluirAtendente('${d.id}')" class="btn" style="font-size:11px;padding:3px 8px;background:#8B0000;color:#fff">🗑</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(e){lista.innerHTML='<div class="card" style="color:#D13438;padding:16px">Erro: '+e.message+'</div>';}
+}
+
+function recShowFormAtendente(){
+  const f=document.getElementById('rec-form-atendente');if(f)f.style.display=f.style.display==='none'||!f.style.display?'block':'none';
+  ['rec-at-nome','rec-at-pin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const er=document.getElementById('rec-at-erro');if(er)er.textContent='';
+}
+
+async function recSalvarAtendente(){
+  const nome=document.getElementById('rec-at-nome').value.trim();
+  const pin=document.getElementById('rec-at-pin').value.trim();
+  const perfil=document.getElementById('rec-at-perfil').value;
+  const err=document.getElementById('rec-at-erro');
+  if(!nome){err.textContent='Nome é obrigatório.';return;}
+  if(!pin||!/^\d{4,6}$/.test(pin)){err.textContent='PIN deve ter 4–6 dígitos numéricos.';return;}
+  try{
+    const dup=await db.collection('rec_atendentes').where('pin','==',pin).get();
+    if(!dup.empty){err.textContent='PIN já em uso por outro atendente.';return;}
+    await db.collection('rec_atendentes').add({nome,pin,perfil,ativo:true,criadoEm:new Date().toISOString()});
+    toast('✅ Atendente cadastrado: '+nome);
+    document.getElementById('rec-form-atendente').style.display='none';
+    recRenderAtendentes();
+  }catch(e){err.textContent='Erro: '+e.message;}
+}
+
+async function recToggleAtendente(id,ativo){
+  await db.collection('rec_atendentes').doc(id).update({ativo:!ativo});
+  recRenderAtendentes();toast(ativo?'Atendente desativado.':'Atendente ativado.');
+}
+
+async function recRedefinirPin(id){
+  const novoPin=prompt('Novo PIN (4–6 dígitos):');
+  if(!novoPin||!/^\d{4,6}$/.test(novoPin)){alert('PIN inválido.');return;}
+  const dup=await db.collection('rec_atendentes').where('pin','==',novoPin).get();
+  if(!dup.empty){alert('PIN já em uso. Escolha outro.');return;}
+  await db.collection('rec_atendentes').doc(id).update({pin:novoPin});
+  toast('✅ PIN redefinido!');
+}
+
+async function recExcluirAtendente(id){
+  const doc=await db.collection('rec_atendentes').doc(id).get();
+  const nome=doc.exists?doc.data().nome:'este atendente';
+  if(!confirm('Excluir "'+nome+'" permanentemente?'))return;
+  await db.collection('rec_atendentes').doc(id).delete();
+  toast('✅ Atendente excluído.');recRenderAtendentes();
+}
+
+// ---------- RELATÓRIOS ----------
+
+function recRelResetFiltros(){
+  const hoje=new Date();
+  const d30=new Date(hoje);d30.setDate(d30.getDate()-30);
+  const fmtD=d=>d.toISOString().substring(0,10);
+  const de=document.getElementById('rec-rel-de');if(de)de.value=fmtD(d30);
+  const ate=document.getElementById('rec-rel-ate');if(ate)ate.value=fmtD(hoje);
+  const at=document.getElementById('rec-rel-atendente');if(at)at.value='';
+  recRenderRelatorios();
+}
+
+async function recRenderRelatorios(){
+  if(!document.getElementById('rec-rel-kpis'))return;
+  const de=document.getElementById('rec-rel-de')?.value||'';
+  const ate=document.getElementById('rec-rel-ate')?.value||'';
+  const atFiltro=document.getElementById('rec-rel-atendente')?.value||'';
+  // Se filtros vazios, inicializa
+  if(!de){recRelResetFiltros();return;}
+  const kpis=document.getElementById('rec-rel-kpis');
+  kpis.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#aaa;padding:20px">Carregando...</div>';
+  try{
+    const snap=await db.collection('rec_vendas').get();
+    let vendas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Filtros
+    if(de)vendas=vendas.filter(v=>(v.criadoEm||'').substring(0,10)>=de);
+    if(ate)vendas=vendas.filter(v=>(v.criadoEm||'').substring(0,10)<=ate);
+    if(atFiltro)vendas=vendas.filter(v=>v.atendenteId===atFiltro);
+    // Preencher select atendentes
+    const atSnap=await db.collection('rec_atendentes').get();
+    const atSelect=document.getElementById('rec-rel-atendente');
+    if(atSelect&&atSelect.options.length<=1){
+      atSnap.docs.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.data().nome;atSelect.appendChild(o);});
+    }
+    // KPIs
+    const totalVendas=vendas.length;
+    const totalReceitaVenda=vendas.reduce((s,v)=>s+(v.totalVenda||0),0);
+    const totalItens=vendas.reduce((s,v)=>s+(v.itens||[]).reduce((ss,it)=>ss+it.quantidade,0),0);
+    const vendaPaga=vendas.filter(v=>(v.itens||[]).some(it=>it.tipo==='venda')).length;
+    const bonific=vendas.filter(v=>(v.itens||[]).every(it=>it.tipo==='bonificacao'||it.tipo==='consumo')).length;
+    kpis.innerHTML=[
+      {label:'Total de Saídas',val:totalVendas,icon:'🛒',cor:'#0D9488'},
+      {label:'Receita Total',val:'R$ '+totalReceitaVenda.toFixed(2).replace('.',','),icon:'💰',cor:'#107C10'},
+      {label:'Itens Saídos',val:totalItens,icon:'📦',cor:'#C07800'},
+      {label:'Bonificações',val:bonific,icon:'🎁',cor:'#8B5CF6'}
+    ].map(k=>`<div class="card" style="padding:14px 18px;border-left:4px solid ${k.cor}">
+      <div style="font-size:22px">${k.icon}</div>
+      <div style="font-size:24px;font-weight:800;color:${k.cor}">${k.val}</div>
+      <div style="font-size:11px;color:#666">${k.label}</div>
+    </div>`).join('');
+    // Gráficos
+    const dayMap={};
+    vendas.forEach(v=>{const d=(v.criadoEm||'').substring(0,10);dayMap[d]=(dayMap[d]||0)+1;});
+    const dias=Object.keys(dayMap).sort();
+    const tipoMap={venda:0,bonificacao:0,consumo:0};
+    vendas.forEach(v=>(v.itens||[]).forEach(it=>{tipoMap[it.tipo]=(tipoMap[it.tipo]||0)+it.quantidade;}));
+    const atMap={};
+    vendas.forEach(v=>{atMap[v.atendenteNome||'—']=(atMap[v.atendenteNome||'—']||0)+1;});
+    const atTop=Object.entries(atMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const prodMap={};
+    vendas.forEach(v=>(v.itens||[]).forEach(it=>{prodMap[it.descricao]=(prodMap[it.descricao]||0)+it.quantidade;}));
+    const prodTop=Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    setTimeout(()=>{
+      const COLORS=['#0D9488','#F59E0B','#8B5CF6','#3B82F6','#10B981','#EF4444','#EC4899','#6366F1','#14B8A6','#F97316'];
+      if(typeof Chart==='undefined')return;
+      if(_recChartDias){_recChartDias.destroy();_recChartDias=null;}
+      if(_recChartTipos){_recChartTipos.destroy();_recChartTipos=null;}
+      if(_recChartAtendentes){_recChartAtendentes.destroy();_recChartAtendentes=null;}
+      if(_recChartProdutos){_recChartProdutos.destroy();_recChartProdutos=null;}
+      const cd=document.getElementById('rec-chart-dias');
+      if(cd)_recChartDias=new Chart(cd,{type:'bar',data:{labels:dias.map(d=>d.substring(5)),datasets:[{label:'Saídas',data:dias.map(d=>dayMap[d]),backgroundColor:'#0D9488BB',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+      const ct=document.getElementById('rec-chart-tipos');
+      if(ct)_recChartTipos=new Chart(ct,{type:'doughnut',data:{labels:['Venda','Bonificação','Consumo'],datasets:[{data:[tipoMap.venda,tipoMap.bonificacao,tipoMap.consumo],backgroundColor:['#0D9488','#8B5CF6','#F59E0B']}]},options:{plugins:{legend:{position:'bottom'}}}});
+      const ca=document.getElementById('rec-chart-atendentes');
+      if(ca)_recChartAtendentes=new Chart(ca,{type:'bar',data:{labels:atTop.map(a=>a[0]),datasets:[{label:'Saídas',data:atTop.map(a=>a[1]),backgroundColor:COLORS,borderRadius:4}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+      const cp=document.getElementById('rec-chart-produtos');
+      if(cp)_recChartProdutos=new Chart(cp,{type:'bar',data:{labels:prodTop.map(p=>p[0].length>20?p[0].substring(0,20)+'…':p[0]),datasets:[{label:'Unidades',data:prodTop.map(p=>p[1]),backgroundColor:COLORS,borderRadius:4}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+    },80);
+    // Histórico
+    const hist=document.getElementById('rec-rel-historico');
+    if(hist){
+      const sorted=vendas.sort((a,b)=>(b.criadoEm||'')>(a.criadoEm||'')?1:-1);
+      hist.innerHTML=sorted.length?sorted.map(v=>{
+        const dt=(v.criadoEm||'').substring(0,16).replace('T',' ');
+        const totalItensV=(v.itens||[]).reduce((s,it)=>s+it.quantidade,0);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F0F0;font-size:13px">
+          <div>
+            <strong>${v.numero||'—'}</strong>
+            <span style="color:#666;margin-left:6px;font-size:11px">${dt}</span>
+            <span style="color:#555;margin-left:6px;font-size:12px">👤 ${v.atendenteNome||'—'}</span>
+            ${v.clienteNome?`<span style="color:#0D9488;margin-left:6px;font-size:11px">📋 ${v.clienteNome}</span>`:''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:#0D9488">R$ ${(v.totalVenda||0).toFixed(2).replace('.',',')}</div>
+            <div style="font-size:11px;color:#999">${totalItensV} item(s)</div>
+          </div>
+        </div>`;
+      }).join(''):'<p style="color:#aaa;text-align:center;padding:20px">Nenhuma venda no período.</p>';
+    }
+  }catch(e){kpis.innerHTML='<div style="grid-column:1/-1;color:#D13438;padding:10px">Erro: '+e.message+'</div>';}
+}
+
+async function recExportarExcel(){
+  if(typeof XLSX==='undefined'){toast('SheetJS não carregado.');return;}
+  const de=document.getElementById('rec-rel-de')?.value||'';
+  const ate=document.getElementById('rec-rel-ate')?.value||'';
+  try{
+    const snap=await db.collection('rec_vendas').get();
+    let vendas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(de)vendas=vendas.filter(v=>(v.criadoEm||'').substring(0,10)>=de);
+    if(ate)vendas=vendas.filter(v=>(v.criadoEm||'').substring(0,10)<=ate);
+    vendas.sort((a,b)=>(b.criadoEm||'')>(a.criadoEm||'')?1:-1);
+    const wb=XLSX.utils.book_new();
+    // Sheet 1: Resumo
+    const totalRec=vendas.reduce((s,v)=>s+(v.totalVenda||0),0);
+    const resumo=[['PDV Recepção — Resumo'],['Período',de+' a '+ate],['Total de Saídas',vendas.length],['Receita Total','R$ '+totalRec.toFixed(2)],['Exportado em',new Date().toLocaleString('pt-BR')]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
+    // Sheet 2: Vendas
+    const vendasRows=[['Número','Data','Atendente','Cliente','Forma Pag.','Total (R$)','Itens']];
+    vendas.forEach(v=>{vendasRows.push([v.numero||'',( v.criadoEm||'').substring(0,16).replace('T',' '),v.atendenteNome||'',v.clienteNome||'',v.formaPagamento||'',(v.totalVenda||0).toFixed(2),(v.itens||[]).reduce((s,it)=>s+it.quantidade,0)]);});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(vendasRows),'Saídas');
+    // Sheet 3: Itens
+    const itensRows=[['Número','Data','Atendente','Código','Produto','Lote','Tipo','Qtd','Preço Unit.','Subtotal']];
+    vendas.forEach(v=>{(v.itens||[]).forEach(it=>{itensRows.push([v.numero||'',(v.criadoEm||'').substring(0,10),v.atendenteNome||'',it.codigo||'',it.descricao||'',it.lote||'',it.tipo||'',it.quantidade||0,(it.preco||0).toFixed(2),(it.subtotal||0).toFixed(2)]);});});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itensRows),'Itens');
+    XLSX.writeFile(wb,'recepcao_'+de+'_'+ate+'.xlsx');
+  }catch(e){toast('Erro ao exportar: '+e.message);}
+}
+
+// Fechar sugestões ao clicar fora
+document.addEventListener('click',e=>{
+  const sugN=document.getElementById('rec-nome-sugestoes');
+  if(sugN&&!e.target.closest('#rec-nome-sugestoes')&&e.target.id!=='rec-scan-input')sugN.style.display='none';
+  const sugT=document.getElementById('rec-transf-sugestoes');
+  if(sugT&&!e.target.closest('#rec-transf-sugestoes')&&e.target.id!=='rec-transf-busca')sugT.style.display='none';
+});
 </script>
 </body>
 </html>
