@@ -9142,6 +9142,7 @@ async function renderVendedores(){
               ${v.ativo?'Desativar':'Ativar'}
             </button>
             <button onclick="redefinirPinVendedor('${d.id}')" class="btn btn-secondary" style="font-size:11px;padding:3px 8px">PIN</button>
+            <button onclick="excluirVendedor('${d.id}')" class="btn" style="font-size:11px;padding:3px 8px;background:#8B0000;color:#fff" title="Excluir vendedor permanentemente">🗑</button>
           </td>
         </tr>`;
       }).join('')}</tbody></table>`;
@@ -9200,6 +9201,17 @@ async function redefinirPinVendedor(id){
   if(!dup.empty){alert('PIN já em uso. Escolha outro.');return;}
   await db.collection('vendedores').doc(id).update({pin:novoPin});
   toast('✅ PIN redefinido!');
+}
+
+async function excluirVendedor(id){
+  try{
+    const doc=await db.collection('vendedores').doc(id).get();
+    const nome=doc.exists?doc.data().nome:'este vendedor';
+    if(!confirm('⚠️ Excluir o vendedor "'+nome+'" permanentemente?\n\nTodos os dados vinculados serão preservados nos pedidos, mas o login deixará de funcionar.')) return;
+    await db.collection('vendedores').doc(id).delete();
+    toast('✅ Vendedor "'+nome+'" excluído.');
+    renderVendedores();
+  }catch(e){alert('Erro ao excluir: '+e.message);}
 }
 
 
@@ -9280,11 +9292,13 @@ async function renderRetornoHistorico(){
   if(!hist||!pdvEventoAtivo) return;
   hist.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Carregando...</p>';
   try{
-    const snap=await db.collection('retornos_evento').where('eventoId','==',pdvEventoAtivo.id).orderBy('criadoEm','desc').get();
+    // Sem orderBy para evitar exigência de índice composto no Firestore — ordenamos no cliente
+    const snap=await db.collection('retornos_evento').where('eventoId','==',pdvEventoAtivo.id).get();
     if(snap.empty){hist.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Nenhum retorno registrado ainda.</p>';return;}
+    const retDocs=snap.docs.map(d=>({_docId:d.id,...d.data()})).sort((a,b)=>(b.criadoEm||'')>(a.criadoEm||'')?1:-1);
     const isAdmUser=pdvVendedorAtivo&&(pdvVendedorAtivo.id==='adm'||pdvVendedorAtivo.perfil==='supervisor');
-    hist.innerHTML=snap.docs.map(d=>{
-      const r=d.data();
+    hist.innerHTML=retDocs.map(r=>{
+      const d={id:r._docId};
       const dt=r.criadoEm?r.criadoEm.substring(0,16).replace('T',' '):'';
       const statusColor=r.status==='aprovado'?'#107C10':r.status==='aguardando_validacao'?'#C07800':'#0078D4';
       const statusLabel=r.status==='aprovado'?'✅ Aprovado':r.status==='aguardando_validacao'?'⏳ Aguardando validação':'📝 '+r.status;
@@ -9404,16 +9418,23 @@ async function pdvBuscarPorNome(termo){
     const evSnap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
     evSnap.docs.forEach(d=>{
       const dd=d.data();
-      eventoMap[dd.codigo]=(eventoMap[dd.codigo]||0)+(dd.quantidade||0);
+      // Armazena o depId (doc do deposito_evento) além da quantidade e lote
+      if(!eventoMap[dd.codigo]||dd.quantidade>0){
+        eventoMap[dd.codigo]={qtd:(eventoMap[dd.codigo]?.qtd||0)+(dd.quantidade||0),depId:d.id,lote:dd.lote||''};
+      }
     });
   }
   sug.innerHTML=matches.map(it=>{
-    const qtdEvento=eventoMap[it.codigo]||0;
+    const evInfo=eventoMap[it.codigo]||null;
+    const qtdEvento=evInfo?.qtd||0;
+    const depId=evInfo?.depId||'';
+    const depLote=evInfo?.lote||it.lote||'';
     const disponivel=qtdEvento>0;
     const badge=disponivel?
       `<span style="color:#107C10;font-size:10px;font-weight:700">🟢 Pronta Entrega (${qtdEvento} un)</span>`:
       `<span style="color:#C07800;font-size:10px">🟡 Sob Pedido</span>`;
-    const itemData={id:it.stockId||'',codigo:it.codigo||'',descricao:it.descricao||'',lote:it.lote||'',quantidade:qtdEvento,barcode:it.barcode||''};
+    // id = depId quando disponível no evento (para debitar deposito_evento corretamente ao finalizar)
+    const itemData={id:depId||it.stockId||'',stockId:it.stockId||'',codigo:it.codigo||'',descricao:it.descricao||'',lote:depLote,quantidade:qtdEvento,barcode:it.barcode||'',precoCusto:it.precoCusto||0};
     return `<div onclick="pdvSelecionarItemNome(${JSON.stringify(itemData).replace(/"/g,"'")})"
       style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;transition:.1s"
       onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
