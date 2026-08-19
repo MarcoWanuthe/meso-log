@@ -9295,17 +9295,25 @@ function pdvExpComprovanteChange(docId,input){
 
 async function pdvConfirmarPagamento(docId){
   const comp=_pdvExpComprovantes[docId]||null;
-  try{
-    let comprovanteUrl=null;
-    if(comp&&comp.file){
+  let comprovanteUrl=null;
+  if(comp&&comp.file){
+    try{
       toast('⏳ Enviando comprovante...');
       const storage=firebase.storage();
-      const ext=comp.nome.split('.').pop();
+      const ext=(comp.nome.split('.').pop()||'pdf');
       const path=`comprovantes/${docId}/${Date.now()}.${ext}`;
       const ref=storage.ref(path);
-      await ref.put(comp.file,{contentType:comp.tipo});
+      const uploadPromise=ref.put(comp.file,{contentType:comp.tipo});
+      const timeoutPromise=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
+      await Promise.race([uploadPromise,timeoutPromise]);
       comprovanteUrl=await ref.getDownloadURL();
+    }catch(uploadErr){
+      console.warn('Storage upload falhou:',uploadErr.message);
+      toast('⚠️ Comprovante não enviado (Storage). Confirmando pagamento...');
+      await new Promise(r=>setTimeout(r,1500));
     }
+  }
+  try{
     const upd={
       statusFat:'recebido',
       pagamentoEm:new Date().toISOString(),
