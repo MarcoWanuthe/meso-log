@@ -9208,7 +9208,7 @@ async function renderExpedicaoPedidos(){
         <div style="background:#F0FFF4;border:1px solid #A8D5A2;border-radius:7px;padding:10px;margin-top:10px">
           <div style="font-size:11px;font-weight:700;color:#155724;margin-bottom:4px">✅ PAGAMENTO CONFIRMADO</div>
           ${p.pagamentoEm?`<div style="font-size:10px;color:#555">Em: ${p.pagamentoEm.slice(0,16).replace('T',' ')}</div>`:''}
-          ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:2px">📎 ${p.comprovanteUrl?`<a href="${p.comprovanteUrl}" target="_blank" style="color:#107C10;text-decoration:underline">${p.comprovanteNome}</a>`:p.comprovanteNome}</div>`:''}
+          ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:4px">📎 ${p.comprovanteBase64?(p.comprovanteMime&&p.comprovanteMime.startsWith('image/')?`<a href="${p.comprovanteBase64}" target="_blank"><img src="${p.comprovanteBase64}" style="max-width:180px;max-height:120px;border-radius:6px;border:1px solid #A8D5A2;margin-top:4px;display:block;cursor:pointer" title="Ver comprovante"></a>`:`<a href="${p.comprovanteBase64}" download="${p.comprovanteNome}" style="color:#107C10;text-decoration:underline">${p.comprovanteNome}</a>`):p.comprovanteNome}</div>`:''}
 
           ${itEnt.length>0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
@@ -9293,32 +9293,65 @@ function pdvExpComprovanteChange(docId,input){
   _pdvExpComprovantes[docId]={nome:file.name,tipo:file.type,tamanho:file.size,file:file};
 }
 
+async function _comprimirImagem(file,maxKB=700){
+  return new Promise(res=>{
+    if(!file.type.startsWith('image/')){res(null);return;}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        const maxW=1400;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        let q=0.8;
+        const tryCompress=()=>{
+          const b64=canvas.toDataURL('image/jpeg',q);
+          const kb=(b64.length*0.75)/1024;
+          if(kb<=maxKB||q<=0.3){res(b64);return;}
+          q-=0.1;tryCompress();
+        };
+        tryCompress();
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function pdvConfirmarPagamento(docId){
   const comp=_pdvExpComprovantes[docId]||null;
-  let comprovanteUrl=null;
+  let comprovanteBase64=null;
+  let comprovanteMime='';
   if(comp&&comp.file){
+    toast('⏳ Processando comprovante...');
     try{
-      toast('⏳ Enviando comprovante...');
-      const storage=firebase.storage();
-      const ext=(comp.nome.split('.').pop()||'pdf');
-      const path=`comprovantes/${docId}/${Date.now()}.${ext}`;
-      const ref=storage.ref(path);
-      const uploadPromise=ref.put(comp.file,{contentType:comp.tipo});
-      const timeoutPromise=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000));
-      await Promise.race([uploadPromise,timeoutPromise]);
-      comprovanteUrl=await ref.getDownloadURL();
-    }catch(uploadErr){
-      console.warn('Storage upload falhou:',uploadErr.message);
-      toast('⚠️ Comprovante não enviado (Storage). Confirmando pagamento...');
-      await new Promise(r=>setTimeout(r,1500));
-    }
+      if(comp.file.type.startsWith('image/')){
+        comprovanteBase64=await _comprimirImagem(comp.file,700);
+        comprovanteMime='image/jpeg';
+      } else {
+        // PDF ou outro: converter direto se <= 700KB
+        if(comp.file.size<=716800){
+          comprovanteBase64=await new Promise(res=>{
+            const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(comp.file);
+          });
+          comprovanteMime=comp.file.type;
+        }
+      }
+      if(!comprovanteBase64){
+        toast('⚠️ Arquivo muito grande para salvar. Confirmando pagamento...');
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }catch(e){console.warn('Comprovante erro:',e);}
   }
   try{
     const upd={
       statusFat:'recebido',
       pagamentoEm:new Date().toISOString(),
       ...(comp?{comprovanteNome:comp.nome,comprovanteTipo:comp.tipo,comprovanteTamanho:comp.tamanho}:{}),
-      ...(comprovanteUrl?{comprovanteUrl}:{})
+      ...(comprovanteBase64?{comprovanteBase64,comprovanteMime}:{})
     };
     await db.collection('pedidos_evento').doc(docId).update(upd);
     delete _pdvExpComprovantes[docId];
