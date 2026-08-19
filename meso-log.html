@@ -51,6 +51,7 @@ if('serviceWorker' in navigator){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
 body{background:#F0F2F5;display:flex;min-height:100vh}
@@ -3161,7 +3162,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
                   <input type="text" id="rec-cli-cpf" placeholder="CPF — 000.000.000-00" class="form-control" style="font-size:13px" oninput="recMaskCpf(this)" maxlength="14">
-                  <input type="text" id="rec-cli-cnpj" placeholder="CNPJ — 00.000.000/0000-00" class="form-control" style="font-size:13px" oninput="recMaskCnpj(this)" maxlength="18">
+                  <input type="text" id="rec-cli-cnpj" placeholder="CNPJ — 00.000.000/0000-00" class="form-control" style="font-size:13px" oninput="recMaskCnpj(this);recCnpjAutoFill(this.value)" maxlength="18">
                   <input type="text" id="rec-cli-cep" placeholder="CEP" class="form-control" style="font-size:13px">
                   <input type="text" id="rec-cli-tel" placeholder="Telefone / WhatsApp" class="form-control" style="font-size:13px">
                 </div>
@@ -9207,7 +9208,7 @@ async function renderExpedicaoPedidos(){
         <div style="background:#F0FFF4;border:1px solid #A8D5A2;border-radius:7px;padding:10px;margin-top:10px">
           <div style="font-size:11px;font-weight:700;color:#155724;margin-bottom:4px">✅ PAGAMENTO CONFIRMADO</div>
           ${p.pagamentoEm?`<div style="font-size:10px;color:#555">Em: ${p.pagamentoEm.slice(0,16).replace('T',' ')}</div>`:''}
-          ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:2px">📎 ${p.comprovanteNome}</div>`:''}
+          ${p.comprovanteNome?`<div style="font-size:10px;color:#107C10;margin-top:2px">📎 ${p.comprovanteUrl?`<a href="${p.comprovanteUrl}" target="_blank" style="color:#107C10;text-decoration:underline">${p.comprovanteNome}</a>`:p.comprovanteNome}</div>`:''}
 
           ${itEnt.length>0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
@@ -9289,21 +9290,27 @@ function pdvExpComprovanteChange(docId,input){
   const file=input.files[0];
   const nomeEl=document.getElementById('comp-nome-'+docId);
   if(nomeEl) nomeEl.textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
-  _pdvExpComprovantes[docId]={nome:file.name,tipo:file.type,tamanho:file.size};
-  if(file.size<=1048576){
-    const r=new FileReader();
-    r.onload=e=>{_pdvExpComprovantes[docId].base64=e.target.result;};
-    r.readAsDataURL(file);
-  }
+  _pdvExpComprovantes[docId]={nome:file.name,tipo:file.type,tamanho:file.size,file:file};
 }
 
 async function pdvConfirmarPagamento(docId){
   const comp=_pdvExpComprovantes[docId]||null;
   try{
+    let comprovanteUrl=null;
+    if(comp&&comp.file){
+      toast('⏳ Enviando comprovante...');
+      const storage=firebase.storage();
+      const ext=comp.nome.split('.').pop();
+      const path=`comprovantes/${docId}/${Date.now()}.${ext}`;
+      const ref=storage.ref(path);
+      await ref.put(comp.file,{contentType:comp.tipo});
+      comprovanteUrl=await ref.getDownloadURL();
+    }
     const upd={
       statusFat:'recebido',
       pagamentoEm:new Date().toISOString(),
-      ...(comp?{comprovanteNome:comp.nome,comprovanteTipo:comp.tipo,comprovanteTamanho:comp.tamanho}:{})
+      ...(comp?{comprovanteNome:comp.nome,comprovanteTipo:comp.tipo,comprovanteTamanho:comp.tamanho}:{}),
+      ...(comprovanteUrl?{comprovanteUrl}:{})
     };
     await db.collection('pedidos_evento').doc(docId).update(upd);
     delete _pdvExpComprovantes[docId];
@@ -13409,6 +13416,40 @@ function recMaskCnpj(el){
   else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d{1,3})/,'$1.$2.$3');
   else if(v.length>2)v=v.replace(/(\d{2})(\d{1,3})/,'$1.$2');
   el.value=v;
+}
+
+let _recCnpjTimer=null;
+async function recCnpjAutoFill(val){
+  const digits=val.replace(/\D/g,'');
+  if(digits.length!==14)return;
+  const statusEl=document.getElementById('rec-pdf-status');
+  clearTimeout(_recCnpjTimer);
+  _recCnpjTimer=setTimeout(async()=>{
+    if(statusEl)statusEl.textContent='🔍 Buscando CNPJ...';
+    try{
+      const res=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+digits);
+      if(!res.ok)throw new Error('CNPJ não encontrado');
+      const d=await res.json();
+      const nomeEl=document.getElementById('rec-cli-nome');
+      const cepEl=document.getElementById('rec-cli-cep');
+      const telEl=document.getElementById('rec-cli-tel');
+      if(nomeEl&&!nomeEl.value){
+        nomeEl.value=d.nome_fantasia||d.razao_social||'';
+      }
+      if(cepEl&&!cepEl.value&&d.cep){
+        cepEl.value=d.cep.replace(/(\d{5})(\d{3})/,'$1-$2');
+      }
+      if(telEl&&!telEl.value&&d.ddd_telefone_1){
+        const t=d.ddd_telefone_1.replace(/\D/g,'');
+        telEl.value=t.length>=10?'('+t.slice(0,2)+') '+t.slice(2):t;
+      }
+      if(statusEl)statusEl.textContent='✅ CNPJ preenchido: '+(d.nome_fantasia||d.razao_social||digits);
+      setTimeout(()=>{if(statusEl)statusEl.textContent='';},4000);
+    }catch(e){
+      if(statusEl)statusEl.textContent='⚠️ CNPJ não localizado na Receita Federal.';
+      setTimeout(()=>{if(statusEl)statusEl.textContent='';},3000);
+    }
+  },600);
 }
 
 async function recImportarPdf(file){
