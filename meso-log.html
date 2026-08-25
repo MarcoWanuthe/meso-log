@@ -583,6 +583,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <span class="guide-flow-step" style="background:rgba(13,148,136,.75)">🧾 Faturamento</span>
             <span class="guide-flow-arrow">→</span>
             <span class="guide-flow-step" style="background:rgba(168,85,247,.75)">Relatórios &amp; Mercus</span>
+            <span class="guide-flow-arrow">·</span>
+            <span class="guide-flow-step" style="background:rgba(236,72,153,.75)">🛍️ Portal</span>
+            <span class="guide-flow-arrow">·</span>
+            <span class="guide-flow-step" style="background:rgba(59,130,246,.75)">🏢 Filiais</span>
+            <span class="guide-flow-arrow">·</span>
+            <span class="guide-flow-step" style="background:rgba(34,197,94,.75)">💸 Fiscal</span>
           </div>
         </div>
         <div class="guide-module">
@@ -726,11 +732,58 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
         </div>
 
+        <!-- MÓDULO PORTAL DE PEDIDOS -->
+        <div class="guide-module" style="margin-top:16px">
+          <div class="guide-module-header" style="background:linear-gradient(135deg,#9D174D,#F472B6)">
+            <div class="mod-icon">🛍️</div>
+            <div><h4>Portal de Pedidos — Substitui Mercus</h4><p>Catálogo online para clientes e representantes realizarem pedidos B2B.</p></div>
+          </div>
+          <div class="guide-module-body">
+            <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">1</div><div class="guide-step-text"><strong>Catálogo:</strong> acesse o menu <strong>🛍️ Portal Pedidos</strong>. Navegue pelos produtos disponíveis, use a busca e adicione itens ao carrinho com as quantidades desejadas.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">2</div><div class="guide-step-text"><strong>Carrinho:</strong> revise os itens selecionados. Preencha os dados do cliente (CNPJ com auto-preenchimento via BrasilAPI, nome, cidade/UF), forma de pagamento e observações. Clique em <em>📤 Enviar Pedido</em>.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">3</div><div class="guide-step-text"><strong>Meus Pedidos:</strong> acompanhe o status dos seus pedidos — <em>Aguardando → Confirmado → Faturado</em>. O ADM atualiza o status conforme o fluxo avança.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">4</div><div class="guide-step-text"><strong>Pedidos ADM:</strong> visível apenas para gestores. Confirme, fature ou cancele qualquer pedido. Busca por cliente ou CNPJ.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">5</div><div class="guide-step-text"><strong>Clientes ADM — 3 sub-abas:</strong> <em>👥 Clientes</em> (CRUD completo com CNPJ auto-fill, vínculo a representante e tabela de preço), <em>🧑‍💼 Representantes</em> (cadastro por região/email) e <em>💲 Tabelas de Preço</em> (desconto base por segmento: Varejo, Distribuidora, Clínica, Spa).</div></div>
+          </div>
+        </div>
+
+        <!-- MÓDULO FILIAIS -->
+        <div class="guide-module" style="margin-top:16px">
+          <div class="guide-module-header" style="background:linear-gradient(135deg,#1E3A8A,#60A5FA)">
+            <div class="mod-icon">🏢</div>
+            <div><h4>Filiais &amp; Estoque Virtual — Substitui IAPP</h4><p>Gestão de estoque alocado por filial (CNPJ/UF) com transferências rastreadas.</p></div>
+          </div>
+          <div class="guide-module-body">
+            <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">1</div><div class="guide-step-text"><strong>Filiais:</strong> acesse o menu <strong>🏢 Filiais</strong>. Cadastre cada filial com CNPJ (auto-preenchimento BrasilAPI), Razão Social, UF, cidade, responsável, e-mail e status (ativa/inativa).</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">2</div><div class="guide-step-text"><strong>Estoque Virtual:</strong> selecione uma filial para ver seu estoque alocado. O estoque da filial é virtual — espelha produtos transferidos do depósito central em Brasília. Exporte em CSV.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">3</div><div class="guide-step-text"><strong>Transferir:</strong> busque o produto no estoque central, selecione a filial destino, informe a quantidade, NF-e de remessa e observação. A operação é atômica: desconta o estoque central e incrementa o virtual da filial simultaneamente.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">4</div><div class="guide-step-text"><strong>Histórico:</strong> filtre transferências por filial, período e data. Cada registro contém produto, quantidade, NF-e e usuário responsável. Rastreabilidade completa de todas as movimentações.</div></div>
+          </div>
+        </div>
+
+        <!-- MÓDULO FISCAL -->
+        <div class="guide-module" style="margin-top:16px">
+          <div class="guide-module-header" style="background:linear-gradient(135deg,#14532D,#4ADE80)">
+            <div class="mod-icon">💸</div>
+            <div><h4>Módulo Fiscal — Substitui OMIE</h4><p>Gestão de NF-e emitidas, recebidas, remessas de filial e financeiro.</p></div>
+          </div>
+          <div class="guide-module-body">
+            <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">1</div><div class="guide-step-text"><strong>NF-e Emitidas:</strong> registre notas fiscais emitidas pela empresa (vendas, remessas, devoluções). Campos: número, série, chave de acesso (44 dígitos), CNPJ do destinatário (auto-fill BrasilAPI), valor, ICMS, natureza da operação e status (Emitida/Cancelada/Denegada). Copie a chave de acesso com um clique.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">2</div><div class="guide-step-text"><strong>NF-e Recebidas:</strong> registre notas de fornecedores e entradas. Mesmos campos. Filtre por status ou busque por número/CNPJ. Edite e exclua conforme necessário.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">3</div><div class="guide-step-text"><strong>Remessas:</strong> registre NF-e de remessa de estoque para filiais. Vincula automaticamente ao cadastro da filial (nome e UF preenchidos). Liste produtos remessados e acompanhe status (Emitida/Cancelada).</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">4</div><div class="guide-step-text"><strong>Financeiro:</strong> lance receitas e despesas manualmente. Filtre por tipo (Receita/Despesa) e período. KPIs em tempo real: total de receitas, despesas e saldo do período filtrado. Categorias: Venda, Compra, Frete, Comissão, Imposto, Outros.</div></div>
+            <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">5</div><div class="guide-step-text"><strong>Relatório:</strong> filtre por filial e período. Consolida NF-e emitidas, remessas e lançamentos financeiros em um único painel com KPIs (total NF-e, remessas, receitas, despesas, saldo). Exporte em CSV com 3 seções: NF-e Emitidas, Remessas e Lançamentos Financeiros.</div></div>
+          </div>
+        </div>
+
         <div class="guide-warning">
           ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
         </div>
         <div class="guide-warning" style="margin-top:10px;border-color:#0D9488;color:#134E4A;background:#F0FDFA">
           🧾 <strong>Faturamento:</strong> senhas de faturistas são geradas pelos 5 primeiros dígitos do CPF. Devoluções em Quarentena aguardam aprovação antes de retornar ao estoque. Pedidos cancelados ficam registrados para auditoria.
+        </div>
+        <div class="guide-warning" style="margin-top:10px;border-color:#3B82F6;color:#1E3A8A;background:#EFF6FF">
+          🏢 <strong>Filiais:</strong> o estoque virtual é baseado nas transferências registradas — não reflete ajustes manuais. Sempre registre uma NF-e de remessa antes de transferir para garantir rastreabilidade fiscal. 💸 <strong>Fiscal:</strong> chaves de NF-e com 44 dígitos são validadas no SEFAZ — use para consultar autenticidade na plataforma do governo.
         </div>
       </div>
     </div>
@@ -2267,6 +2320,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <span class="guide-flow-step" style="background:rgba(168,85,247,.75)">Relatórios &amp; Mercus</span>
               <span class="guide-flow-arrow">→</span>
               <span class="guide-flow-step" style="background:rgba(13,148,136,.75)">🧾 Faturamento</span>
+              <span class="guide-flow-arrow">·</span>
+              <span class="guide-flow-step" style="background:rgba(236,72,153,.75)">🛍️ Portal</span>
+              <span class="guide-flow-arrow">·</span>
+              <span class="guide-flow-step" style="background:rgba(59,130,246,.75)">🏢 Filiais</span>
+              <span class="guide-flow-arrow">·</span>
+              <span class="guide-flow-step" style="background:rgba(34,197,94,.75)">💸 Fiscal</span>
             </div>
           </div>
 
@@ -2422,8 +2481,55 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
           </div>
 
+          <!-- MÓDULO PORTAL DE PEDIDOS -->
+          <div class="guide-module" style="margin-top:16px">
+            <div class="guide-module-header" style="background:linear-gradient(135deg,#9D174D,#F472B6)">
+              <div class="mod-icon">🛍️</div>
+              <div><h4>Portal de Pedidos — Substitui Mercus</h4><p>Catálogo online para clientes e representantes realizarem pedidos B2B.</p></div>
+            </div>
+            <div class="guide-module-body">
+              <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">1</div><div class="guide-step-text"><strong>Catálogo:</strong> acesse o menu <strong>🛍️ Portal Pedidos</strong>. Navegue pelos produtos, busque e adicione ao carrinho.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">2</div><div class="guide-step-text"><strong>Carrinho:</strong> preencha CNPJ (auto-fill BrasilAPI), forma de pagamento e observações. Clique em <em>📤 Enviar Pedido</em>.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">3</div><div class="guide-step-text"><strong>Meus Pedidos:</strong> acompanhe status — <em>Aguardando → Confirmado → Faturado</em>.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">4</div><div class="guide-step-text"><strong>Pedidos ADM:</strong> confirme, fature ou cancele pedidos. Apenas gestores.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#EC4899">5</div><div class="guide-step-text"><strong>Clientes ADM:</strong> 3 sub-abas — <em>👥 Clientes</em> (CRUD + CNPJ auto-fill), <em>🧑‍💼 Representantes</em> e <em>💲 Tabelas de Preço</em> (desconto por segmento).</div></div>
+            </div>
+          </div>
+
+          <!-- MÓDULO FILIAIS -->
+          <div class="guide-module" style="margin-top:16px">
+            <div class="guide-module-header" style="background:linear-gradient(135deg,#1E3A8A,#60A5FA)">
+              <div class="mod-icon">🏢</div>
+              <div><h4>Filiais &amp; Estoque Virtual — Substitui IAPP</h4><p>Gestão de estoque alocado por filial (CNPJ/UF) com transferências rastreadas.</p></div>
+            </div>
+            <div class="guide-module-body">
+              <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">1</div><div class="guide-step-text"><strong>Filiais:</strong> cadastre com CNPJ (auto-fill), UF, responsável e status. Ative/inative conforme necessário.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">2</div><div class="guide-step-text"><strong>Estoque Virtual:</strong> visualize o estoque alocado por filial. Exporte em CSV.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">3</div><div class="guide-step-text"><strong>Transferir:</strong> busque produto, selecione filial, informe quantidade e NF-e de remessa. Operação atômica — desconta estoque central e incrementa virtual simultaneamente.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#3B82F6">4</div><div class="guide-step-text"><strong>Histórico:</strong> filtre transferências por filial e período. Rastreabilidade completa.</div></div>
+            </div>
+          </div>
+
+          <!-- MÓDULO FISCAL -->
+          <div class="guide-module" style="margin-top:16px">
+            <div class="guide-module-header" style="background:linear-gradient(135deg,#14532D,#4ADE80)">
+              <div class="mod-icon">💸</div>
+              <div><h4>Módulo Fiscal — Substitui OMIE</h4><p>Gestão de NF-e emitidas, recebidas, remessas e financeiro.</p></div>
+            </div>
+            <div class="guide-module-body">
+              <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">1</div><div class="guide-step-text"><strong>NF-e Emitidas:</strong> registre notas de venda com número, série, chave (44 dígitos), CNPJ destinatário (auto-fill), valor, ICMS e status. Copie a chave com um clique.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">2</div><div class="guide-step-text"><strong>NF-e Recebidas:</strong> registre entradas de fornecedores. Filtre por status ou busque por número/CNPJ.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">3</div><div class="guide-step-text"><strong>Remessas:</strong> NF-e de remessa de estoque para filiais. Vincula automaticamente à filial cadastrada.</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">4</div><div class="guide-step-text"><strong>Financeiro:</strong> lance receitas e despesas. KPIs em tempo real por período (receitas, despesas, saldo).</div></div>
+              <div class="guide-step"><div class="guide-step-num" style="background:#22C55E">5</div><div class="guide-step-text"><strong>Relatório:</strong> consolide NF-e + financeiro por filial e período. Exporte CSV com 3 seções.</div></div>
+            </div>
+          </div>
+
           <div class="guide-warning">
             ⚠️ <strong>Regras importantes:</strong> toda venda é registrada com nome do vendedor e horário. Nunca compartilhe seu PIN. Em caso de dúvida, contate o gestor de logística. Cancelamentos requerem PIN ADM.
+          </div>
+          <div class="guide-warning" style="margin-top:10px;border-color:#3B82F6;color:#1E3A8A;background:#EFF6FF">
+            🏢 <strong>Filiais:</strong> sempre registre NF-e de remessa antes de transferir. 💸 <strong>Fiscal:</strong> chaves de 44 dígitos são validadas no SEFAZ. 🛍️ <strong>Portal:</strong> pedidos ficam visíveis para ADM em tempo real.
           </div>
 
           <!-- FATURAMENTO & EXPEDIÇÃO -->
