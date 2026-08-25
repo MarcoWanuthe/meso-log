@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<!-- MESO-LOG Alvorada System 2026-08-14 | Quarentena + Relatórios Faturamento + Auditoria completa -->
+<!-- MESO-LOG Alvorada System 2026-08-25 | Design System Mesoestetic | Quarentena + Relatórios Faturamento + Auditoria completa -->
 <html lang="pt-BR">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -53,33 +56,33 @@ if('serviceWorker' in navigator){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Open Sans',Arial,sans-serif}
 body{background:#F0F2F5;display:flex;min-height:100vh}
 /* SETUP SCREEN */
-#setup-screen{position:fixed;inset:0;background:#002050;z-index:9999;display:none;align-items:center;justify-content:center}
+#setup-screen{position:fixed;inset:0;background:#111111;z-index:9999;display:none;align-items:center;justify-content:center}
 .setup-box{background:#fff;border-radius:12px;padding:40px;max-width:620px;width:95%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.setup-box h1{font-size:22px;color:#002050;margin-bottom:4px}
+.setup-box h1{font-size:22px;color:#111111;margin-bottom:4px}
 .setup-box .sub{font-size:13px;color:#666;margin-bottom:24px}
 .setup-step{display:none}.setup-step.active{display:block}
-.step-num{display:inline-block;background:#0078D4;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:8px}
-.setup-step h3{font-size:14px;color:#002050;margin:16px 0 8px;font-weight:700}
+.step-num{display:inline-block;background:#1a1a1a;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:8px}
+.setup-step h3{font-size:14px;color:#111111;margin:16px 0 8px;font-weight:700}
 .setup-step p{font-size:13px;color:#555;line-height:1.6;margin-bottom:8px}
-.setup-step code{background:#F0F4F8;padding:2px 6px;border-radius:3px;font-size:12px;font-family:monospace}
-.setup-step a{color:#0078D4;text-decoration:none;font-weight:600}
+.setup-step code{background:#F4F4F4;padding:2px 6px;border-radius:3px;font-size:12px;font-family:monospace}
+.setup-step a{color:#1a1a1a;text-decoration:none;font-weight:600}
 .setup-step a:hover{text-decoration:underline}
 .config-textarea{width:100%;height:140px;padding:10px;border:2px solid #D0D7E2;border-radius:6px;font-size:12px;font-family:monospace;resize:vertical;margin:8px 0}
-.config-textarea:focus{outline:none;border-color:#0078D4}
+.config-textarea:focus{outline:none;border-color:#1a1a1a}
 .setup-err{color:#D13438;font-size:12px;margin-top:6px}
 .img-hint{background:#F8F9FB;border:1px solid #E0E4EC;border-radius:6px;padding:10px 14px;font-size:12px;color:#555;margin:8px 0;line-height:1.6}
 /* SIDEBAR */
-#sidebar{width:220px;min-width:220px;background:#002050;display:flex;flex-direction:column;padding:0;position:fixed;height:100vh;z-index:100;transition:.3s}
+#sidebar{width:220px;min-width:220px;background:#111111;display:flex;flex-direction:column;padding:0;position:fixed;height:100vh;z-index:100;transition:.3s}
 #sidebar .logo{padding:18px 16px 14px;border-bottom:1px solid #003080}
 #sidebar .logo h1{color:#fff;font-size:17px;font-weight:700;letter-spacing:1px}
 #sidebar .logo p{color:#8BA7D4;font-size:10px;margin-top:2px}
 #sidebar nav{flex:1;padding:10px 0;overflow-y:auto}
 #sidebar nav a{display:flex;align-items:center;gap:10px;padding:11px 18px;color:#A8C2E8;text-decoration:none;font-size:13px;cursor:pointer;transition:.2s;border-left:3px solid transparent}
 #sidebar nav a:hover{background:#003080;color:#fff}
-#sidebar nav a.active{background:#0040A0;color:#fff;border-left:3px solid #F2C811}
+#sidebar nav a.active{background:#333333;color:#fff;border-left:3px solid #F2C811}
 #sidebar nav a .icon{font-size:16px;width:20px;text-align:center}
 #sidebar .sidebar-footer{padding:12px 18px;border-top:1px solid #003080;color:#7090B8;font-size:11px}
 .online-dot{width:8px;height:8px;background:#00C851;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 2s infinite}
@@ -87,55 +90,55 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 /* MAIN */
 #main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 #topbar{background:#fff;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E0E4EC;position:sticky;top:0;z-index:50;gap:12px}
-#topbar h2{font-size:16px;color:#002050;font-weight:600;flex:1}
+#topbar h2{font-size:16px;color:#111111;font-weight:600;flex:1}
 #topbar .badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.badge{background:#002050;color:#fff;padding:3px 12px;border-radius:20px;font-size:11px}
+.badge{background:#111111;color:#fff;padding:3px 12px;border-radius:20px;font-size:11px}
 .badge-live{background:#00C851;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;display:flex;align-items:center;gap:5px}
 #content{padding:22px 28px;flex:1}
 /* CARDS */
 .card{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px}
 .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:#fff;border-radius:8px;padding:16px 20px;border-left:4px solid #0078D4;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.stat-card{background:#fff;border-radius:8px;padding:16px 20px;border-left:4px solid #1a1a1a;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .stat-card h3{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px}
-.stat-card .num{font-size:26px;font-weight:700;color:#002050;margin-top:4px}
+.stat-card .num{font-size:26px;font-weight:700;color:#111111;margin-top:4px}
 .stat-card.yellow{border-left-color:#F2C811}
 .stat-card.green{border-left-color:#107C10}
 .stat-card.red{border-left-color:#D13438}
-.stat-card.blue{border-left-color:#0078D4}
+.stat-card.blue{border-left-color:#1a1a1a}
 /* PAGES */
 .page{display:none}.page.active{display:block}
 /* STEPS */
 .steps{display:flex;margin-bottom:22px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .step{flex:1;padding:13px;text-align:center;font-size:12px;color:#888;background:#fff;border-bottom:3px solid #e0e0e0;transition:.2s}
-.step.active{color:#0078D4;border-bottom:3px solid #0078D4;font-weight:600}
+.step.active{color:#1a1a1a;border-bottom:3px solid #1a1a1a;font-weight:600}
 .step.done{color:#107C10;border-bottom:3px solid #107C10}
 .step span{display:block;font-size:16px;margin-bottom:2px}
 /* FORM */
 .form-group{margin-bottom:14px}
 .form-group label{display:block;font-size:11px;font-weight:700;color:#444;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1px solid #D0D7E2;border-radius:5px;font-size:13px;color:#222;background:#fff;transition:.2s}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#0078D4;box-shadow:0 0 0 2px rgba(0,120,212,.12)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#1a1a1a;box-shadow:0 0 0 2px rgba(0,0,0,.10)}
 .form-group textarea{resize:vertical;min-height:80px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 /* BUTTONS */
 .btn{padding:9px 20px;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:#0078D4;color:#fff}.btn-primary:hover{background:#005fa3}
+.btn-primary{background:#1a1a1a;color:#fff}.btn-primary:hover{background:#005fa3}
 .btn-success{background:#107C10;color:#fff}.btn-success:hover{background:#0a5e0a}
 .btn-warning{background:#F2C811;color:#222}.btn-warning:hover{background:#d4ae0e}
 .btn-danger{background:#D13438;color:#fff}.btn-danger:hover{background:#a52a2d}
-.btn-outline{background:#fff;color:#0078D4;border:1px solid #0078D4}.btn-outline:hover{background:#EBF3FB}
+.btn-outline{background:#fff;color:#1a1a1a;border:1px solid #1a1a1a}.btn-outline:hover{background:#F5F5F5}
 .btn-sm{padding:5px 12px;font-size:12px}
 .btn-lg{padding:12px 28px;font-size:14px}
 /* PRODUCT TABLE */
 .prod-table{width:100%;border-collapse:collapse;font-size:13px}
-.prod-table th{background:#002050;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.prod-table th{background:#111111;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
 .prod-table td{padding:8px 12px;border-bottom:1px solid #EEF0F4;vertical-align:middle}
 .prod-table tr:hover td{background:#F5F8FF}
-.prod-table tr.selected td{background:#EBF3FB}
+.prod-table tr.selected td{background:#F5F5F5}
 .badge-grupo{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase}
 .bg-xprof{background:#E8F5E9;color:#1B5E20}
-.bg-cprof{background:#E3F2FD;color:#0D47A1}
+.bg-cprof{background:#F0F0F0;color:#0D47A1}
 .bg-agulha{background:#FFF3E0;color:#E65100}
 .bg-outros{background:#F3E5F5;color:#4A148C}
 /* CART */
@@ -154,11 +157,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .s-entregue{background:#107C10;color:#fff}
 .s-cancelado{background:#FDE7E9;color:#D13438}
 /* ENVIOS STATUS */
-.s-coletado{background:#E3F2FD;color:#0D47A1}
+.s-coletado{background:#F0F0F0;color:#0D47A1}
 .s-transito{background:#EDE7F6;color:#4527A0}
 .s-extraviado{background:#FBE9E7;color:#BF360C}
 .carrier-card{background:#F8FAFB;border:1px solid #E0E4EC;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.carrier-card h4{font-size:13px;color:#002050;font-weight:700;margin:0 0 3px}
+.carrier-card h4{font-size:13px;color:#111111;font-weight:700;margin:0 0 3px}
 .carrier-card p{font-size:11px;color:#666;margin:0}
 .urgencia-normal{background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
 .urgencia-urgente{background:#FFF8E1;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
@@ -171,13 +174,13 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:#fff;border-radius:10px;padding:26px;max-width:600px;width:92%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
-.modal h3{font-size:16px;color:#002050;margin-bottom:16px;font-weight:700}
+.modal h3{font-size:16px;color:#111111;margin-bottom:16px;font-weight:700}
 /* REPORT */
 .report-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px}
 .report-filters .form-group{margin:0}
 /* PDV */
 .pdv-evento-card{background:#fff;border:1px solid #E0E4EC;border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.2s}
-.pdv-evento-card:hover{border-color:#0078D4;box-shadow:0 2px 8px rgba(0,120,212,.1)}
+.pdv-evento-card:hover{border-color:#1a1a1a;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .pdv-evento-card.ativo{border-color:#00C851;background:#F0FFF4}
 .pdv-badge{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600;text-transform:uppercase}
 .pdv-badge.aberto{background:#D4EDDA;color:#155724}
@@ -186,12 +189,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .pdv-cart-item{background:#F8F9FB;border:1px solid #E0E4EC;border-radius:6px;padding:10px 12px;margin-bottom:8px}
 .pdv-cart-item .natureza-toggle{display:flex;gap:6px;margin-top:6px}
 .pdv-cart-item .natureza-toggle button{flex:1;padding:4px;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer;background:#fff;transition:.15s}
-.pdv-cart-item .natureza-toggle button.active-venda{background:#0078D4;color:#fff;border-color:#0078D4}
+.pdv-cart-item .natureza-toggle button.active-venda{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 .pdv-cart-item .natureza-toggle button.active-boni{background:#FF8C00;color:#fff;border-color:#FF8C00}
 .pdv-pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:16px auto 0}
 .pdv-pin-pad button{padding:14px;font-size:18px;font-weight:700;border:1px solid #D0D7E2;border-radius:8px;background:#fff;cursor:pointer;transition:.15s}
-.pdv-pin-pad button:hover{background:#0078D4;color:#fff}
-.pdv-pin-display{text-align:center;font-size:28px;letter-spacing:8px;color:#002050;margin:8px 0;min-height:40px}
+.pdv-pin-pad button:hover{background:#1a1a1a;color:#fff}
+.pdv-pin-display{text-align:center;font-size:28px;letter-spacing:8px;color:#111111;margin:8px 0;min-height:40px}
 .pedido-card{background:#fff;border:1px solid #E0E4EC;border-radius:8px;padding:12px 14px;margin-bottom:8px}
 .pedido-card .pedido-status{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
 .pedido-card .pedido-status.pendente{background:#FFF3CD;color:#856404}
@@ -199,31 +202,31 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .pedido-card .pedido-status.entregue{background:#D4EDDA;color:#155724}
 .estoque-evento-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F0F0;font-size:13px}
 /* INTRO BANNER */
-.intro-banner{background:linear-gradient(135deg,#002050,#0078D4);border-radius:10px;padding:22px 26px;color:#fff;margin-bottom:22px}
+.intro-banner{background:linear-gradient(135deg,#111111,#1a1a1a);border-radius:10px;padding:22px 26px;color:#fff;margin-bottom:22px}
 .intro-banner h2{font-size:19px;font-weight:700;margin-bottom:5px}
 .intro-banner p{font-size:13px;opacity:.85;line-height:1.6}
 /* ADM LOCK */
 .adm-lock{text-align:center;padding:60px 20px}
 .adm-lock .lock-icon{font-size:56px;margin-bottom:14px}
-.adm-lock h3{color:#002050;font-size:18px;margin-bottom:18px}
+.adm-lock h3{color:#111111;font-size:18px;margin-bottom:18px}
 .adm-lock input{padding:11px 16px;border:1px solid #D0D7E2;border-radius:5px;font-size:14px;text-align:center;letter-spacing:2px;width:260px;display:block;margin:0 auto 14px}
 /* TABS */
 .tab-bar{display:flex;gap:0;margin-bottom:18px;border-bottom:2px solid #E0E4EC}
 .tab-bar button{padding:9px 18px;border:none;background:none;font-size:13px;color:#666;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
-.tab-bar button.active{color:#0078D4;border-bottom:2px solid #0078D4;font-weight:600}
+.tab-bar button.active{color:#1a1a1a;border-bottom:2px solid #1a1a1a;font-weight:600}
 /* PAGINATION */
 .pagination{display:flex;gap:5px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .pagination button{padding:4px 10px;border:1px solid #D0D7E2;background:#fff;border-radius:4px;font-size:12px;cursor:pointer}
-.pagination button.active{background:#0078D4;color:#fff;border-color:#0078D4}
+.pagination button.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 /* LOADER */
 .loader{display:flex;align-items:center;gap:10px;color:#888;font-size:13px;padding:20px}
-.spinner{width:20px;height:20px;border:2px solid #E0E4EC;border-top-color:#0078D4;border-radius:50%;animation:spin .7s linear infinite}
+.spinner{width:20px;height:20px;border:2px solid #E0E4EC;border-top-color:#1a1a1a;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* IDENTITY BANNER */
-.identity-bar{background:#EBF3FB;border:1px solid #BDDCF5;border-radius:6px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.identity-bar strong{color:#002050}
+.identity-bar{background:#F5F5F5;border:1px solid #DDDDDD;border-radius:6px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.identity-bar strong{color:#111111}
 /* TOAST */
-#toast{position:fixed;bottom:28px;right:28px;background:#002050;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;max-width:340px}
+#toast{position:fixed;bottom:28px;right:28px;background:#111111;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9998;opacity:0;transition:opacity .3s;pointer-events:none;max-width:340px}
 #toast.show{opacity:1}
 @media(max-width:900px){
   #sidebar{width:58px;min-width:58px}
@@ -238,7 +241,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   #main{margin-left:0}
   body{background:#fff}
 }
-.estoque-group-row td{background:#E8EDF5;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#002050;padding:6px 12px}
+.estoque-group-row td{background:#E8EDF5;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#111111;padding:6px 12px}
 .s-sem-estoque{background:#FFEBEE;color:#C62828;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
 .s-estoque-baixo{background:#FFF8E1;color:#E65100;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
 .s-estoque-ok{background:#E8F5E9;color:#2E7D32;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
@@ -257,7 +260,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .venc-90 .venc-header{background:#FFF9C4}
 .venc-120 .venc-header{background:#E8F5E9}
 .venc-180 .venc-header{background:#E0F2F1}
-.venc-365 .venc-header{background:#E3F2FD}
+.venc-365 .venc-header{background:#F0F0F0}
 .venc-ok .venc-header{background:#F3F3F3}
 .venc-tag{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;color:#fff}
 .venc-vencido .venc-tag{background:#B71C1C}
@@ -273,7 +276,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .abc-b{background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
 .abc-c{background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
 /* SAIDA */
-.op-saida{background:#E3F2FD;color:#0D47A1}
+.op-saida{background:#F0F0F0;color:#0D47A1}
 /* MIN STOCK */
 .min-critico{background:#FFEBEE;color:#B71C1C}
 .min-alerta{background:#FFF3E0;color:#E65100}
@@ -282,14 +285,14 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
 /* MÓDULO OPERAÇÕES */
 .scan-input-wrap{position:relative;margin:12px 0}
-.scan-input-wrap input{width:100%;padding:16px 18px 16px 52px;font-size:18px;border:3px solid #0078D4;border-radius:10px;text-align:left;background:#F0F8FF;outline:none;font-family:monospace;letter-spacing:1px;transition:.2s}
-.scan-input-wrap input:focus{border-color:#002050;box-shadow:0 0 0 4px rgba(0,120,212,.18);background:#fff}
+.scan-input-wrap input{width:100%;padding:16px 18px 16px 52px;font-size:18px;border:3px solid #1a1a1a;border-radius:10px;text-align:left;background:#F8F8F8;outline:none;font-family:monospace;letter-spacing:1px;transition:.2s}
+.scan-input-wrap input:focus{border-color:#111111;box-shadow:0 0 0 4px rgba(0,0,0,.12);background:#fff}
 .scan-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:22px;pointer-events:none}
-.scan-status{text-align:center;font-size:11px;color:#0078D4;margin-top:4px}
-.found-card{background:linear-gradient(135deg,#EBF3FB,#F0FFF4);border:2px solid #0078D4;border-radius:8px;padding:16px;margin:10px 0;animation:fadeIn .3s}
+.scan-status{text-align:center;font-size:11px;color:#1a1a1a;margin-top:4px}
+.found-card{background:linear-gradient(135deg,#F5F5F5,#FFFFFF);border:2px solid #1a1a1a;border-radius:8px;padding:16px;margin:10px 0;animation:fadeIn .3s}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.found-card .found-title{font-size:14px;font-weight:700;color:#002050;margin-bottom:10px}
-.ops-session-bar{background:linear-gradient(135deg,#002050,#0040A0);color:#fff;border-radius:8px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,32,80,.2)}
+.found-card .found-title{font-size:14px;font-weight:700;color:#111111;margin-bottom:10px}
+.ops-session-bar{background:linear-gradient(135deg,#111111,#333333);color:#fff;border-radius:8px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .ops-session-bar h3{font-size:14px;font-weight:700;margin:0}
 .ops-session-bar p{font-size:12px;opacity:.8;margin:3px 0 0}
 .inv-item-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #EEF0F4;font-size:13px;transition:.15s}
@@ -303,12 +306,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .rec-item-row{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f0f0f0;align-items:center;font-size:13px}
 .rec-item-row:last-child{border-bottom:none}
 .pulse-border{animation:pulseB 1.5s ease-in-out infinite}
-@keyframes pulseB{0%,100%{box-shadow:0 0 0 0 rgba(0,120,212,.4)}50%{box-shadow:0 0 0 8px rgba(0,120,212,0)}}
+@keyframes pulseB{0%,100%{box-shadow:0 0 0 0 rgba(0,0,0,.25)}50%{box-shadow:0 0 0 8px rgba(0,0,0,0)}}
 
 /* ═══════════════════════════════════════════════════════════════
    GUIDE / AJUDA — Design Sofisticado
    ═══════════════════════════════════════════════════════════════ */
-.guide-hero{background:linear-gradient(135deg,#0f172a 0%,#1e40af 55%,#3b82f6 100%);border-radius:16px;padding:34px 38px;margin-bottom:22px;color:#fff}
+.guide-hero{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 55%,#333333 100%);border-radius:16px;padding:34px 38px;margin-bottom:22px;color:#fff}
 .guide-hero h2{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
 .guide-hero p{font-size:12.5px;opacity:.65;margin-bottom:18px}
 .guide-flow{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
@@ -794,7 +797,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   <div id="solic-login" style="max-width:400px;margin:40px auto">
     <div class="card" style="text-align:center;padding:32px 28px">
       <div style="font-size:40px;margin-bottom:8px">🔐</div>
-      <h3 style="color:#002050;margin-bottom:4px;font-size:16px">1 · Solicitação de Materiais</h3>
+      <h3 style="color:#111111;margin-bottom:4px;font-size:16px">1 · Solicitação de Materiais</h3>
       <p style="font-size:12px;color:#888;margin-bottom:20px">Área restrita — faça login para continuar</p>
       <div class="form-group" style="text-align:left">
         <label>Usuário</label>
@@ -812,7 +815,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   <div id="solic-user-bar" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 14px;margin-bottom:12px">
     <div style="display:flex;align-items:center;gap:10px">
       <span id="solic-user-perfil-badge" style="font-size:11px;padding:2px 10px;border-radius:12px;font-weight:700;color:#fff"></span>
-      <span id="solic-user-nome-show" style="font-size:13px;font-weight:600;color:#002050"></span>
+      <span id="solic-user-nome-show" style="font-size:13px;font-weight:600;color:#111111"></span>
       <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:11px" onclick="solicLogout()">Sair →</button>
     </div>
   </div>
@@ -841,7 +844,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <div id="step1">
         <div style="display:grid;grid-template-columns:1fr 360px;gap:18px">
           <div class="card">
-            <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">Catálogo de Produtos</h3>
+            <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">Catálogo de Produtos</h3>
             <div class="search-bar">
               <input type="text" id="prod-search" placeholder="🔍  Buscar por nome ou código..." oninput="renderProducts()">
               <select id="prod-filter" onchange="renderProducts()">
@@ -861,7 +864,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
           <div>
             <div class="card" style="position:sticky;top:76px">
-              <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">🛒 Itens Selecionados <span id="cart-count" style="background:#0078D4;color:#fff;padding:1px 8px;border-radius:12px;font-size:11px">0</span></h3>
+              <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">🛒 Itens Selecionados <span id="cart-count" style="background:#1a1a1a;color:#fff;padding:1px 8px;border-radius:12px;font-size:11px">0</span></h3>
               <div id="cart-items" style="max-height:380px;overflow-y:auto">
                 <p style="color:#aaa;font-size:13px;text-align:center;padding:20px">Nenhum produto selecionado.</p>
               </div>
@@ -875,10 +878,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- STEP 2 -->
       <div id="step2" style="display:none">
         <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:16px;font-weight:700">Informações do Evento e Solicitante</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:16px;font-weight:700">Informações do Evento e Solicitante</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
             <div>
-              <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">👤 Dados do Solicitante</p>
+              <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">👤 Dados do Solicitante</p>
               <div class="form-group"><label>Nome Completo *</label><input type="text" id="sol-nome" placeholder="Seu nome completo"></div>
               <div class="form-row">
                 <div class="form-group"><label>E-mail *</label><input type="email" id="sol-email" placeholder="email@mesoestetic.com"></div>
@@ -887,7 +890,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <div class="form-group"><label>Setor / Departamento *</label><input type="text" id="sol-setor" placeholder="Ex: Treinamento, Marketing..."></div>
             </div>
             <div>
-              <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">🎯 Responsável pelo Evento</p>
+              <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">🎯 Responsável pelo Evento</p>
               <div class="form-group"><label>Nome do Responsável *</label><input type="text" id="resp-nome" placeholder="Nome do responsável"></div>
               <div class="form-row">
                 <div class="form-group"><label>E-mail</label><input type="email" id="resp-email" placeholder="email@evento.com"></div>
@@ -896,13 +899,13 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
           </div>
           <hr style="margin:16px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📅 Dados do Evento</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📅 Dados do Evento</p>
           <div class="form-row">
             <div class="form-group"><label>Nome do Evento *</label><input type="text" id="ev-nome" placeholder="Ex: Workshop de Bioestimulação"></div>
             <div class="form-group"><label>Data do Evento *</label><input type="date" id="ev-data"></div>
           </div>
           <hr style="margin:16px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📦 Endereço de Entrega</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📦 Endereço de Entrega</p>
           <div class="form-row-3">
             <div class="form-group"><label>CEP *</label><input type="text" id="end-cep" placeholder="00000-000" oninput="buscaCep(this.value)"></div>
             <div class="form-group"><label>Cidade *</label><input type="text" id="end-cidade" placeholder="Cidade"></div>
@@ -913,7 +916,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="form-group"><label>Bairro</label><input type="text" id="end-bairro" placeholder="Bairro"></div>
           </div>
           <hr style="margin:16px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📝 Justificativa</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📝 Justificativa</p>
           <div class="form-row">
             <div class="form-group"><label>Justificativa das Quantidades *</label><textarea id="ev-justificativa" placeholder="Como cada produto será utilizado e justificativa das quantidades..."></textarea></div>
             <div class="form-group"><label>Nº de Pacientes / Modelos *</label><input type="number" id="ev-pacientes" min="1" placeholder="Quantos pacientes/modelos"></div>
@@ -928,7 +931,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- STEP 3 -->
       <div id="step3" style="display:none">
         <div class="card">
-          <h3 style="font-size:15px;color:#002050;margin-bottom:18px;font-weight:700">📄 Revisão da Solicitação</h3>
+          <h3 style="font-size:15px;color:#111111;margin-bottom:18px;font-weight:700">📄 Revisão da Solicitação</h3>
           <div id="review-content"></div>
           <div style="display:flex;gap:10px;margin-top:18px">
             <button class="btn btn-outline" onclick="goStep2Back()">← Voltar</button>
@@ -971,7 +974,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     </div><!-- /sview-acompanhar -->
   <div id="sview-relatorios" style="display:none">
       <div class="card" style="margin-bottom:18px">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📊 Filtrar Relatório</h3>
+        <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">📊 Filtrar Relatório</h3>
         <div class="report-filters">
           <div class="form-group"><label>Data Início</label><input type="date" id="rel-inicio"></div>
           <div class="form-group"><label>Data Fim</label><input type="date" id="rel-fim"></div>
@@ -993,7 +996,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div id="sview-pendentes" style="display:none">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;color:#002050;font-weight:700">⏳ Aguardando Aprovação</h3>
+      <h3 style="font-size:13px;color:#111111;font-weight:700">⏳ Aguardando Aprovação</h3>
       <button class="btn btn-outline btn-sm" onclick="renderSolicPendentes()">🔄</button>
     </div>
     <div id="solic-pend-loader" class="loader"><div class="spinner"></div>Carregando...</div>
@@ -1004,7 +1007,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div id="sview-todas" style="display:none">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;color:#002050;font-weight:700">📋 Todas as Solicitações</h3>
+      <h3 style="font-size:13px;color:#111111;font-weight:700">📋 Todas as Solicitações</h3>
       <button class="btn btn-outline btn-sm" onclick="renderSolicTodas()">🔄</button>
     </div>
     <div class="search-bar" style="margin-bottom:12px">
@@ -1023,7 +1026,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div id="sview-expedir" style="display:none">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;color:#002050;font-weight:700">🚚 Aprovadas — Aguardando Expedição</h3>
+      <h3 style="font-size:13px;color:#111111;font-weight:700">🚚 Aprovadas — Aguardando Expedição</h3>
       <button class="btn btn-outline btn-sm" onclick="renderSolicExpedir()">🔄</button>
     </div>
     <div id="solic-exp-list"></div>
@@ -1033,7 +1036,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div id="sview-historico" style="display:none">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3 style="font-size:13px;color:#002050;font-weight:700">📦 Histórico de Expedição</h3>
+      <h3 style="font-size:13px;color:#111111;font-weight:700">📦 Histórico de Expedição</h3>
       <button class="btn btn-outline btn-sm" onclick="renderSolicHistorico()">🔄</button>
     </div>
     <div id="solic-hist-list"></div>
@@ -1053,7 +1056,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- NOVA SOLICITAÇÃO DE ENVIO -->
       <div id="eview-form">
         <div class="card">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">👤 Solicitante</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">👤 Solicitante</p>
           <div class="form-row">
             <div class="form-group"><label>Nome Completo *</label><input type="text" id="env-sol-nome" placeholder="Seu nome completo"></div>
             <div class="form-group"><label>E-mail *</label><input type="email" id="env-sol-email" placeholder="email@mesoestetic.com"></div>
@@ -1063,7 +1066,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="form-group"><label>Telefone / WhatsApp</label><input type="tel" id="env-sol-tel" placeholder="(11) 99999-9999"></div>
           </div>
           <hr style="margin:14px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📬 Destinatário</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📬 Destinatário</p>
           <div class="form-row">
             <div class="form-group"><label>Nome do Destinatário *</label><input type="text" id="env-dest-nome" placeholder="Nome completo"></div>
             <div class="form-group"><label>Empresa / Setor</label><input type="text" id="env-dest-empresa" placeholder="Ex: Clínica XYZ, Distribuidor ABC"></div>
@@ -1073,7 +1076,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="form-group"><label>Telefone do Destinatário</label><input type="tel" id="env-dest-tel" placeholder="(11) 99999-9999"></div>
           </div>
           <hr style="margin:14px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📍 Endereço de Entrega</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📍 Endereço de Entrega</p>
           <div class="form-row-3">
             <div class="form-group"><label>CEP *</label><input type="text" id="env-cep" placeholder="00000-000" oninput="buscaCepEnvio(this.value)"></div>
             <div class="form-group"><label>Cidade</label><input type="text" id="env-cidade" placeholder="Cidade"></div>
@@ -1088,7 +1091,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="form-group"><label>Bairro</label><input type="text" id="env-bairro" placeholder="Bairro"></div>
           </div>
           <hr style="margin:14px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📦 Conteúdo do Envio</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📦 Conteúdo do Envio</p>
           <div class="form-row">
             <div class="form-group"><label>Tipo de Material *</label>
               <select id="env-tipo">
@@ -1108,7 +1111,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <textarea id="env-conteudo" placeholder="Descreva todos os itens que serão enviados (nome, lote, quantidade individual...)"></textarea>
           </div>
           <hr style="margin:14px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">🚚 Logística</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">🚚 Logística</p>
           <div class="form-row-3">
             <div class="form-group"><label>Transportadora Preferencial</label>
               <select id="env-transportadora">
@@ -1125,7 +1128,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div class="form-group"><label>Prazo Desejado</label><input type="date" id="env-prazo"></div>
           </div>
           <hr style="margin:14px 0;border-color:#eee">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:10px">📝 Informações Adicionais</p>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px">📝 Informações Adicionais</p>
           <div class="form-group"><label>Justificativa / Motivo do Envio *</label>
             <textarea id="env-justificativa" placeholder="Por que este envio está sendo realizado? A qual projeto ou ação se relaciona?"></textarea>
           </div>
@@ -1198,7 +1201,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- ADM: TRANSPORTADORAS -->
       <div id="eview-transportadoras" style="display:none">
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">➕ Cadastrar Transportadora</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">➕ Cadastrar Transportadora</h3>
           <div class="form-row-3">
             <div class="form-group"><label>Nome *</label><input type="text" id="new-carrier-nome" placeholder="Ex: Correios, Jadlog..."></div>
             <div class="form-group"><label>Tipo</label>
@@ -1216,7 +1219,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button class="btn btn-success" onclick="addCarrier()">➕ Cadastrar</button>
         </div>
         <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">Transportadoras Cadastradas</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">Transportadoras Cadastradas</h3>
           <div id="carriers-list"><div style="text-align:center;padding:20px;color:#aaa">Nenhuma transportadora cadastrada.</div></div>
         </div>
       </div>
@@ -1224,7 +1227,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- ADM: RELATÓRIO DE ENVIOS -->
       <div id="eview-relatorio-envios" style="display:none">
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📊 Relatório de Envios por Período</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">📊 Relatório de Envios por Período</h3>
           <div class="form-row-3">
             <div class="form-group"><label>Data Início</label><input type="date" id="rel-env-inicio"></div>
             <div class="form-group"><label>Data Fim</label><input type="date" id="rel-env-fim"></div>
@@ -1303,7 +1306,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <!-- Formulário novo produto (oculto por padrão) -->
           <div id="cat-form-novo" style="display:none;margin-bottom:14px">
             <div class="card" style="border-left:4px solid #4CAF50">
-              <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">➕ Novo Produto / Novo Lote</h3>
+              <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:12px">➕ Novo Produto / Novo Lote</h3>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
                 <div class="form-group"><label>Código Interno *</label><input type="text" id="cnp-cod" placeholder="T-XXXX0000" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
                 <div class="form-group"><label>Descrição *</label><input type="text" id="cnp-desc" placeholder="Nome do produto" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px"></div>
@@ -1340,7 +1343,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- CONFIGURAÇÕES ADM -->
         <div id="adm-config" style="display:none">
           <div class="card" style="max-width:480px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:16px">🔐 Alterar Senha de Administrador</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:16px">🔐 Alterar Senha de Administrador</h3>
             <div class="form-group"><label>Nova Senha</label>
               <input type="password" id="cfg-pwd" placeholder="Mínimo 6 caracteres" style="width:100%;padding:8px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px">
             </div>
@@ -1359,7 +1362,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- USUÁRIOS SOLIC ADM -->
         <div id="adm-usuarios" style="display:none">
           <div class="card" style="margin-bottom:14px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:14px" id="adm-usr-form-title">➕ Novo Usuário</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:14px" id="adm-usr-form-title">➕ Novo Usuário</h3>
             <input type="hidden" id="adm-usr-id">
             <div class="form-row">
               <div class="form-group"><label>Nome Completo</label><input type="text" id="adm-usr-nome" placeholder="Nome do usuário"></div>
@@ -1396,7 +1399,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
           </div>
           <div class="card">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">Usuários Cadastrados</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:12px">Usuários Cadastrados</h3>
             <div style="overflow-x:auto">
               <table class="prod-table">
                 <thead><tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
@@ -1442,7 +1445,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div style="display:grid;grid-template-columns:1fr 380px;gap:16px">
             <div>
               <div class="card">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">📦 Registrar Recebimento</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">📦 Registrar Recebimento</h3>
                 <div class="form-row-3">
                   <div class="form-group"><label>Fornecedor *</label><input type="text" id="rec-fornecedor" placeholder="Ex: Mesoestetic Espanha"></div>
                   <div class="form-group"><label>Nº Nota Fiscal</label><input type="text" id="rec-nf" placeholder="NF-000000"></div>
@@ -1450,7 +1453,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 </div>
                 <div class="form-group"><label>Observações</label><input type="text" id="rec-obs" placeholder="Transportadora, condições da entrega..."></div>
                 <hr style="margin:14px 0;border-color:#eee">
-                <h4 style="font-size:12px;font-weight:700;color:#002050;margin-bottom:8px;text-transform:uppercase">📷 Escanear Itens Recebidos</h4>
+                <h4 style="font-size:12px;font-weight:700;color:#111111;margin-bottom:8px;text-transform:uppercase">📷 Escanear Itens Recebidos</h4>
                 <div class="scan-input-wrap">
                   <span class="scan-icon">📷</span>
                   <input type="text" id="rec-scan-input" placeholder="Aponte o leitor ou digite o cód. de barras e pressione Enter..." 
@@ -1473,7 +1476,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
             <div>
               <div class="card" style="position:sticky;top:76px">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">📚 Histórico de Recebimentos</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">📚 Histórico de Recebimentos</h3>
                 <div id="rec-historico"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
               </div>
             </div>
@@ -1486,7 +1489,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div id="inv-setup">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div class="card">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">📋 Iniciar Nova Contagem de Inventário</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">📋 Iniciar Nova Contagem de Inventário</h3>
                 <p style="font-size:12px;color:#666;margin-bottom:14px;line-height:1.6">Configure a sessão, clique em <strong>Iniciar</strong> e escaneie os produtos um por um. Ao finalizar, as quantidades do estoque são atualizadas automaticamente.</p>
                 <div class="form-group"><label>Nome do Inventário *</label><input type="text" id="inv-nome" placeholder="Ex: Inventário Geral — Junho 2026"></div>
                 <div class="form-row">
@@ -1497,7 +1500,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <button class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" onclick="iniciarInventario()">▶️ Iniciar Contagem</button>
               </div>
               <div class="card">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">📚 Histórico de Inventários</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">📚 Histórico de Inventários</h3>
                 <div id="inv-historico"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
               </div>
             </div>
@@ -1519,7 +1522,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div style="display:grid;grid-template-columns:1fr 420px;gap:16px">
               <div>
                 <div class="card" style="margin-bottom:14px">
-                  <h3 style="font-size:13px;color:#002050;margin-bottom:8px;font-weight:700">📷 Leitor de Código de Barras</h3>
+                  <h3 style="font-size:13px;color:#111111;margin-bottom:8px;font-weight:700">📷 Leitor de Código de Barras</h3>
                   <p style="font-size:12px;color:#666;margin-bottom:10px">Aponte o leitor para o produto ou digite o código interno/barras e pressione <strong>Enter</strong>.</p>
                   <div class="scan-input-wrap">
                     <span class="scan-icon">📷</span>
@@ -1557,7 +1560,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <div>
                 <div class="card" style="position:sticky;top:76px">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                    <h3 style="font-size:13px;color:#002050;font-weight:700">🧾 Itens Contados <span id="inv-count-badge" style="background:#0078D4;color:#fff;padding:1px 8px;border-radius:12px;font-size:11px">0</span></h3>
+                    <h3 style="font-size:13px;color:#111111;font-weight:700">🧾 Itens Contados <span id="inv-count-badge" style="background:#1a1a1a;color:#fff;padding:1px 8px;border-radius:12px;font-size:11px">0</span></h3>
                     <button class="btn btn-outline btn-sm" onclick="exportarInventarioParcial()">⬇️ CSV</button>
                   </div>
                   <div id="inv-itens-list" style="max-height:520px;overflow-y:auto">
@@ -1574,7 +1577,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div style="display:grid;grid-template-columns:1fr 400px;gap:16px">
             <div>
               <div class="card">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">⚠️ Registrar Ocorrência</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">⚠️ Registrar Ocorrência</h3>
                 <div class="form-row">
                   <div class="form-group"><label>Tipo de Ocorrência *</label>
                     <select id="perd-tipo" style="width:100%;padding:9px 12px;border:1px solid #D0D7E2;border-radius:5px;font-size:13px">
@@ -1616,7 +1619,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
             <div>
               <div class="card" style="position:sticky;top:76px">
-                <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">📚 Histórico de Ocorrências</h3>
+                <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">📚 Histórico de Ocorrências</h3>
                 <div id="perd-historico"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
               </div>
             </div>
@@ -1627,7 +1630,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- ===== SAÍDA DE ESTOQUE ===== -->
         <div id="ops-saida" style="display:none">
           <div class="card" style="margin-bottom:14px">
-            <h3 style="font-size:13px;color:#002050;margin-bottom:4px;font-weight:700">📤 Registrar Saída de Estoque</h3>
+            <h3 style="font-size:13px;color:#111111;margin-bottom:4px;font-weight:700">📤 Registrar Saída de Estoque</h3>
             <p style="font-size:12px;color:#666;margin-bottom:14px">Escaneie o código de barras ou informe o código do produto a ser retirado do estoque.</p>
             <div class="form-row" style="margin-bottom:12px">
               <div class="form-group" style="margin:0">
@@ -1665,11 +1668,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 </div>
                 <div class="form-group" style="margin:0">
                   <label>Estoque Disponível</label>
-                  <input type="text" id="saida-found-estoque" readonly style="width:100%;padding:9px 12px;border:1px solid #D0D7E2;border-radius:5px;font-size:13px;background:#F5F5F5;font-weight:700;color:#002050">
+                  <input type="text" id="saida-found-estoque" readonly style="width:100%;padding:9px 12px;border:1px solid #D0D7E2;border-radius:5px;font-size:13px;background:#F5F5F5;font-weight:700;color:#111111">
                 </div>
                 <div class="form-group" style="margin:0">
                   <label>Quantidade a Retirar</label>
-                  <input type="number" id="saida-found-qty" min="1" value="1" style="width:100%;padding:9px 12px;border:2px solid #0078D4;border-radius:5px;font-size:16px;font-weight:700;text-align:center">
+                  <input type="number" id="saida-found-qty" min="1" value="1" style="width:100%;padding:9px 12px;border:2px solid #1a1a1a;border-radius:5px;font-size:16px;font-weight:700;text-align:center">
                 </div>
               </div>
               <div class="form-group" style="margin-top:10px">
@@ -1686,7 +1689,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <!-- Histórico de Saídas -->
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <h3 style="font-size:13px;color:#002050;font-weight:700">📋 Últimas Saídas Registradas</h3>
+              <h3 style="font-size:13px;color:#111111;font-weight:700">📋 Últimas Saídas Registradas</h3>
               <button class="btn btn-sm btn-outline" onclick="loadSaidaHistorico()">↺ Atualizar</button>
             </div>
             <div id="saida-historico"><div style="color:#aaa;text-align:center;padding:20px;font-size:13px">Carregando...</div></div>
@@ -1697,7 +1700,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div id="ops-relatorios" style="display:none">
           <!-- Filters -->
           <div class="card" style="margin-bottom:14px">
-            <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">📊 Relatório de Operações por Período</h3>
+            <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">📊 Relatório de Operações por Período</h3>
             <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
               <div class="form-group" style="margin:0">
                 <label>Data Início</label>
@@ -1740,7 +1743,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="pdvPinDigit('1')">1</button><button onclick="pdvPinDigit('2')">2</button><button onclick="pdvPinDigit('3')">3</button>
           <button onclick="pdvPinDigit('4')">4</button><button onclick="pdvPinDigit('5')">5</button><button onclick="pdvPinDigit('6')">6</button>
           <button onclick="pdvPinDigit('7')">7</button><button onclick="pdvPinDigit('8')">8</button><button onclick="pdvPinDigit('9')">9</button>
-          <button onclick="pdvPinClear()" style="font-size:13px;color:#D13438">✕</button><button onclick="pdvPinDigit('0')">0</button><button onclick="pdvPinConfirm()" style="font-size:13px;background:#0078D4;color:#fff">✓</button>
+          <button onclick="pdvPinClear()" style="font-size:13px;color:#D13438">✕</button><button onclick="pdvPinDigit('0')">0</button><button onclick="pdvPinConfirm()" style="font-size:13px;background:#1a1a1a;color:#fff">✓</button>
         </div>
         <p id="pdv-pin-err" style="color:#D13438;font-size:12px;margin-top:10px;min-height:18px"></p>
       </div>
@@ -1764,18 +1767,18 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- ABA EVENTOS -->
         <div id="pdv-view-eventos">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="color:#002050;margin:0">Eventos</h3>
+            <h3 style="color:#111111;margin:0">Eventos</h3>
             <button id="pdv-btn-novo-evento" class="btn btn-primary" onclick="pdvShowNovoEvento()" style="display:none">+ Novo Evento</button>
           </div>
-          <div id="pdv-evento-selecionado-bar" style="display:none;background:#E8F4FD;border:1px solid #0078D4;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none">
-            <strong style="color:#0078D4">Evento ativo:</strong> <span id="pdv-evento-ativo-nome" style="font-weight:600"></span>
+          <div id="pdv-evento-selecionado-bar" style="display:none;background:#E8F4FD;border:1px solid #1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none">
+            <strong style="color:#1a1a1a">Evento ativo:</strong> <span id="pdv-evento-ativo-nome" style="font-weight:600"></span>
             <span id="pdv-evento-ativo-badge" class="pdv-badge" style="margin-left:8px"></span>
           </div>
           <div id="pdv-eventos-lista"><p style="color:#aaa;text-align:center;padding:30px">Carregando eventos...</p></div>
 
           <!-- Form novo evento (ADM) -->
           <div id="pdv-form-evento" style="display:none;background:#F8F9FB;border:1px solid #E0E4EC;border-radius:8px;padding:18px;margin-top:16px">
-            <h4 style="color:#002050;margin-bottom:14px">Novo Evento</h4>
+            <h4 style="color:#111111;margin-bottom:14px">Novo Evento</h4>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div class="form-group"><label>Nome do Evento *</label><input id="pev-nome" class="form-control" placeholder="Ex: Congresso SBD 2026"></div>
               <div class="form-group"><label>Data *</label><input id="pev-data" type="date" class="form-control"></div>
@@ -1805,7 +1808,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <!-- Coluna esquerda: scanner + produto -->
               <div>
                 <div class="card">
-                  <h4 style="color:#002050;margin-bottom:12px">🔍 Buscar Produto</h4>
+                  <h4 style="color:#111111;margin-bottom:12px">🔍 Buscar Produto</h4>
                   <div style="display:flex;gap:6px;margin-bottom:8px">
                     <button id="pdv-modo-barras" onclick="pdvModoToggle('barras')" class="btn btn-primary" style="font-size:12px;padding:5px 10px">🔢 Barras</button>
                     <button id="pdv-modo-codigo" onclick="pdvModoToggle('codigo')" class="btn btn-secondary" style="font-size:12px;padding:5px 10px">📋 Código</button>
@@ -1813,7 +1816,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   </div>
                   <div style="position:relative">
                     <input id="pdv-scan-input" class="form-control" placeholder="Bipe ou digite o código/EAN..." oninput="pdvScanProduto(this.value)" style="font-size:15px;letter-spacing:1px">
-                    <div id="pdv-nome-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #0078D4;border-radius:0 0 6px 6px;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+                    <div id="pdv-nome-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #1a1a1a;border-radius:0 0 6px 6px;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
                   </div>
                   <div id="pdv-found-card" style="display:none;margin-top:12px;background:#F0FFF4;border:1px solid #00C851;border-radius:6px;padding:12px">
                     <strong id="pdv-found-nome"></strong>
@@ -1842,7 +1845,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                         </div>
                         <div style="text-align:right">
                           <div style="font-size:10px;color:#7B5E00;font-weight:600">Subtotal:</div>
-                          <div id="pdv-subtotal-item" style="font-size:14px;font-weight:800;color:#002050">R$ 0,00</div>
+                          <div id="pdv-subtotal-item" style="font-size:14px;font-weight:800;color:#111111">R$ 0,00</div>
                         </div>
                       </div>
                     </div>
@@ -1862,7 +1865,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   </div>
                 </div>
                 <div class="card" style="margin-top:12px">
-                  <h4 style="color:#002050;margin-bottom:12px">👤 Cliente</h4>
+                  <h4 style="color:#111111;margin-bottom:12px">👤 Cliente</h4>
 
                   <!-- Nome -->
                   <div style="margin-bottom:8px">
@@ -1949,8 +1952,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               <div>
                 <div class="card">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <h4 style="color:#002050;margin:0">🛒 Carrinho</h4>
-                    <span id="pdv-carrinho-count" style="background:#0078D4;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px">0 itens</span>
+                    <h4 style="color:#111111;margin:0">🛒 Carrinho</h4>
+                    <span id="pdv-carrinho-count" style="background:#1a1a1a;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px">0 itens</span>
                   </div>
                   <div id="pdv-carrinho-lista"><p style="color:#aaa;font-size:13px;text-align:center;padding:20px">Nenhum item adicionado</p></div>
                   <div id="pdv-carrinho-totais" style="display:none;border-top:1px solid #E0E4EC;padding-top:10px;margin-top:10px">
@@ -1970,7 +1973,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                     </div>
                     <!-- Resumo financeiro -->
                     <div id="pdv-resumo-financeiro" style="display:none;background:#F0F7FF;border:1px solid #BDD7EE;border-radius:8px;padding:10px;margin-top:10px">
-                      <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:7px;letter-spacing:.5px">💰 RESUMO FINANCEIRO</div>
+                      <div style="font-size:11px;font-weight:700;color:#111111;margin-bottom:7px;letter-spacing:.5px">💰 RESUMO FINANCEIRO</div>
                       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
                         <span style="color:#555">Subtotal bruto:</span>
                         <strong id="pdv-fin-subtotal" style="color:#333">R$ 0,00</strong>
@@ -1983,17 +1986,17 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                         <span style="color:#C07800">% médio de desconto:</span>
                         <strong id="pdv-fin-pct" style="color:#C07800">0%</strong>
                       </div>
-                      <div style="display:flex;justify-content:space-between;align-items:center;background:#002050;border-radius:6px;padding:8px 10px">
+                      <div style="display:flex;justify-content:space-between;align-items:center;background:#111111;border-radius:6px;padding:8px 10px">
                         <span style="color:#fff;font-size:13px;font-weight:700">💲 VALOR FINAL</span>
                         <strong id="pdv-fin-total" style="color:#FFD566;font-size:18px">R$ 0,00</strong>
                       </div>
                     </div>
                   </div>
                   <!-- ===== CONDIÇÕES DE PAGAMENTO ===== -->
-                  <div id="pdv-pagamentos-bloco" style="margin-top:14px;border-top:2px solid #002050;padding-top:12px">
+                  <div id="pdv-pagamentos-bloco" style="margin-top:14px;border-top:2px solid #111111;padding-top:12px">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                      <span style="font-size:13px;font-weight:700;color:#002050">💳 Condições de Pagamento</span>
-                      <button onclick="pdvAdicionarPagamento()" style="font-size:11px;padding:3px 12px;background:#002050;color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:600">+ Forma</button>
+                      <span style="font-size:13px;font-weight:700;color:#111111">💳 Condições de Pagamento</span>
+                      <button onclick="pdvAdicionarPagamento()" style="font-size:11px;padding:3px 12px;background:#111111;color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:600">+ Forma</button>
                     </div>
                     <!-- Linhas de pagamento -->
                     <div id="pdv-pagamentos-lista"></div>
@@ -2011,7 +2014,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- ABA PEDIDOS -->
         <div id="pdv-view-pedidos" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <h3 style="color:#002050;margin:0">Pedidos do Evento</h3>
+            <h3 style="color:#111111;margin:0">Pedidos do Evento</h3>
             <div style="display:flex;gap:8px">
               <select id="pdv-filtro-status" class="form-control" style="font-size:12px;width:140px" onchange="renderPedidosEvento()">
                 <option value="">Todos os status</option>
@@ -2031,15 +2034,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div id="pdv-view-estoque-evento" style="display:none">
 
           <!-- Contexto de importação: Evento destino + Nº Pedido Mercus -->
-          <div style="background:#EBF3FB;border:1px solid #0078D4;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div style="background:#F5F5F5;border:1px solid #1a1a1a;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
             <div style="flex:1;min-width:220px">
-              <label style="font-size:11px;font-weight:700;color:#0078D4;display:block;margin-bottom:4px">📋 EVENTO DESTINO *</label>
+              <label style="font-size:11px;font-weight:700;color:#1a1a1a;display:block;margin-bottom:4px">📋 EVENTO DESTINO *</label>
               <select id="est-evt-sel" class="form-control" style="font-size:13px" onchange="estSelecionarEventoDestino(this.value)">
                 <option value="">— selecione o evento —</option>
               </select>
             </div>
             <div style="flex:1;min-width:180px">
-              <label style="font-size:11px;font-weight:700;color:#0078D4;display:block;margin-bottom:4px">📦 Nº PEDIDO MERCUS</label>
+              <label style="font-size:11px;font-weight:700;color:#1a1a1a;display:block;margin-bottom:4px">📦 Nº PEDIDO MERCUS</label>
               <input id="est-mercus-num" class="form-control" placeholder="Ex: PED-0001 / NF 000123" style="font-size:13px">
             </div>
             <div id="est-evt-status-badge" style="font-size:12px;color:#555;padding-bottom:4px"></div>
@@ -2047,7 +2050,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- Header com botões de import -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <h3 style="color:#002050;margin:0">📦 Estoque do Evento</h3>
+            <h3 style="color:#111111;margin:0">📦 Estoque do Evento</h3>
             <div id="est-evento-btn-group" style="display:none;display:flex;gap:6px;flex-wrap:wrap">
               <button onclick="estEventoTogglePanel('xml')" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">📄 Importar XML</button>
               <button onclick="estEventoTogglePanel('excel')" class="btn btn-secondary" style="font-size:12px;padding:5px 12px">📊 Importar Excel</button>
@@ -2070,8 +2073,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
 
           <!-- A: Painel import XML -->
-          <div id="est-panel-xml" style="display:none;background:#EBF3FB;border:1px solid #0078D4;border-radius:8px;padding:16px;margin-bottom:14px">
-            <h4 style="color:#002050;margin-bottom:10px">📄 Importar NF-e XML</h4>
+          <div id="est-panel-xml" style="display:none;background:#F5F5F5;border:1px solid #1a1a1a;border-radius:8px;padding:16px;margin-bottom:14px">
+            <h4 style="color:#111111;margin-bottom:10px">📄 Importar NF-e XML</h4>
             <p style="font-size:12px;color:#555;margin-bottom:10px">Selecione o arquivo XML da NF-e de remessa. Os produtos e quantidades serão adicionados automaticamente ao estoque deste evento.</p>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <input type="file" id="est-xml-file" accept=".xml" class="form-control" style="flex:1;min-width:200px">
@@ -2083,7 +2086,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- B: Painel import Excel -->
           <div id="est-panel-excel" style="display:none;background:#F3FBF0;border:1px solid #00C851;border-radius:8px;padding:16px;margin-bottom:14px">
-            <h4 style="color:#002050;margin-bottom:10px">📊 Importar Planilha Excel</h4>
+            <h4 style="color:#111111;margin-bottom:10px">📊 Importar Planilha Excel</h4>
             <p style="font-size:12px;color:#555;margin-bottom:10px">Arraste um arquivo Excel (.xlsx) exportado do Mercus ou clique para selecionar. O sistema detecta automaticamente as colunas de código, descrição, lote e quantidade.</p>
             <div id="est-excel-drop" ondrop="estExcelDrop(event)" ondragover="event.preventDefault()" style="border:2px dashed #00C851;border-radius:6px;padding:24px;text-align:center;cursor:pointer;margin-bottom:10px;background:#fff" onclick="document.getElementById('est-excel-file').click()">
               <div style="font-size:28px">📊</div>
@@ -2099,7 +2102,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- C: Painel entrada em lote -->
           <div id="est-panel-lote" style="display:none;background:#FFF8EC;border:1px solid #FF8C00;border-radius:8px;padding:16px;margin-bottom:14px">
-            <h4 style="color:#002050;margin-bottom:10px">✏️ Entrada em Lote</h4>
+            <h4 style="color:#111111;margin-bottom:10px">✏️ Entrada em Lote</h4>
             <p style="font-size:12px;color:#555;margin-bottom:10px">Adicione vários produtos de uma vez. Digite o código ou nome para buscar no catálogo e informe a quantidade.</p>
             <div id="lote-linhas" style="margin-bottom:10px"></div>
             <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -2113,7 +2116,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- Painel entrada manual (ADM) -->
           <div id="pdv-entrada-manual" style="display:none;background:#F0FFF4;border:1px solid #00C851;border-radius:8px;padding:16px;margin-bottom:16px">
-            <h4 style="color:#002050;margin-bottom:12px">➕ Adicionar Produto ao Estoque do Evento</h4>
+            <h4 style="color:#111111;margin-bottom:12px">➕ Adicionar Produto ao Estoque do Evento</h4>
             <div style="display:flex;gap:8px;margin-bottom:12px">
               <input id="em-scan" class="form-control" placeholder="📷 Bipe o código ou EAN..." oninput="emScanProduto(this.value)" style="font-size:14px;flex:1;letter-spacing:1px" autofocus>
               <button onclick="emScanProduto(document.getElementById('em-scan').value,true)" class="btn btn-secondary" style="font-size:12px;white-space:nowrap">🔍 Buscar</button>
@@ -2123,7 +2126,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div id="em-found-card" style="display:none;background:#fff;border:1px solid #D0D7E2;border-radius:6px;padding:14px;margin-bottom:10px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
                 <div>
-                  <strong id="em-found-nome" style="color:#002050;font-size:14px"></strong>
+                  <strong id="em-found-nome" style="color:#111111;font-size:14px"></strong>
                   <div id="em-found-info" style="font-size:12px;color:#666;margin-top:3px"></div>
                 </div>
                 <span id="em-found-estoque-badge" style="font-size:11px;padding:3px 8px;border-radius:10px;font-weight:600;background:#D4EDDA;color:#155724"></span>
@@ -2151,7 +2154,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
             <!-- Itens adicionados na sessão -->
             <div id="em-sessao-lista" style="display:none">
-              <h5 style="color:#002050;font-size:12px;margin-bottom:8px">Adicionados nesta sessão:</h5>
+              <h5 style="color:#111111;font-size:12px;margin-bottom:8px">Adicionados nesta sessão:</h5>
               <div id="em-sessao-itens"></div>
             </div>
           </div>
@@ -2161,13 +2164,13 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA EXPEDIÇÃO -->
         <div id="pdv-view-expedicao" style="display:none">
-          <h3 style="color:#002050;margin-bottom:4px">🚚 Expedição</h3>
+          <h3 style="color:#111111;margin-bottom:4px">🚚 Expedição</h3>
           <p style="font-size:12px;color:#666;margin-bottom:14px">Confirme o pagamento, anexe o comprovante e gere o recibo.</p>
 
           <!-- Filtro por fase -->
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
             <button onclick="pdvExpFiltro('todos',this)" id="pdv-exp-f-todos"
-              style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #002050;background:#002050;color:#fff;cursor:pointer;font-weight:600">Todos</button>
+              style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #111111;background:#111111;color:#fff;cursor:pointer;font-weight:600">Todos</button>
             <button onclick="pdvExpFiltro('cobranca',this)" id="pdv-exp-f-cobranca"
               style="font-size:12px;padding:5px 14px;border-radius:14px;border:2px solid #D13438;background:#fff;color:#D13438;cursor:pointer;font-weight:600">⏳ Ag. Cobrança</button>
             <button onclick="pdvExpFiltro('cobrado',this)" id="pdv-exp-f-cobrado"
@@ -2179,9 +2182,9 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA FECHAMENTO -->
         <div id="pdv-view-fechamento" style="display:none">
-          <h3 style="color:#002050;margin-bottom:16px">🔒 Fechamento do Evento</h3>
+          <h3 style="color:#111111;margin-bottom:16px">🔒 Fechamento do Evento</h3>
           <div class="card" style="margin-bottom:16px">
-            <h4 style="color:#002050;margin-bottom:12px">Destinação do Estoque Remanescente</h4>
+            <h4 style="color:#111111;margin-bottom:12px">Destinação do Estoque Remanescente</h4>
             <p style="font-size:13px;color:#555;margin-bottom:14px">Defina o destino dos produtos que não foram vendidos:</p>
             <div style="display:flex;gap:12px;margin-bottom:16px">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
@@ -2198,15 +2201,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA RELATÓRIOS -->
         <div id="pdv-view-relatorios" style="display:none">
-          <h3 style="color:#002050;margin-bottom:16px">📊 Relatórios do Evento</h3>
+          <h3 style="color:#111111;margin-bottom:16px">📊 Relatórios do Evento</h3>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="pdv-rel-kpis"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
             <div class="card">
-              <h4 style="color:#002050;margin-bottom:12px">Por Vendedor</h4>
+              <h4 style="color:#111111;margin-bottom:12px">Por Vendedor</h4>
               <div id="pdv-rel-vendedores"></div>
             </div>
             <div class="card">
-              <h4 style="color:#002050;margin-bottom:12px">Por Produto</h4>
+              <h4 style="color:#111111;margin-bottom:12px">Por Produto</h4>
               <div id="pdv-rel-produtos"></div>
             </div>
           </div>
@@ -2218,7 +2221,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA COMPARATIVO (ADM) -->
         <div id="pdv-view-comparativo" style="display:none">
-          <h3 style="color:#002050;margin-bottom:16px">📊 Comparativo entre Eventos</h3>
+          <h3 style="color:#111111;margin-bottom:16px">📊 Comparativo entre Eventos</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
             <div class="form-group">
               <label>Evento A</label>
@@ -2235,11 +2238,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- ABA VENDEDORES (ADM) -->
         <div id="pdv-view-vendedores" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="color:#002050;margin:0">👥 Gestão de Vendedores</h3>
+            <h3 style="color:#111111;margin:0">👥 Gestão de Vendedores</h3>
             <button class="btn btn-primary" onclick="pdvShowFormVendedor()">+ Novo Vendedor</button>
           </div>
           <div id="pdv-form-vendedor" style="display:none;background:#F8F9FB;border:1px solid #E0E4EC;border-radius:8px;padding:16px;margin-bottom:16px">
-            <h4 style="color:#002050;margin-bottom:12px">Novo Vendedor</h4>
+            <h4 style="color:#111111;margin-bottom:12px">Novo Vendedor</h4>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
               <div class="form-group"><label>Nome *</label><input id="vend-nome" class="form-control" placeholder="Nome completo"></div>
               <div class="form-group"><label>PIN (4-6 dígitos) *</label><input id="vend-pin" type="password" class="form-control" placeholder="••••" maxlength="6"></div>
@@ -2274,13 +2277,13 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
         <!-- ABA RETORNO DO EVENTO -->
         <div id="pdv-view-retorno" style="display:none">
-          <h3 style="color:#002050;margin-bottom:6px">↩️ Retorno do Evento</h3>
+          <h3 style="color:#111111;margin-bottom:6px">↩️ Retorno do Evento</h3>
           <p style="font-size:12px;color:#666;margin-bottom:14px">Registre os produtos que estão retornando ao depósito sede. O gestor de logística validará as quantidades antes de dar entrada no estoque central.</p>
 
           <!-- Formulário de registro de retorno (vendedor) -->
           <div id="retorno-form-section">
             <div class="card" style="margin-bottom:16px">
-              <h4 style="color:#002050;margin-bottom:12px">📦 Produtos Retornando</h4>
+              <h4 style="color:#111111;margin-bottom:12px">📦 Produtos Retornando</h4>
               <div id="retorno-estoque-lista" style="margin-bottom:14px">
                 <p style="color:#aaa;text-align:center;padding:20px">Carregando estoque do evento...</p>
               </div>
@@ -2294,7 +2297,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
           <!-- Histórico / validação (ADM/supervisor vê aqui também) -->
           <div class="card">
-            <h4 style="color:#002050;margin-bottom:12px">📋 Histórico de Retornos</h4>
+            <h4 style="color:#111111;margin-bottom:12px">📋 Histórico de Retornos</h4>
             <div id="retorno-historico"></div>
           </div>
         </div>
@@ -2728,7 +2731,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- TAB GERENCIAR -->
       <div id="eview-gerenciar" style="display:none">
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">➕ Adicionar Item ao Estoque</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">➕ Adicionar Item ao Estoque</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
             <div class="form-group" style="margin:0"><label>Código</label><input type="text" id="new-est-codigo" placeholder="T-PACX0007"></div>
             <div class="form-group" style="margin:0"><label>Descrição</label><input type="text" id="new-est-descricao" placeholder="Nome do produto"></div>
@@ -2740,7 +2743,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div class="card" style="padding:0;overflow:hidden">
           <div style="padding:12px 16px;background:#F8F9FB;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <h3 style="font-size:13px;font-weight:700;color:#002050;margin:0">Lista para Edição</h3>
+              <h3 style="font-size:13px;font-weight:700;color:#111111;margin:0">Lista para Edição</h3>
               <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;font-size:12px" onclick="arquivarLotesZerados()">📦 Arquivar Lotes com Qtd 0</button>
             </div>
             <input type="text" id="ger-est-search" placeholder="🔍 Código, cód. barras, nome ou lote..." style="padding:6px 10px;border:1px solid #d0d7de;border-radius:5px;font-size:12px;width:260px" oninput="renderGerenciarEstoque()">
@@ -2756,7 +2759,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- TAB IMPORTAR -->
       <div id="eview-importar" style="display:none">
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:8px;font-weight:700">📥 Importar Contagem via Planilha</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:8px;font-weight:700">📥 Importar Contagem via Planilha</h3>
           <p style="font-size:13px;color:#555;margin-bottom:12px">Suba um arquivo <strong>Excel (.xlsx)</strong> ou <strong>CSV (.csv)</strong> com colunas: <code>Código</code>, <code>Lote</code>, <code>Quantidade</code>. Somente os itens do arquivo serão atualizados — os demais ficam intactos.</p>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="file" id="import-est-file" accept=".xlsx,.csv" style="display:none" onchange="importarEstoqueFile(this.files[0])">
@@ -2766,7 +2769,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div id="import-est-result" style="margin-top:14px"></div>
         </div>
         <div class="card">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:8px;font-weight:700">🌱 Popular Banco de Dados Oficial</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:8px;font-weight:700">🌱 Popular Banco de Dados Oficial</h3>
           <p style="font-size:13px;color:#555;margin-bottom:10px">Use este botão uma única vez para popular o Firestore com todos os <strong>134 produtos do banco oficial</strong> (quantidade inicial = 0). Itens existentes são mantidos.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button class="btn" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC02" onclick="seedEstoque()">🌱 Executar Seed (popular base)</button>
@@ -2779,11 +2782,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <!-- TAB RASTREABILIDADE / KARDEX -->
       <div id="eview-kardex" style="display:none">
         <div class="card" style="margin-bottom:14px">
-          <h3 style="font-size:13px;color:#002050;margin-bottom:14px;font-weight:700">&#x1F4C2; Rastreabilidade de Lote — Kardex Digital</h3>
+          <h3 style="font-size:13px;color:#111111;margin-bottom:14px;font-weight:700">&#x1F4C2; Rastreabilidade de Lote — Kardex Digital</h3>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
             <div class="form-group" style="margin:0;flex:1;min-width:200px">
               <label>Buscar por Codigo ou Lote</label>
-              <input type="text" id="kardex-search" placeholder="Ex: T-PAGE0011 ou lote 14966..." style="width:100%;padding:9px 12px;border:2px solid #0078D4;border-radius:6px;font-size:13px"
+              <input type="text" id="kardex-search" placeholder="Ex: T-PAGE0011 ou lote 14966..." style="width:100%;padding:9px 12px;border:2px solid #1a1a1a;border-radius:6px;font-size:13px"
                 onkeydown="if(event.key==='Enter') buscarKardex()">
             </div>
             <button class="btn btn-primary" onclick="buscarKardex()">&#x1F50D; Rastrear</button>
@@ -2805,7 +2808,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <div class="card-grid" id="venc-kpis" style="margin-bottom:16px"></div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
           <span style="font-size:13px;font-weight:600;color:#444">Vence em?</span>
-          <button id="vdf-0" class="btn btn-sm" style="background:#002050;color:#fff" onclick="setVencDayFilter(0)">Todos</button>
+          <button id="vdf-0" class="btn btn-sm" style="background:#111111;color:#fff" onclick="setVencDayFilter(0)">Todos</button>
           <button id="vdf-30" class="btn btn-sm" onclick="setVencDayFilter(30)">30 dias</button>
           <button id="vdf-60" class="btn btn-sm" onclick="setVencDayFilter(60)">60 dias</button>
           <button id="vdf-90" class="btn btn-sm" onclick="setVencDayFilter(90)">90 dias</button>
@@ -2839,12 +2842,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
           <div class="card" style="flex:1;min-width:180px;padding:14px">
             <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.4px">Valor em Risco (Compra)</div>
-            <div id="comp-valor" style="font-size:16px;font-weight:700;color:#002050;margin-top:4px">-</div>
+            <div id="comp-valor" style="font-size:16px;font-weight:700;color:#111111;margin-top:4px">-</div>
           </div>
         </div>
         <div class="card" style="margin-bottom:14px">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:700;color:#002050">Estoque Minimo por Produto (Curva ABC)</span>
+            <span style="font-size:13px;font-weight:700;color:#111111">Estoque Minimo por Produto (Curva ABC)</span>
             <select id="comp-filter" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:5px;font-size:12px" onchange="renderCompras()">
               <option value="">Todos</option>
               <option value="critico">Sem Estoque</option>
@@ -2870,7 +2873,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
       <!-- TAB HISTÓRICO DE LOTES -->
       <div id="eview-historico" style="display:none">
-        <div class="card" style="margin-bottom:14px;padding:14px 18px;background:linear-gradient(135deg,#002050,#004494);color:#fff">
+        <div class="card" style="margin-bottom:14px;padding:14px 18px;background:linear-gradient(135deg,#111111,#222222);color:#fff">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <div>
               <div style="font-size:15px;font-weight:700">📋 Histórico de Lotes Arquivados</div>
@@ -2904,7 +2907,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <div id="fat-login-panel" style="display:none;max-width:400px;margin:40px auto">
         <div class="card" style="text-align:center;padding:36px 32px">
           <div style="font-size:40px;margin-bottom:10px">🧾</div>
-          <h2 style="color:#002050;margin-bottom:4px;font-size:20px">Faturamento</h2>
+          <h2 style="color:#111111;margin-bottom:4px;font-size:20px">Faturamento</h2>
           <p style="color:#666;font-size:13px;margin-bottom:22px">Acesso restrito ao time de faturamento</p>
           <div class="form-group" style="text-align:left;margin-bottom:12px">
             <label style="font-size:12px;font-weight:700;color:#333">Usuário</label>
@@ -2924,7 +2927,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <div id="fat-main-panel" style="display:none">
 
         <!-- User bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;background:#002050;color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#111111;color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:18px">🧾</span>
             <div>
@@ -2970,7 +2973,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- TAB NOVO PEDIDO -->
         <div id="fview-novo" style="display:none">
           <div class="card" style="margin-bottom:12px;padding:12px 16px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:10px">📄 Importar via PDF Mercus</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:10px">📄 Importar via PDF Mercus</h3>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <input type="file" id="fat-pdf-input" accept=".pdf" style="display:none" onchange="parseMercusPDF(this.files[0])">
               <button class="btn btn-primary" onclick="document.getElementById('fat-pdf-input').click()">📂 Selecionar PDF do Mercus</button>
@@ -2978,7 +2981,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
           </div>
           <div class="card" style="padding:18px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:14px">📝 Dados do Pedido</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:14px">📝 Dados do Pedido</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nº Pedido Mercus *</label><input type="text" id="fat-num-mercus" placeholder="40603" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nº ERP (pedido_erp)</label><input type="text" id="fat-num-erp" placeholder="3536" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
@@ -3034,7 +3037,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- TAB FATURISTAS (ADM only) -->
         <div id="fview-faturistas" style="display:none">
           <div class="card" style="margin-bottom:12px;padding:14px 18px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">➕ Cadastrar Faturista</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:12px">➕ Cadastrar Faturista</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nome</label><input type="text" id="fat-new-nome" placeholder="João" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Sobrenome</label><input type="text" id="fat-new-sobrenome" placeholder="Silva" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
@@ -3060,7 +3063,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         <!-- TAB EMPRESAS (ADM only) -->
         <div id="fview-empresas" style="display:none">
           <div class="card" style="margin-bottom:12px;padding:14px 18px">
-            <h3 style="font-size:13px;color:#002050;font-weight:700;margin-bottom:12px">🏢 Adicionar Empresa</h3>
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:12px">🏢 Adicionar Empresa</h3>
             <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end">
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Nome da Empresa</label><input type="text" id="fat-new-emp-nome" placeholder="JPG - Filial RJ" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
               <div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:700;color:#555">Sigla</label><input type="text" id="fat-new-emp-sigla" placeholder="JPG RJ" style="width:100%;padding:8px;border:1.5px solid #d0d7de;border-radius:6px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>
@@ -3100,22 +3103,22 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <!-- gráficos linha + donut -->
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
             <div class="card" style="flex:2;min-width:280px;padding:14px">
-              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📈 Pedidos por Dia (criados vs fechados)</div>
+              <div style="font-size:12px;font-weight:700;color:#111111;margin-bottom:10px">📈 Pedidos por Dia (criados vs fechados)</div>
               <canvas id="fat-chart-linha" style="max-height:200px"></canvas>
             </div>
             <div class="card" style="flex:1;min-width:220px;padding:14px;display:flex;flex-direction:column;align-items:center">
-              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px;align-self:flex-start">🔵 Distribuição por Status</div>
+              <div style="font-size:12px;font-weight:700;color:#111111;margin-bottom:10px;align-self:flex-start">🔵 Distribuição por Status</div>
               <canvas id="fat-chart-donut" style="max-height:200px;max-width:200px"></canvas>
             </div>
           </div>
           <!-- gráficos clientes + produtos -->
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
             <div class="card" style="flex:1;min-width:280px;padding:14px">
-              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">🏆 Top 10 Clientes (pedidos fechados)</div>
+              <div style="font-size:12px;font-weight:700;color:#111111;margin-bottom:10px">🏆 Top 10 Clientes (pedidos fechados)</div>
               <canvas id="fat-chart-clientes" style="max-height:260px"></canvas>
             </div>
             <div class="card" style="flex:1;min-width:280px;padding:14px">
-              <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📦 Top 10 Produtos (qtd solicitada)</div>
+              <div style="font-size:12px;font-weight:700;color:#111111;margin-bottom:10px">📦 Top 10 Produtos (qtd solicitada)</div>
               <canvas id="fat-chart-produtos" style="max-height:260px"></canvas>
             </div>
           </div>
@@ -3164,17 +3167,17 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <p style="color:#666;font-size:13px;margin:0 0 24px">Digite seu PIN para entrar</p>
           <div id="rec-pin-display" style="font-size:28px;letter-spacing:12px;height:44px;display:flex;align-items:center;justify-content:center;background:#F8F9FB;border-radius:10px;margin-bottom:18px">——</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-            <button onclick="recPinDigit('1')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">1</button>
-            <button onclick="recPinDigit('2')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">2</button>
-            <button onclick="recPinDigit('3')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">3</button>
-            <button onclick="recPinDigit('4')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">4</button>
-            <button onclick="recPinDigit('5')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">5</button>
-            <button onclick="recPinDigit('6')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">6</button>
-            <button onclick="recPinDigit('7')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">7</button>
-            <button onclick="recPinDigit('8')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">8</button>
-            <button onclick="recPinDigit('9')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">9</button>
+            <button onclick="recPinDigit('1')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">1</button>
+            <button onclick="recPinDigit('2')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">2</button>
+            <button onclick="recPinDigit('3')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">3</button>
+            <button onclick="recPinDigit('4')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">4</button>
+            <button onclick="recPinDigit('5')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">5</button>
+            <button onclick="recPinDigit('6')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">6</button>
+            <button onclick="recPinDigit('7')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">7</button>
+            <button onclick="recPinDigit('8')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">8</button>
+            <button onclick="recPinDigit('9')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">9</button>
             <div></div>
-            <button onclick="recPinDigit('0')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F0F4F8;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F0F4F8'">0</button>
+            <button onclick="recPinDigit('0')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#F4F4F4;color:#111;cursor:pointer;transition:.15s" onmouseover="this.style.background='#DDE4EE'" onmouseout="this.style.background='#F4F4F4'">0</button>
             <button onclick="recPinDigit('⌫')" style="padding:14px;font-size:18px;font-weight:700;border:none;border-radius:10px;background:#FFF0F0;color:#D13438;cursor:pointer;transition:.15s" onmouseover="this.style.background='#FDD'" onmouseout="this.style.background='#FFF0F0'">⌫</button>
           </div>
           <button onclick="recPinConfirm()" style="width:100%;padding:12px;background:#0D9488;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px">Entrar →</button>
@@ -3493,7 +3496,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div>
     </div>
     <div style="border:1px dashed #d0d7de;border-radius:8px;padding:14px;margin-bottom:12px;background:#FAFAFA">
-      <div style="font-size:12px;font-weight:700;color:#002050;margin-bottom:10px">📎 Anexar Arquivos (salvos neste navegador)</div>
+      <div style="font-size:12px;font-weight:700;color:#111111;margin-bottom:10px">📎 Anexar Arquivos (salvos neste navegador)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
           <label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:4px">📄 NF-e PDF</label>
@@ -3524,7 +3527,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div class="modal-overlay" id="modal-fat-impressao">
   <div class="modal" style="max-width:420px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="margin:0;color:#002050">🖨️ Imprimir Documentos</h3>
+      <h3 style="margin:0;color:#111111">🖨️ Imprimir Documentos</h3>
       <button onclick="closeModal('modal-fat-impressao')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
     </div>
     <div style="font-size:13px;color:#555;margin-bottom:20px;background:#E8F5E9;padding:12px 16px;border-radius:8px;border-left:4px solid #4CAF50">
@@ -3631,10 +3634,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 <div class="modal-overlay" id="modal-cat-edit">
   <div class="modal" style="max-width:600px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="margin:0;color:#002050">✏️ Editar Produto / Lote</h3>
+      <h3 style="margin:0;color:#111111">✏️ Editar Produto / Lote</h3>
       <button onclick="closeModal('modal-cat-edit')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
     </div>
-    <div style="background:#E3F2FD;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1565C0">
+    <div style="background:#F0F0F0;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#1565C0">
       ℹ️ Alterações em <b>Descrição, Categoria, Barcode e Preço</b> serão aplicadas a <u>todos os lotes</u> deste produto.
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -4991,7 +4994,7 @@ function buildReview(){
       <tbody>${cart.map(p=>`<tr><td><code style="font-size:11px">${p.codigo}</code></td><td>${p.descricao}</td><td><strong>${p.qty}</strong></td><td>${p.um}</td></tr>`).join('')}</tbody>
     </table>
     <p style="font-size:10px;text-transform:uppercase;color:#888;margin-bottom:5px;font-weight:700">Justificativa</p>
-    <p style="font-size:13px;background:#F8F9FB;padding:9px 12px;border-radius:5px;border-left:3px solid #0078D4;margin-bottom:10px">${d.evento.justificativa}</p>
+    <p style="font-size:13px;background:#F8F9FB;padding:9px 12px;border-radius:5px;border-left:3px solid #1a1a1a;margin-bottom:10px">${d.evento.justificativa}</p>
     ${d.evento.obs?`<p style="font-size:10px;text-transform:uppercase;color:#888;margin-bottom:5px;font-weight:700">Observações</p><p style="font-size:13px;background:#FFFBEC;padding:9px 12px;border-radius:5px;border-left:3px solid #F2C811">${d.evento.obs}</p>`:''}
   `;
 }
@@ -5275,7 +5278,7 @@ function renderTrack(){
   const slice=reqs.slice((trackPage-1)*PER_PAGE,trackPage*PER_PAGE);
   tbody.innerHTML=slice.map(r=>`
     <tr>
-      <td><strong style="color:#002050">${r.id}</strong></td>
+      <td><strong style="color:#111111">${r.id}</strong></td>
       <td style="font-size:12px">${formatDate(r.dataSolicitacao)}</td>
       <td>${r.evento?.nome||''}</td>
       <td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td>
@@ -5324,20 +5327,20 @@ function gerarRelatorio(){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
       <div class="card">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">Produtos Mais Solicitados</h3>
+        <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">Produtos Mais Solicitados</h3>
         <table class="prod-table"><thead><tr><th>Código</th><th>Descrição</th><th>Total</th></tr></thead><tbody>
           ${Object.entries(prodMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10).map(([c,d])=>`<tr><td><code style="font-size:11px">${c}</code></td><td>${d.descricao}</td><td><strong>${d.total}</strong></td></tr>`).join('')}
         </tbody></table>
       </div>
       <div class="card">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">Por Status</h3>
+        <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">Por Status</h3>
         <table class="prod-table"><thead><tr><th>Status</th><th>Qtd</th></tr></thead><tbody>
           ${['Aguardando Aprovação','Aprovado','Em Separação','Enviado','Entregue','Cancelado'].map(s=>{const c=reqs.filter(r=>r.status===s).length;return c?`<tr><td><span class="status-badge ${statusClass(s)}">${s}</span></td><td><strong>${c}</strong></td></tr>`:''}).join('')}
         </tbody></table>
       </div>
     </div>
     <div class="card">
-      <h3 style="font-size:13px;color:#002050;margin-bottom:10px;font-weight:700">Detalhe das Solicitações</h3>
+      <h3 style="font-size:13px;color:#111111;margin-bottom:10px;font-weight:700">Detalhe das Solicitações</h3>
       <table class="prod-table"><thead><tr><th>Código</th><th>Data</th><th>Evento</th><th>Solicitante</th><th>Itens</th><th>Status</th></tr></thead><tbody>
         ${reqs.map(r=>`<tr><td><strong>${r.id}</strong></td><td style="font-size:12px">${formatDate(r.dataSolicitacao)}</td><td>${r.evento?.nome||''}</td><td>${r.solicitante?.nome||''}</td><td>${r.produtos?.length||0} produto(s)</td><td><span class="status-badge ${statusClass(r.status)}">${r.status}</span></td></tr>`).join('')}
       </tbody></table>
@@ -5408,7 +5411,7 @@ function filterAdmTable(){
   const slice=reqs.slice((admPage-1)*PER_PAGE,admPage*PER_PAGE);
   document.getElementById('adm-tbody').innerHTML=slice.map(r=>`
     <tr>
-      <td><strong style="color:#002050">${r.id}</strong></td>
+      <td><strong style="color:#111111">${r.id}</strong></td>
       <td style="font-size:12px">${formatDate(r.dataSolicitacao)}</td>
       <td>${r.evento?.nome||''}</td>
       <td>${r.solicitante?.nome||''}<br><span style="font-size:11px;color:#888">${r.solicitante?.email||''}</span></td>
@@ -5481,7 +5484,7 @@ function renderCatalogo(){
   const totalQtd    = allStock.reduce((a,s)=>a+(Number(s.quantidade)||0),0);
   const statsEl = document.getElementById('cat-stats');
   if(statsEl) statsEl.innerHTML = `
-    <div style="background:#E3F2FD;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1565C0">${totalUnicos}</div><div style="color:#555">Produtos únicos</div></div>
+    <div style="background:#F0F0F0;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1565C0">${totalUnicos}</div><div style="color:#555">Produtos únicos</div></div>
     <div style="background:#E8F5E9;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1B5E20">${totalLotes}</div><div style="color:#555">Total de lotes</div></div>
     <div style="background:#${semBarcode>0?'FFEBEE':'E8F5E9'};border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#${semBarcode>0?'B71C1C':'1B5E20'}">${semBarcode}</div><div style="color:#555">Sem barcode</div></div>
     <div style="background:#F3E5F5;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#6A1B9A">${totalQtd}</div><div style="color:#555">Unid. em estoque</div></div>`;
@@ -5507,7 +5510,7 @@ function renderCatalogo(){
 
     const lotsHTML = lotes.map(l => {
       const docId = l.id || cleanDocId(l.codigo, l.lote||'');
-      const qtdColor = (Number(l.quantidade)||0) <= (Number(l.estoqueMinimo)||0) && (Number(l.estoqueMinimo)||0) > 0 ? '#B71C1C' : '#002050';
+      const qtdColor = (Number(l.quantidade)||0) <= (Number(l.estoqueMinimo)||0) && (Number(l.estoqueMinimo)||0) > 0 ? '#B71C1C' : '#111111';
       return `<tr style="font-size:12px">
         <td style="font-family:monospace;padding:5px 8px">${l.lote||'—'}</td>
         <td style="padding:5px 8px">${l.dataValidade||'—'}</td>
@@ -5522,7 +5525,7 @@ function renderCatalogo(){
     return `<div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
       <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;flex-wrap:wrap;cursor:pointer" onclick="catToggleLotes('cat-lotes-${cod.replace(/[^a-z0-9]/gi,'_')}')">
         <div style="flex:0 0 auto">
-          <code style="background:#E3F2FD;color:#002050;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700">${cod}</code>
+          <code style="background:#F0F0F0;color:#111111;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700">${cod}</code>
         </div>
         <div style="flex:1;min-width:160px">
           <div style="font-size:13px;font-weight:600;color:#111">${ref.descricao||'—'}</div>
@@ -5828,7 +5831,7 @@ function openDetails(id,isAdm){
     <p style="font-size:10px;text-transform:uppercase;color:#888;margin-bottom:4px;font-weight:700">Justificativa</p>
     <p style="font-size:13px;background:#F8F9FB;padding:8px 12px;border-radius:5px;margin-bottom:8px">${r.evento?.justificativa}</p>
     ${r.evento?.obs?`<p style="font-size:10px;text-transform:uppercase;color:#888;margin-bottom:4px;font-weight:700">Observações</p><p style="font-size:13px;background:#FFFBEC;padding:8px 12px;border-radius:5px;margin-bottom:8px">${r.evento.obs}</p>`:''}
-    <div style="display:flex;align-items:center;gap:10px;background:#F0F4F8;padding:9px 12px;border-radius:6px">
+    <div style="display:flex;align-items:center;gap:10px;background:#F4F4F4;padding:9px 12px;border-radius:6px">
       <span class="status-badge ${statusClass(r.status)}">${r.status}</span>
       ${r.codigoRastreamento?`<span style="font-size:12px">📦 <code style="background:#fff;padding:1px 5px;border-radius:3px">${r.codigoRastreamento}</code>${r.transportadora?' via '+r.transportadora:''}</span>`:''}
     </div>
@@ -5880,19 +5883,22 @@ document.addEventListener('DOMContentLoaded',function(){
 function gerarPDFById(id){const r=allRequests.find(x=>x.id===id);if(r)gerarPDFSolicitacao(r);}
 
 function gerarPDFSolicitacao(r){
-  const html=`<html><head><style>
+  const html=`<html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><style>
     *{font-family:Arial,sans-serif;margin:0;padding:0;box-sizing:border-box}body{padding:28px;font-size:12px;color:#222}
-    h1{font-size:18px;color:#002050}h2{font-size:13px;color:#0078D4;margin:16px 0 7px;border-bottom:1px solid #E0E4EC;padding-bottom:3px}
-    .header{display:flex;justify-content:space-between;border-bottom:2px solid #002050;padding-bottom:10px;margin-bottom:14px}
-    table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}th{background:#002050;color:#fff;padding:5px 8px;text-align:left}td{padding:4px 8px;border-bottom:1px solid #eee}
+    h1{font-size:18px;color:#111111}h2{font-size:13px;color:#1a1a1a;margin:16px 0 7px;border-bottom:1px solid #E0E4EC;padding-bottom:3px}
+    .header{display:flex;justify-content:space-between;border-bottom:2px solid #111111;padding-bottom:10px;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}th{background:#111111;color:#fff;padding:5px 8px;text-align:left}td{padding:4px 8px;border-bottom:1px solid #eee}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.label{font-size:10px;text-transform:uppercase;color:#888;font-weight:700}.val{font-size:12px;margin-top:1px}
-    .box{background:#F8F9FB;padding:7px 10px;border-radius:4px;border-left:3px solid #0078D4;font-size:12px;line-height:1.5}
+    .box{background:#F8F9FB;padding:7px 10px;border-radius:4px;border-left:3px solid #1a1a1a;font-size:12px;line-height:1.5}
     .status{background:#FFF4CE;color:#7A4F00;padding:2px 10px;border-radius:12px;display:inline-block;font-size:11px;font-weight:600}
     footer{margin-top:20px;padding-top:10px;border-top:1px solid #eee;font-size:10px;color:#888;text-align:center}
   </style></head><body>
     <div class="header">
       <div><h1>MESO-LOG</h1><div style="font-size:11px;color:#666">Mesoestetic Pharma Group Brasil · Logística</div></div>
-      <div style="text-align:right"><div style="font-size:20px;font-weight:700;color:#002050">${r.id}</div><div style="font-size:11px;color:#666">Data: ${formatDate(r.dataSolicitacao)}</div><div class="status" style="margin-top:3px">${r.status}</div></div>
+      <div style="text-align:right"><div style="font-size:20px;font-weight:700;color:#111111">${r.id}</div><div style="font-size:11px;color:#666">Data: ${formatDate(r.dataSolicitacao)}</div><div class="status" style="margin-top:3px">${r.status}</div></div>
     </div>
     <div class="grid">
       <div><h2>Solicitante</h2>
@@ -6073,7 +6079,7 @@ function renderMeusEnvios(){
     return`<div class="card" style="margin-bottom:10px;padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
         <div>
-          <span style="font-weight:700;color:#002050;font-size:14px">${s.id}</span>
+          <span style="font-weight:700;color:#111111;font-size:14px">${s.id}</span>
           <span class="status-badge ${sc}" style="margin-left:8px">${s.status}</span>
           <span class="${urg}" style="margin-left:6px">${s.urgencia||'Normal'}</span>
         </div>
@@ -6138,7 +6144,7 @@ function renderCarriersList(){
       <div>
         <h4>🚚 ${c.nome} <span style="font-weight:400;font-size:11px;color:#888">(${c.tipo||''})</span></h4>
         <p>${c.prazo?`Prazo médio: ${c.prazo} dias · `:''}${c.contato||''}${c.obs?' · '+c.obs:''}</p>
-        ${c.link?`<a href="${c.link}" target="_blank" style="font-size:11px;color:#0078D4">🔗 Rastrear</a>`:''}
+        ${c.link?`<a href="${c.link}" target="_blank" style="font-size:11px;color:#1a1a1a">🔗 Rastrear</a>`:''}
       </div>
       <button class="btn btn-danger btn-sm" onclick="deleteCarrier('${c.id}')">🗑️</button>
     </div>
@@ -6207,34 +6213,34 @@ function openEnvioDetalhes(id,isAdm){
       <div><strong>Prazo Desejado:</strong> ${formatDate(s.prazo)||'—'}</div>
     </div>
     <hr style="margin:12px 0;border-color:#eee">
-    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Solicitante</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Solicitante</p>
     <div style="font-size:13px;line-height:1.8">
       ${s.solicitante?.nome||'—'} — ${s.solicitante?.departamento||''}<br>
       📧 ${s.solicitante?.email||''} ${s.solicitante?.telefone?'· 📞 '+s.solicitante.telefone:''}
     </div>
     <hr style="margin:12px 0;border-color:#eee">
-    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Destinatário</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Destinatário</p>
     <div style="font-size:13px;line-height:1.8">
       ${s.destinatario?.nome||'—'} — ${s.destinatario?.empresa||''}<br>
       ${s.endereco?.rua||''}, ${s.endereco?.numero||''} ${s.endereco?.complemento?'— '+s.endereco.complemento:''}<br>
       ${s.endereco?.bairro||''} — ${s.endereco?.cidade||''}/${s.endereco?.estado||''} — CEP ${s.endereco?.cep||''}
     </div>
     <hr style="margin:12px 0;border-color:#eee">
-    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Conteúdo</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Conteúdo</p>
     <div style="font-size:13px;line-height:1.8">
       <strong>Tipo:</strong> ${s.conteudo?.tipo||'—'} · <strong>Qtd:</strong> ${s.conteudo?.quantidade||'—'}<br>
       ${s.conteudo?.descricao||'—'}
     </div>
     <hr style="margin:12px 0;border-color:#eee">
-    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Logística</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Logística</p>
     <div style="font-size:13px;line-height:1.8">
       <strong>Transportadora:</strong> ${s.transportadora||'A definir'}<br>
       ${s.codigoRastreamento?`<strong>Rastreamento:</strong> <code style="background:#f5f5f5;padding:2px 6px;border-radius:3px">${s.codigoRastreamento}</code> ${getTrackingLink(s)}`:'Sem código de rastreamento ainda.'}
     </div>
     <hr style="margin:12px 0;border-color:#eee">
-    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Justificativa</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Justificativa</p>
     <div style="font-size:13px;color:#444">${s.justificativa||'—'}</div>
-    ${s.observacoes?`<hr style="margin:12px 0;border-color:#eee"><p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0078D4;margin-bottom:6px">Observações</p><div style="font-size:13px;color:#444">${s.observacoes}</div>`:''}
+    ${s.observacoes?`<hr style="margin:12px 0;border-color:#eee"><p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin-bottom:6px">Observações</p><div style="font-size:13px;color:#444">${s.observacoes}</div>`:''}
     ${isAdm&&s.obsInterna?`<hr style="margin:12px 0;border-color:#eee"><p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#D13438;margin-bottom:6px">Obs. Interna (ADM)</p><div style="font-size:13px;color:#D13438">${s.obsInterna}</div>`:''}
   `;
   const act=document.getElementById('modal-actions');
@@ -6265,7 +6271,7 @@ function gerarRelatorioEnvios(){
   const totsHtml=Object.entries(tots).map(([k,v])=>`<span class="status-badge ${shipStatusClass(k)}" style="margin-right:6px">${k}: ${v}</span>`).join('');
   res.innerHTML=`
     <div class="card" style="margin-bottom:14px">
-      <p style="font-size:13px;font-weight:700;color:#002050;margin-bottom:8px">Total: ${list.length} envio(s)</p>
+      <p style="font-size:13px;font-weight:700;color:#111111;margin-bottom:8px">Total: ${list.length} envio(s)</p>
       <div style="display:flex;flex-wrap:wrap;gap:6px">${totsHtml}</div>
     </div>
     <div class="card">
@@ -6294,8 +6300,11 @@ function exportarPDFEnvios(){
   const inicio=document.getElementById('rel-env-inicio').value;
   const fim=document.getElementById('rel-env-fim').value;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Envios</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}h1{color:#002050;font-size:16px}h2{color:#333;font-size:13px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}th{background:#002050;color:#fff}tr:nth-child(even){background:#f9f9f9}</style></head><body>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Relatório de Envios</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}h1{color:#111111;font-size:16px}h2{color:#333;font-size:13px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}th{background:#111111;color:#fff}tr:nth-child(even){background:#f9f9f9}</style></head><body>
   <h1>MESO-LOG — Relatório de Envios</h1>
   <p style="color:#666">Período: ${inicio?formatDate(inicio):'início'} a ${fim?formatDate(fim):'hoje'} · Total: ${list.length} envio(s)</p>
   <table>
@@ -6307,8 +6316,11 @@ function exportarPDFEnvios(){
 
 function gerarPDFEnvio(s){
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Envio ${s.id}</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#222}h1{color:#002050;font-size:16px;border-bottom:2px solid #002050;padding-bottom:6px}h3{color:#0078D4;font-size:11px;text-transform:uppercase;margin:14px 0 4px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.field{background:#f8f9fb;padding:6px 10px;border-radius:4px}.label{font-size:10px;color:#888;text-transform:uppercase}.value{font-weight:600;margin-top:2px}</style></head><body>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Envio ${s.id}</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#222}h1{color:#111111;font-size:16px;border-bottom:2px solid #111111;padding-bottom:6px}h3{color:#1a1a1a;font-size:11px;text-transform:uppercase;margin:14px 0 4px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.field{background:#f8f9fb;padding:6px 10px;border-radius:4px}.label{font-size:10px;color:#888;text-transform:uppercase}.value{font-weight:600;margin-top:2px}</style></head><body>
   <h1>MESO-LOG · Comprovante de Solicitação de Envio</h1>
   <p style="color:#666;font-size:11px">Código: <strong>${s.id}</strong> · Data: ${formatDate(s.dataSolicitacao)} · Status: ${s.status}</p>
   <h3>Solicitante</h3>
@@ -6352,7 +6364,7 @@ function getTrackingLink(s){
     url=`https://www.jadlog.com.br/jadlog/tracking.jad?cte=${code}`;
   else if(code)
     url=`https://www.google.com/search?q=${encodeURIComponent(code+' rastreamento')}`;
-  return url?`<a href="${url}" target="_blank" style="font-size:11px;color:#0078D4;margin-left:6px">🔗 Rastrear</a>`:'';
+  return url?`<a href="${url}" target="_blank" style="font-size:11px;color:#1a1a1a;margin-left:6px">🔗 Rastrear</a>`:'';
 }
 
 function shipStatusClass(s){return{'Aguardando Aprovação':'s-aguardando','Aprovado':'s-aprovado','Coletado':'s-coletado','Em Trânsito':'s-transito','Entregue':'s-entregue','Cancelado':'s-cancelado','Extraviado':'s-extraviado'}[s]||'s-aguardando';}
@@ -6488,7 +6500,7 @@ function renderAlertasEstoque(){
       <div style="font-size:11px;color:#555;margin-top:2px">${label}</div>
     </div>`;
   let cards =
-    card('📦','Total de itens',total,'#F0F4FF','#002050','') +
+    card('📦','Total de itens',total,'#F0F4FF','#111111','') +
     card('🚫','Sem estoque',semEstoque,'#FFF0F0','#B71C1C','Sem Estoque') +
     card('⚠️','Vencendo em 90d',vencendo,'#FFF8E1','#E65100','Vencendo');
   if(admLoggedIn){
@@ -6639,7 +6651,7 @@ function exportarModeloEstoque(){
 async function importarEstoqueFile(file){
   if(!file) return;
   const res = document.getElementById('import-est-result');
-  res.innerHTML='<div style="color:#0078D4">⏳ Processando arquivo...</div>';
+  res.innerHTML='<div style="color:#1a1a1a">⏳ Processando arquivo...</div>';
   const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
   // Normaliza lote: float do Excel (14966.0) → "14966"; string → trim
   const normLote = v => { if(v==null||v==='') return ''; if(typeof v==='number') return String(Math.round(v)); return String(v).trim(); };
@@ -6792,7 +6804,7 @@ function gerarRelatorioEstoquePDF(){
   [...catsPresent,...catsOther].forEach(ct=>{
     const group = items.filter(s=>s.categoria===ct);
     if(!group.length) return;
-    rows+=`<tr style="background:#E8EDF5"><td colspan="6" style="font-weight:700;font-size:11px;text-transform:uppercase;color:#002050;padding:6px 10px">${ct}</td></tr>`;
+    rows+=`<tr style="background:#E8EDF5"><td colspan="6" style="font-weight:700;font-size:11px;text-transform:uppercase;color:#111111;padding:6px 10px">${ct}</td></tr>`;
     group.forEach(s=>{
       const qty=Number(s.quantidade)||0;
       const val=calcValidade(s.dataValidade||'');
@@ -6801,8 +6813,11 @@ function gerarRelatorioEstoquePDF(){
     });
   });
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Estoque</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}h1{color:#002050;font-size:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left}th{background:#002050;color:#fff}tr:nth-child(even){background:#f9f9f9}</style>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Relatório de Estoque</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}h1{color:#111111;font-size:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left}th{background:#111111;color:#fff}tr:nth-child(even){background:#f9f9f9}</style>
   </head><body>
   <h1>MESO-LOG — Relatório de Estoque</h1>
   <p style="color:#666">Gerado em: ${now} · Total: ${items.length} item(ns)</p>
@@ -6832,7 +6847,7 @@ async function buscarKardex(){
   const infoEl=document.getElementById('kardex-produto-info');
   const hdrEl=document.getElementById('kardex-produto-header');
   const btnPDF=document.getElementById('btn-kardex-pdf');
-  el.innerHTML='<div class="card" style="text-align:center;padding:24px"><div class="spinner" style="width:28px;height:28px;border:3px solid #e0e0e0;border-top:3px solid #0078D4;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;margin-right:10px"></div>Rastreando...</div>';
+  el.innerHTML='<div class="card" style="text-align:center;padding:24px"><div class="spinner" style="width:28px;height:28px;border:3px solid #e0e0e0;border-top:3px solid #1a1a1a;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;margin-right:10px"></div>Rastreando...</div>';
   infoEl.style.display='none';
   btnPDF.style.display='none';
 
@@ -6939,7 +6954,7 @@ async function buscarKardex(){
         dataValidade:'—',
         quantidade:Number(r.quantidade)||0,
         sinal:'-',
-        cor:'#E3F2FD',
+        cor:'#F0F0F0',
         corTexto:'#0D47A1',
         detalhe:'Destino: '+(r.destino||'—')+(r.obs?' | '+r.obs:''),
         docId:r.id
@@ -6964,7 +6979,7 @@ async function buscarKardex(){
     hdrEl.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px">
         <div>
-          <div style="font-size:16px;font-weight:700;color:#002050">${descricao}</div>
+          <div style="font-size:16px;font-weight:700;color:#111111">${descricao}</div>
           <div style="font-size:12px;color:#666;margin-top:2px"><code>${codigo}</code> &bull; ${matches.length} lote(s) no estoque</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -6980,7 +6995,7 @@ async function buscarKardex(){
             <div style="font-size:20px;font-weight:700;color:#004578">${totalAjustes}</div>
             <div style="font-size:10px;color:#555">Ajustes</div>
           </div>
-          <div style="background:#002050;border-radius:6px;padding:8px 14px;text-align:center">
+          <div style="background:#111111;border-radius:6px;padding:8px 14px;text-align:center">
             <div style="font-size:20px;font-weight:700;color:#fff">${estoqueAtual}</div>
             <div style="font-size:10px;color:#A8C2E8">Saldo Atual</div>
           </div>
@@ -7003,7 +7018,7 @@ async function buscarKardex(){
     el.innerHTML=`
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:12px 16px;background:#F8F9FB;border-bottom:1px solid #eee">
-          <strong style="font-size:13px;color:#002050">Timeline de Movimentacoes (${movements.length} registros)</strong>
+          <strong style="font-size:13px;color:#111111">Timeline de Movimentacoes (${movements.length} registros)</strong>
         </div>
         <div style="overflow-x:auto">
           <table class="prod-table">
@@ -7035,8 +7050,11 @@ function exportarKardexPDF(){
   const rows=movements.map(m=>`<tr><td>${fmtDate(m.data)}</td><td style="font-weight:700;color:${m.corTexto}">${m.tipLabel}</td><td>${m.lote}</td><td>${m.dataValidade}</td><td style="text-align:center;font-weight:700">${m.sinal}${m.quantidade}</td><td style="font-size:10px">${m.detalhe}</td></tr>`).join('');
   const lotesRows=matches.map(m=>`<tr><td>${m.lote||'—'}</td><td>${m.dataValidade||'S/Val.'}</td><td style="font-weight:700">${m.quantidade||0}</td></tr>`).join('');
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Kardex: ${codigo}</title>
-  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#002050;font-size:15px}h2{color:#002050;font-size:12px;margin:14px 0 6px;border-left:4px solid #0078D4;padding-left:8px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#002050;color:#fff}.footer{margin-top:16px;border-top:1px solid #ccc;padding-top:6px;font-size:9px;color:#999}</style>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Kardex: ${codigo}</title>
+  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#111111;font-size:15px}h2{color:#111111;font-size:12px;margin:14px 0 6px;border-left:4px solid #1a1a1a;padding-left:8px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#111111;color:#fff}.footer{margin-top:16px;border-top:1px solid #ccc;padding-top:6px;font-size:9px;color:#999}</style>
   </head><body>
   <h1>MESO-LOG — Kardex: ${descricao}</h1>
   <p style="color:#666">Codigo: ${codigo} &bull; Gerado em: ${now}</p>
@@ -7175,7 +7193,7 @@ function setVencDayFilter(n){
   window.__vencDayFilter=n;
   [0,30,60,90,120,365].forEach(function(v){
     var b=document.getElementById('vdf-'+v);
-    if(b){b.style.background=v===n?'#002050':'';b.style.color=v===n?'#fff':'';}
+    if(b){b.style.background=v===n?'#111111':'';b.style.color=v===n?'#fff':'';}
   });
   renderVencimentos();
 }
@@ -7277,8 +7295,11 @@ function exportarVencimentosPDF(){
   const fmtDias=dias=>dias<0?Math.abs(Math.round(dias))+'d vencido':'vence em '+Math.round(dias)+'d';
   const rows=all.map(s=>`<tr><td>${s.codigo}</td><td>${s.descricao}</td><td>${s.lote||'—'}</td><td style="font-weight:700">${s.dataValidade||'—'}</td><td>${fmtDias(s.dias)}</td><td style="text-align:center">${s.quantidade||0}</td></tr>`).join('');
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Painel de Vencimentos</title>
-  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#002050;font-size:15px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px 8px}th{background:#002050;color:#fff}</style>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Painel de Vencimentos</title>
+  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#111111;font-size:15px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:5px 8px}th{background:#111111;color:#fff}</style>
   </head><body><h1>MESO-LOG — Painel de Vencimentos</h1>
   <p style="color:#666">Gerado em: ${now} · ${all.length} produto(s) em risco</p>
   <table><thead><tr><th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Prazo</th><th>Qtd</th></tr></thead><tbody>${rows}</tbody></table>
@@ -7346,7 +7367,7 @@ function renderCompras(){
       <td style="font-size:12px">${i.categoria}</td>
       <td><span class="abc-${i.abc.toLowerCase()}">${i.abc}</span></td>
       <td style="font-size:11px;color:#666">${i.lotes.slice(0,3).join(', ')+(i.lotes.length>3?'...':'')}</td>
-      <td style="text-align:center;font-weight:700;font-size:15px;color:${i.qtdTotal===0?'#B71C1C':'#002050'}">${i.qtdTotal}</td>
+      <td style="text-align:center;font-weight:700;font-size:15px;color:${i.qtdTotal===0?'#B71C1C':'#111111'}">${i.qtdTotal}</td>
       <td style="text-align:center">
         <input class="min-input" type="number" min="0" value="${i.estoqueMinimo}" 
           onchange="salvarEstoqueMinimo('${i.codigo}',this.value)" 
@@ -7384,13 +7405,16 @@ function gerarListaCompra(){
       <td style="text-align:center"><span class="abc-${i.abc.toLowerCase()}" style="padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">${i.abc}</span></td>
       <td style="text-align:center;color:${i.qtdTotal===0?'#B71C1C':'#E65100'};font-weight:700">${i.qtdTotal}</td>
       <td style="text-align:center">${i.estoqueMinimo}</td>
-      <td style="text-align:center;font-weight:700;color:#0078D4">${i.estoqueMinimo-i.qtdTotal}</td>
+      <td style="text-align:center;font-weight:700;color:#1a1a1a">${i.estoqueMinimo-i.qtdTotal}</td>
       <td style="text-align:right">R$ ${((i.estoqueMinimo-i.qtdTotal)*i.precoCusto).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
     </tr>`).join('');
   const total=itens.reduce((s,i)=>s+(i.estoqueMinimo-i.qtdTotal)*i.precoCusto,0);
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lista de Compra</title>
-  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#002050;font-size:15px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left}th{background:#002050;color:#fff}.total{font-size:14px;font-weight:700;color:#002050;margin-top:12px}</style>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>Lista de Compra</title>
+  <style>body{font-family:Arial;font-size:11px;margin:20px}h1{color:#111111;font-size:15px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left}th{background:#111111;color:#fff}.total{font-size:14px;font-weight:700;color:#111111;margin-top:12px}</style>
   </head><body>
   <h1>MESO-LOG — Lista de Compra</h1>
   <p style="color:#666">Gerado em: ${now} · ${itens.length} item(ns) abaixo do mínimo</p>
@@ -7619,13 +7643,13 @@ async function gerarRelatorioOps(){
         <div class="stat-card green"><h3>Recebimentos</h3><div class="num">${recs.length}</div><div style="font-size:11px;color:#666;margin-top:4px">${totalItensRec} itens recebidos</div></div>
         <div class="stat-card blue"><h3>Inventários</h3><div class="num">${invs.length}</div><div style="font-size:11px;color:#666;margin-top:4px">${totalItensInv} itens contados</div></div>
         <div class="stat-card red"><h3>Perdas/Avarias/Venc.</h3><div class="num">${perds.length}</div><div style="font-size:11px;color:#666;margin-top:4px">${qtdPerdas} unid. baixadas</div></div>
-        <div class="stat-card yellow"><h3>Período</h3><div style="font-size:16px;font-weight:700;color:#002050;margin-top:4px">${fmtDate(ini)}</div><div style="font-size:12px;color:#666">até ${fmtDate(fim)}</div></div>
+        <div class="stat-card yellow"><h3>Período</h3><div style="font-size:16px;font-weight:700;color:#111111;margin-top:4px">${fmtDate(ini)}</div><div style="font-size:12px;color:#666">até ${fmtDate(fim)}</div></div>
       </div>`;
 
     // ---- Recebimentos table ----
     if(!tipo || tipo==='recebimento'){
       html += `<div class="card" style="margin-bottom:16px">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📦 Recebimentos no Período (${recs.length})</h3>`;
+        <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">📦 Recebimentos no Período (${recs.length})</h3>`;
       if(!recs.length){
         html += '<p style="color:#aaa;text-align:center;padding:16px">Nenhum recebimento no período.</p>';
       } else {
@@ -7646,7 +7670,7 @@ async function gerarRelatorioOps(){
           </tr>`).join('')}</tbody>
         </table></div>
         <!-- Produtos recebidos detail -->
-        ${recs.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:#0078D4;font-weight:600">Ver todos os produtos recebidos</summary>
+        ${recs.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:#1a1a1a;font-weight:600">Ver todos os produtos recebidos</summary>
           <div style="overflow-x:auto;margin-top:8px"><table class="prod-table">
           <thead><tr><th>Fornecedor/NF</th><th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Qtd</th></tr></thead>
           <tbody>${recs.flatMap(r=>(r.itens||[]).map(it=>`<tr>
@@ -7666,7 +7690,7 @@ async function gerarRelatorioOps(){
     // ---- Inventários table ----
     if(!tipo || tipo==='inventario'){
       html += `<div class="card" style="margin-bottom:16px">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">📋 Inventários no Período (${invs.length})</h3>`;
+        <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">📋 Inventários no Período (${invs.length})</h3>`;
       if(!invs.length){
         html += '<p style="color:#aaa;text-align:center;padding:16px">Nenhum inventário no período.</p>';
       } else {
@@ -7687,7 +7711,7 @@ async function gerarRelatorioOps(){
     // ---- Perdas/Avarias/Vencimentos table ----
     if(!tipo || tipo==='perdas'){
       html += `<div class="card" style="margin-bottom:16px">
-        <h3 style="font-size:13px;color:#002050;margin-bottom:12px;font-weight:700">⚠️ Ocorrências no Período (${perds.length})</h3>`;
+        <h3 style="font-size:13px;color:#111111;margin-bottom:12px;font-weight:700">⚠️ Ocorrências no Período (${perds.length})</h3>`;
       if(!perds.length){
         html += '<p style="color:#aaa;text-align:center;padding:16px">Nenhuma ocorrência no período.</p>';
       } else {
@@ -7713,7 +7737,7 @@ async function gerarRelatorioOps(){
         </table></div>
         <!-- Produtos mais afetados -->
         ${Object.keys(prodPerdaMap).length ? `<div style="margin-top:12px">
-          <h4 style="font-size:12px;font-weight:700;color:#002050;margin-bottom:8px">Produtos Mais Afetados</h4>
+          <h4 style="font-size:12px;font-weight:700;color:#111111;margin-bottom:8px">Produtos Mais Afetados</h4>
           <table class="prod-table"><thead><tr><th>Código</th><th>Descrição</th><th>Qtd Total</th><th>Ocorrências</th></tr></thead>
           <tbody>${Object.entries(prodPerdaMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10).map(([cod,v])=>`<tr>
             <td><code style="font-size:11px">${cod}</code></td>
@@ -7764,18 +7788,21 @@ function exportarRelatorioOpsPDF(){
   });
 
   const w = window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8">
   <title>Relatório de Operações — MESO-LOG</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:11px;margin:20px;color:#222}
-    h1{color:#002050;font-size:16px;border-bottom:2px solid #002050;padding-bottom:6px}
-    h2{color:#002050;font-size:13px;margin:18px 0 6px;border-left:4px solid #0078D4;padding-left:8px}
+    h1{color:#111111;font-size:16px;border-bottom:2px solid #111111;padding-bottom:6px}
+    h2{color:#111111;font-size:13px;margin:18px 0 6px;border-left:4px solid #1a1a1a;padding-left:8px}
     .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
-    .stat{background:#F0F4F8;border-radius:6px;padding:10px;text-align:center}
-    .stat .num{font-size:20px;font-weight:700;color:#002050}
+    .stat{background:#F4F4F4;border-radius:6px;padding:10px;text-align:center}
+    .stat .num{font-size:20px;font-weight:700;color:#111111}
     .stat .lbl{font-size:10px;color:#666;margin-top:2px}
     table{width:100%;border-collapse:collapse;margin-bottom:6px}
-    th{background:#002050;color:#fff;padding:5px 8px;text-align:left;font-size:10px}
+    th{background:#111111;color:#fff;padding:5px 8px;text-align:left;font-size:10px}
     td{padding:4px 8px;border-bottom:1px solid #e0e0e0;font-size:10px}
     tr:nth-child(even){background:#f9f9f9}
     .footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px;font-size:9px;color:#999}
@@ -7909,7 +7936,7 @@ function handleRecScan(val){
   const card=document.getElementById('rec-found-card');
   if(found){
     recFoundItem=found;
-    document.getElementById('rec-found-title').innerHTML='<span style="color:#002050">'+found.codigo+'</span> · '+found.descricao;
+    document.getElementById('rec-found-title').innerHTML='<span style="color:#111111">'+found.codigo+'</span> · '+found.descricao;
     document.getElementById('rec-found-lote').value=found.lote||'';
     document.getElementById('rec-found-validade').value=found.dataValidade||'';
     document.getElementById('rec-found-qty').value='';
@@ -7940,7 +7967,7 @@ function renderRecItens(){
   const el=document.getElementById('rec-itens-list');if(!el)return;
   if(!recItemsArr.length){el.innerHTML='';return;}
   el.innerHTML=`<div style="background:#F8FAFB;border:1px solid #E0E4EC;border-radius:6px;padding:10px">
-    <h4 style="font-size:12px;color:#002050;font-weight:700;margin-bottom:8px">${recItemsArr.length} item(ns) a receber:</h4>
+    <h4 style="font-size:12px;color:#111111;font-weight:700;margin-bottom:8px">${recItemsArr.length} item(ns) a receber:</h4>
     ${recItemsArr.map((it,i)=>`<div class="rec-item-row">
       <span style="flex:1"><strong>${it.codigo}</strong> <span style="color:#666;font-size:12px">${it.descricao}</span></span>
       <span style="font-size:12px;color:#555">Lote: ${it.lote||'—'}</span>
@@ -8177,10 +8204,10 @@ function handleInvScan(val){
   if(found){
     invFoundItem = found;
     document.getElementById('inv-found-title').innerHTML =
-      '<span style="color:#002050">'+found.codigo+'</span> · '+found.descricao;
+      '<span style="color:#111111">'+found.codigo+'</span> · '+found.descricao;
     // badge with category
     document.getElementById('inv-found-badge').innerHTML =
-      '<span style="background:#EBF3FB;color:#0078D4;padding:2px 8px;border-radius:10px;font-size:11px">'+
+      '<span style="background:#F5F5F5;color:#1a1a1a;padding:2px 8px;border-radius:10px;font-size:11px">'+
       (found.categoria||'')+'</span>';
     document.getElementById('inv-found-lote').value     = found.lote||'';
     document.getElementById('inv-found-validade').value = found.dataValidade||'';
@@ -8240,7 +8267,7 @@ function renderInvItens(){
   el.innerHTML = invItens.map((it,i)=>`
     <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;color:#002050;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.codigo}</div>
+        <div style="font-weight:700;color:#111111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.codigo}</div>
         <div style="color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.descricao}</div>
         <div style="color:#888;font-size:11px">Lote: ${it.lote||'—'} · Val: ${it.dataValidade||'—'}</div>
       </div>
@@ -8273,7 +8300,7 @@ function confirmarNaoBipados(callback){
     '<div style="max-height:370px;overflow-y:auto;border:1px solid #e0e4ec;border-radius:8px;margin-bottohm:16px">'+
     naoBipados.map(function(it,i){return '<div id="nb-row-'+i+'" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;transition:background .2s;background:#fff5f5">'+
       '<div style="flex:1;min-width:0">'+
-      '<div style="font-weight:700;color:#002050">'+it.codigo+'</div>'+
+      '<div style="font-weight:700;color:#111111">'+it.codigo+'</div>'+
       '<div style="color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+it.descricao+'</div>'+
       '<div style="color:#888;font-size:11px">Lote: '+(it.lote||'—')+' · Estoque atual: <strong style="color:#C50F1F">'+it.quantidade+'</strong></div></div>'+
       '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'+
@@ -8471,7 +8498,7 @@ function renderHistoricoInventarios(){
         const r=d.data();
         const dt=(r.data||r.criadoEm?.slice(0,10)||'').split('-').reverse().join('/');
         return `<div style="padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
-          <div style="font-weight:700;color:#002050">${r.nome||'—'}</div>
+          <div style="font-weight:700;color:#111111">${r.nome||'—'}</div>
           <div style="color:#555">${dt} · ${r.responsavel||'—'} · ${r.local||'Geral'}</div>
           <div style="color:#107C10;font-weight:600">${r.totalItens||0} item(ns) contados</div>
         </div>`;
@@ -8596,7 +8623,7 @@ function initPdvEventos(){
         const ativo=pdvEventoAtivo&&pdvEventoAtivo.id===ev.id;
         return `<div class="pdv-evento-card ${ativo?'ativo':''}" onclick="selecionarEvento('${ev.id}')">
           <div style="flex:1">
-            <strong style="color:#002050">${ev.nome}</strong>
+            <strong style="color:#111111">${ev.nome}</strong>
             <div style="font-size:12px;color:#666;margin-top:3px">📅 ${dtFmt} · 📍 ${ev.local||'—'}${ev.nfeNum?' · NF-e: '+ev.nfeNum:''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
@@ -8855,7 +8882,7 @@ function renderCarrinho(){
             onchange="pdvCarrinho[${i}].precoUnit=parseFloat(this.value)||0;pdvCarrinho[${i}].precoComDesc=pdvCarrinho[${i}].precoUnit*(1-pdvCarrinho[${i}].descontoPct/100);pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()"></span>
           <span style="font-size:11px;color:#D13438">desc <input type="number" min="0" max="100" step="0.5" value="${(it.descontoPct||0)}" class="form-control" style="width:54px;font-size:11px;display:inline-block"
             onchange="pdvCarrinho[${i}].descontoPct=parseFloat(this.value)||0;pdvCarrinho[${i}].precoComDesc=pdvCarrinho[${i}].precoUnit*(1-pdvCarrinho[${i}].descontoPct/100);pdvCarrinho[${i}].subtotalItem=pdvCarrinho[${i}].precoComDesc*pdvCarrinho[${i}].quantidade;renderCarrinho()">%</span>
-          <span style="font-size:12px;font-weight:700;color:#002050;margin-left:auto">= R$ ${(it.subtotalItem||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+          <span style="font-size:12px;font-weight:700;color:#111111;margin-left:auto">= R$ ${(it.subtotalItem||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
         </div>`
       :(it.natureza==='bonificacao'?'<div style="font-size:11px;color:#FF8C00;margin-top:3px">🎁 Bonificação — sem valor financeiro</div>':'');
     return `<div class="pdv-cart-item">
@@ -8967,7 +8994,7 @@ function pdvRenderPagamentos(){
             onchange="pdvPagamentos[${i}].parcelas=parseInt(this.value);pdvRenderPagamentos()">
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option value="${n}"${(p.parcelas||1)===n?' selected':''}>${n}x</option>`).join('')}
           </select>
-          ${(p.parcelas||1)>1&&p.valor>0?`<span style="font-size:11px;color:#002050;font-weight:700">${'R$ '+((p.valor/(p.parcelas||1)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))}/x</span>`:''}
+          ${(p.parcelas||1)>1&&p.valor>0?`<span style="font-size:11px;color:#111111;font-weight:700">${'R$ '+((p.valor/(p.parcelas||1)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))}/x</span>`:''}
         </div>
         <input class="form-control" placeholder="Obs: bandeira, código..." style="font-size:11px;padding:3px 6px"
           value="${p.obs||''}"
@@ -9253,7 +9280,7 @@ async function renderPedidosEvento(){
       return `<div class="pedido-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
-            <strong style="color:#002050">${p.numero||d.id}</strong>
+            <strong style="color:#111111">${p.numero||d.id}</strong>
             <span style="font-size:12px;color:#666;margin-left:8px">${dtFmt}</span>
           </div>
           <span class="pedido-status" style="background:${statusBg[p.status]||'#eee'};color:${statusColor[p.status]||'#333'}">${p.status}</span>
@@ -9267,10 +9294,10 @@ async function renderPedidosEvento(){
           <button id="tab-sp-${pedidoId}" onclick="pedidoTab('${pedidoId}','sp')" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;color:#aaa">📦 A Entregar (${itSP.length})</button>
         </div>
         <div id="view-ent-${pedidoId}" style="font-size:11px;color:#666;margin-bottom:6px">
-          ${itEnt.length?itEnt.map(it=>'<span style="background:#F0FFF4;border:1px solid #c3e6cb;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#0078D4')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Nenhum item entregue no evento.</em>'}
+          ${itEnt.length?itEnt.map(it=>'<span style="background:#F0FFF4;border:1px solid #c3e6cb;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#1a1a1a')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Nenhum item entregue no evento.</em>'}
         </div>
         <div id="view-sp-${pedidoId}" style="display:none;font-size:11px;color:#666;margin-bottom:6px">
-          ${itSP.length?itSP.map(it=>'<span style="background:#FFF8E7;border:1px solid #ffc107;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#0078D4')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Sem itens sob pedido.</em>'}
+          ${itSP.length?itSP.map(it=>'<span style="background:#FFF8E7;border:1px solid #ffc107;border-radius:3px;padding:2px 6px;margin-right:3px;display:inline-block">'+it.descricao+' ×'+it.quantidade+' <span style="color:'+(it.natureza==='bonificacao'?'#FF8C00':'#1a1a1a')+'">#'+(it.natureza==='bonificacao'?'Bon':'Venda')+'</span></span>').join(''):'<em style="color:#aaa">Sem itens sob pedido.</em>'}
           ${itSP.length&&p.statusAEntregar!=='entregue_sede'?`<div style="margin-top:6px"><button onclick="marcarAEntregar('${d.id}')" class="btn" style="font-size:11px;padding:3px 8px;background:#C07800;color:#fff">📦 Marcar como Entregue pela Sede</button></div>`:''}
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
@@ -9490,7 +9517,7 @@ async function estImportarXML(){
   const statusEl=document.getElementById('est-xml-status');
   if(!fileEl.files.length){alert('Selecione um arquivo XML.');return;}
   const file=fileEl.files[0];
-  statusEl.innerHTML='<span style="color:#0078D4">⏳ Importando...</span>';
+  statusEl.innerHTML='<span style="color:#1a1a1a">⏳ Importando...</span>';
   try{
     const text=await file.text();
     const parser=new DOMParser();
@@ -9542,7 +9569,7 @@ async function estImportarExcel(file){
   if(!getEstImportEventoId()){alert('Selecione o Evento Destino antes de importar.');return;}
   const previewEl=document.getElementById('est-excel-preview');
   const btnConfirm=document.getElementById('btn-confirmar-excel');
-  previewEl.innerHTML='<span style="color:#0078D4">⏳ Lendo planilha...</span>';
+  previewEl.innerHTML='<span style="color:#1a1a1a">⏳ Lendo planilha...</span>';
   try{
     const buf=await file.arrayBuffer();
     const wb=XLSX.read(buf,{type:'array'});
@@ -9904,7 +9931,7 @@ function pdvExpFiltro(f,btn){
     const b=document.getElementById('pdv-exp-f-'+k);
     if(!b) return;
     const styles={
-      todos:  {border:'#002050',bg:'#002050',color:'#fff'},
+      todos:  {border:'#111111',bg:'#111111',color:'#fff'},
       cobranca:{border:'#D13438',bg:'#D13438',color:'#fff'},
       cobrado: {border:'#107C10',bg:'#107C10',color:'#fff'},
     };
@@ -9954,7 +9981,7 @@ async function renderExpedicaoPedidos(){
               <strong>${fmt(pg.valor)}</strong>
             </div>`;
           }).join(''):`<div style="font-size:12px;color:#aaa">Não informado</div>`}
-          ${totalFin>0?`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#002050;margin-top:6px;padding-top:6px;border-top:1px solid #FFD566">
+          ${totalFin>0?`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#111111;margin-top:6px;padding-top:6px;border-top:1px solid #FFD566">
             <span>TOTAL A COBRAR</span><span style="color:#D13438">${fmt(p.valorFinal||totalFin)}</span>
           </div>`:''}
           <div style="margin-top:10px">
@@ -9962,7 +9989,7 @@ async function renderExpedicaoPedidos(){
             <div style="display:flex;gap:6px;align-items:center">
               <input type="file" id="comp-file-${docId}" accept="image/*,application/pdf" style="display:none" onchange="pdvExpComprovanteChange('${docId}',this)">
               <button onclick="document.getElementById('comp-file-${docId}').click()"
-                style="font-size:11px;padding:5px 10px;background:#F0F7FF;border:1px dashed #0078D4;border-radius:6px;color:#0078D4;cursor:pointer">
+                style="font-size:11px;padding:5px 10px;background:#F0F7FF;border:1px dashed #1a1a1a;border-radius:6px;color:#1a1a1a;cursor:pointer">
                 📁 Selecionar arquivo
               </button>
               <span id="comp-nome-${docId}" style="font-size:11px;color:#107C10"></span>
@@ -10013,12 +10040,12 @@ async function renderExpedicaoPedidos(){
 
           ${itEnt.length===0&&itSP.length===0?`
           <div style="border-top:1px solid #A8D5A2;margin-top:8px;padding-top:8px">
-            <div style="font-size:11px;font-weight:700;color:#002050;margin-bottom:5px">📦 Itens do pedido</div>
-            ${todosItens.map((it,i)=>rowItem(it,'#0078D4',i,'t')).join('')}
+            <div style="font-size:11px;font-weight:700;color:#111111;margin-bottom:5px">📦 Itens do pedido</div>
+            ${todosItens.map((it,i)=>rowItem(it,'#1a1a1a',i,'t')).join('')}
           </div>`:''}
 
           <button onclick="pdvImprimirExpedicao('${docId}')"
-            style="margin-top:10px;width:100%;padding:9px;background:#002050;color:#FFD566;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">
+            style="margin-top:10px;width:100%;padding:9px;background:#111111;color:#FFD566;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">
             🖨️ Emitir Recibo
           </button>
         </div>`;
@@ -10026,7 +10053,7 @@ async function renderExpedicaoPedidos(){
       return `<div class="pedido-card" style="border-left:4px solid ${cobrado?'#107C10':'#D13438'};margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <strong style="font-size:13px;color:#002050">${p.numero}</strong>
+            <strong style="font-size:13px;color:#111111">${p.numero}</strong>
             <span style="font-size:11px;color:#555;margin-left:8px">${dtFmt}</span><br>
             <span style="font-size:12px">👤 ${p.cliente||'—'}</span>
             ${p.cpf&&p.cpf.replace(/\D/g,'')?`<span style="font-size:10px;color:#888;margin-left:6px">CPF: ${p.cpf}</span>`:''}
@@ -10165,7 +10192,7 @@ async function renderFechamentoResumo(){
     const totalRem=eSnap.docs.reduce((s,d)=>s+(Number(d.data().quantidade)||0),0);
     el.innerHTML=`
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
-        <div><div style="font-size:22px;font-weight:700;color:#0078D4">${pSnap.docs.length}</div><div style="font-size:11px;color:#666">Pedidos</div></div>
+        <div><div style="font-size:22px;font-weight:700;color:#1a1a1a">${pSnap.docs.length}</div><div style="font-size:11px;color:#666">Pedidos</div></div>
         <div><div style="font-size:22px;font-weight:700;color:#107C10">${totalVendas}</div><div style="font-size:11px;color:#666">Unid. Vendidas</div></div>
         <div><div style="font-size:22px;font-weight:700;color:#FF8C00">${totalBoni}</div><div style="font-size:11px;color:#666">Bonificações</div></div>
       </div>
@@ -10204,7 +10231,7 @@ async function renderRelatorioEvento(){
     // KPIs
     const kpis=document.getElementById('pdv-rel-kpis');
     if(kpis) kpis.innerHTML=[
-      {v:totalPedidos,l:'Pedidos',c:'#0078D4'},
+      {v:totalPedidos,l:'Pedidos',c:'#1a1a1a'},
       {v:totalVendas,l:'Unid. Vendidas',c:'#107C10'},
       {v:totalBoni,l:'Bonificações',c:'#FF8C00'}
     ].map(k=>`<div class="card" style="text-align:center;padding:16px">
@@ -10264,7 +10291,7 @@ async function renderRelatorioEvento(){
         if(relP2) relP2.innerHTML=sorted2.map(([c2,v2])=>{
           const pctV2=Math.round((v2.vendas/maxVal2)*100);
           const pctB2=Math.round((v2.boni/maxVal2)*100);
-          return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><strong>'+c2+'</strong> <span style="color:#666;font-size:11px">'+v2.descricao.slice(0,28)+'</span></span><span style="font-weight:700">'+v2.total+'</span></div><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F0F0F0"><div style="width:'+pctV2+'%;background:#0078D4;transition:.3s"></div><div style="width:'+pctB2+'%;background:#FF8C00;transition:.3s"></div></div><div style="font-size:10px;color:#666;margin-top:2px">■Venda '+v2.vendas+' / ■Boni '+v2.boni+'</div></div>';
+          return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><strong>'+c2+'</strong> <span style="color:#666;font-size:11px">'+v2.descricao.slice(0,28)+'</span></span><span style="font-weight:700">'+v2.total+'</span></div><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F0F0F0"><div style="width:'+pctV2+'%;background:#1a1a1a;transition:.3s"></div><div style="width:'+pctB2+'%;background:#FF8C00;transition:.3s"></div></div><div style="font-size:10px;color:#666;margin-top:2px">■Venda '+v2.vendas+' / ■Boni '+v2.boni+'</div></div>';
         }).join('');
       }
     }
@@ -10282,7 +10309,7 @@ async function renderVendedores(){
     const snap=await db.collection('vendedores').orderBy('nome').get();
     if(snap.empty){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:20px">Nenhum vendedor cadastrado.</p>';return;}
     lista.innerHTML=`<table style="width:100%;border-collapse:collapse">
-      <thead><tr style="background:#F0F4F8">
+      <thead><tr style="background:#F4F4F4">
         <th style="padding:8px;text-align:left;font-size:12px;color:#555">Nome</th>
         <th style="padding:8px;text-align:left;font-size:12px;color:#555">Perfil</th>
         <th style="padding:8px;text-align:center;font-size:12px;color:#555">Status</th>
@@ -10395,7 +10422,7 @@ async function renderRetornoEstoque(){
     const snap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
     if(snap.empty){lista.innerHTML='<p style="color:#aaa;text-align:center;padding:10px">Nenhum produto no estoque do evento.</p>';return;}
     lista.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="background:#F0F4F8">
+      <thead><tr style="background:#F4F4F4">
         <th style="padding:8px;text-align:left">Produto</th>
         <th style="padding:8px;text-align:center">Lote</th>
         <th style="padding:8px;text-align:center">Saldo no Evento</th>
@@ -10406,7 +10433,7 @@ async function renderRetornoEstoque(){
         return `<tr style="border-bottom:1px solid #F0F0F0">
           <td style="padding:8px"><strong>${it.descricao||it.codigo}</strong><div style="font-size:11px;color:#666">${it.codigo}</div></td>
           <td style="padding:8px;text-align:center">${it.lote||'—'}</td>
-          <td style="padding:8px;text-align:center;color:#0078D4;font-weight:700">${it.quantidade||0} un</td>
+          <td style="padding:8px;text-align:center;color:#1a1a1a;font-weight:700">${it.quantidade||0} un</td>
           <td style="padding:8px;text-align:center">
             <input type="number" min="0" max="${it.quantidade||0}" value="${it.quantidade||0}"
               class="form-control" style="width:70px;font-size:12px;text-align:center;display:inline-block"
@@ -10459,7 +10486,7 @@ async function renderRetornoHistorico(){
     hist.innerHTML=retDocs.map(r=>{
       const d={id:r._docId};
       const dt=r.criadoEm?r.criadoEm.substring(0,16).replace('T',' '):'';
-      const statusColor=r.status==='aprovado'?'#107C10':r.status==='aguardando_validacao'?'#C07800':'#0078D4';
+      const statusColor=r.status==='aprovado'?'#107C10':r.status==='aguardando_validacao'?'#C07800':'#1a1a1a';
       const statusLabel=r.status==='aprovado'?'✅ Aprovado':r.status==='aguardando_validacao'?'⏳ Aguardando validação':'📝 '+r.status;
       return `<div style="border:1px solid #E0E4EC;border-radius:8px;padding:14px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -10476,7 +10503,7 @@ async function renderRetornoHistorico(){
               <td style="padding:4px 8px">${it.descricao||it.codigo}</td>
               <td style="padding:4px 8px;text-align:center">${it.lote||'—'}</td>
               <td style="padding:4px 8px;text-align:center">${it.qtdEvento}</td>
-              <td style="padding:4px 8px;text-align:center;font-weight:700;color:#0078D4">${it.qtdRetorno}</td>
+              <td style="padding:4px 8px;text-align:center;font-weight:700;color:#1a1a1a">${it.qtdRetorno}</td>
               ${isAdmUser&&r.status==='aguardando_validacao'?`<td style="padding:4px 8px;text-align:center"><input type="number" min="0" value="${it.qtdRetorno}" class="form-control" style="width:60px;font-size:11px;text-align:center;display:inline-block" id="adj-${d.id}-${idx}"></td>`:(isAdmUser?`<td style="padding:4px 8px;text-align:center;color:#aaa">—</td>`:'')}
             </tr>`).join('')}</tbody>
         </table>
@@ -10596,7 +10623,7 @@ async function pdvBuscarPorNome(termo){
     const itemData={id:depId||it.stockId||'',stockId:it.stockId||'',codigo:it.codigo||'',descricao:it.descricao||'',lote:depLote,quantidade:qtdEvento,barcode:it.barcode||'',precoCusto:it.precoCusto||0};
     return `<div onclick="pdvSelecionarItemNome(${JSON.stringify(itemData).replace(/"/g,"'")})"
       style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;transition:.1s"
-      onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+      onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='#fff'">
       <strong>${it.descricao||it.codigo}</strong>
       <span style="color:#666;margin-left:6px;font-size:11px">${it.codigo}</span>
       ${badge}
@@ -10835,27 +10862,30 @@ function imprimirPedidoPDF(p, docId, checkedState){
   const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${qrData}`;
 
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="UTF-8">
   <title>Recibo ${p.numero||docId}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,sans-serif;font-size:11px;color:#222;padding:20px;max-width:480px;margin:0 auto}
-    .header{text-align:center;border-bottom:2px solid #002050;padding-bottom:10px;margin-bottom:12px}
-    .header h1{font-size:13px;color:#002050;font-weight:700}
+    .header{text-align:center;border-bottom:2px solid #111111;padding-bottom:10px;margin-bottom:12px}
+    .header h1{font-size:13px;color:#111111;font-weight:700}
     .header p{font-size:9px;color:#888;margin-top:2px}
-    .num{font-size:19px;font-weight:700;color:#0078D4;margin:5px 0}
+    .num{font-size:19px;font-weight:700;color:#1a1a1a;margin:5px 0}
     .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;background:${statusBg[p.status]||'#eee'};color:${statusTx[p.status]||'#333'}}
-    .sec-title{font-size:10px;font-weight:700;color:#002050;letter-spacing:.5px;text-transform:uppercase;margin:12px 0 4px;padding-bottom:3px;border-bottom:1px solid #002050}
+    .sec-title{font-size:10px;font-weight:700;color:#111111;letter-spacing:.5px;text-transform:uppercase;margin:12px 0 4px;padding-bottom:3px;border-bottom:1px solid #111111}
     .row{display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:1px solid #f5f5f5}
     .row strong{color:#444;min-width:80px}
     .row span{color:#222;text-align:right;max-width:280px}
     table{width:100%;border-collapse:collapse;margin-top:4px}
-    th{background:#002050;color:#fff;padding:5px 8px;font-size:9px;text-align:left}
+    th{background:#111111;color:#fff;padding:5px 8px;font-size:9px;text-align:left}
     th.r{text-align:right}
     th.c{text-align:center}
     .fin-box{background:#F0F7FF;border:1px solid #BDD7EE;border-radius:6px;padding:8px 10px;margin-top:10px}
     .fin-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0}
-    .fin-total{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#002050;margin-top:6px;padding-top:6px;border-top:1px solid #BDD7EE}
+    .fin-total{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#111111;margin-top:6px;padding-top:6px;border-top:1px solid #BDD7EE}
     .qr{text-align:center;margin:12px 0}
     .footer{margin-top:14px;text-align:center;font-size:9px;color:#aaa;border-top:1px dashed #ccc;padding-top:8px}
     @media print{body{padding:0}}
@@ -10910,7 +10940,7 @@ function imprimirPedidoPDF(p, docId, checkedState){
     <div class="fin-row"><span style="color:#555">Subtotal bruto:</span><strong>${fmt(p.subtotalBruto)}</strong></div>
     ${p.descontoTotal>0?`<div class="fin-row"><span style="color:#D13438">Desconto total:</span><strong style="color:#D13438">- ${fmt(p.descontoTotal)}</strong></div>`:''}
     ${p.pctDesconto>0?`<div class="fin-row"><span style="color:#C07800">% médio desconto:</span><strong style="color:#C07800">${Number(p.pctDesconto).toFixed(1)}%</strong></div>`:''}
-    <div class="fin-total"><span>VALOR FINAL</span><span style="color:#0078D4">${fmt(p.valorFinal)}</span></div>
+    <div class="fin-total"><span>VALOR FINAL</span><span style="color:#1a1a1a">${fmt(p.valorFinal)}</span></div>
   </div>`:''}
 
   <!-- CONDIÇÕES DE PAGAMENTO -->
@@ -10980,7 +11010,7 @@ async function renderComparativo(){
     el.innerHTML=`
       <table style="width:100%;border-collapse:collapse">
         <thead>
-          <tr style="background:#002050;color:#fff">
+          <tr style="background:#111111;color:#fff">
             <th style="padding:8px 10px;text-align:left;font-size:12px">Indicador</th>
             <th style="padding:8px 10px;text-align:center;font-size:12px">${a.nome}<br><span style="font-weight:400;font-size:10px">${a.data}</span></th>
             <th style="padding:8px 10px;text-align:center;font-size:12px">${b.nome}<br><span style="font-weight:400;font-size:10px">${b.data}</span></th>
@@ -11020,11 +11050,11 @@ async function updateHomePdvCard(){
       const dtFmt=(ev.data||'').split('-').reverse().join('/');
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F0F0;font-size:13px">
         <div>
-          <strong style="color:#002050">${ev.nome}</strong>
+          <strong style="color:#111111">${ev.nome}</strong>
           <div style="font-size:11px;color:#666">📅 ${dtFmt} · 📍 ${ev.local||'—'}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:700;color:#0078D4">${cnt.pedidos} pedidos</div>
+          <div style="font-weight:700;color:#1a1a1a">${cnt.pedidos} pedidos</div>
           <div style="font-size:11px;color:#107C10">${cnt.vendas} un vendidas</div>
         </div>
       </div>`;
@@ -11074,7 +11104,7 @@ function solicShowPanel(){
   if(login)login.style.display='none';
   if(bar)bar.style.display='';
   if(tabBar)tabBar.style.display='';
-  const colors={marketing:'#0078D4',aprovador:'#107C10',logistica:'#D83B01'};
+  const colors={marketing:'#1a1a1a',aprovador:'#107C10',logistica:'#D83B01'};
   const labels={marketing:'Marketing',aprovador:'Aprovador',logistica:'Logística'};
   const badge=document.getElementById('solic-user-perfil-badge');
   const nomeEl=document.getElementById('solic-user-nome-show');
@@ -11130,7 +11160,7 @@ function renderSolicPendentes(){
     <div class="card" style="margin-bottom:10px;border-left:4px solid #FFC107">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
         <div>
-          <strong style="color:#002050;font-size:14px">${r.id}</strong>
+          <strong style="color:#111111;font-size:14px">${r.id}</strong>
           <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
           <div style="font-size:12px;color:#666;margin-top:4px">📅 ${formatDate(r.dataSolicitacao)} · ${r.evento?.nome||''}</div>
           <div style="font-size:12px;color:#444;margin-top:2px">👤 ${r.solicitante?.nome||''} · ${r.solicitante?.setor||''}</div>
@@ -11162,7 +11192,7 @@ function renderSolicTodas(){
     <div class="card" style="margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
-          <strong style="color:#002050">${r.id}</strong>
+          <strong style="color:#111111">${r.id}</strong>
           <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
           <div style="font-size:12px;color:#666;margin-top:2px">${r.evento?.nome||''} · ${r.solicitante?.nome||''}</div>
         </div>
@@ -11188,12 +11218,12 @@ function renderSolicExpedir(){
     <div class="card" style="margin-bottom:12px;border-left:4px solid #D83B01">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
         <div>
-          <strong style="color:#002050;font-size:14px">${r.id}</strong>
+          <strong style="color:#111111;font-size:14px">${r.id}</strong>
           <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
           <div style="font-size:12px;color:#666;margin-top:4px">📅 ${formatDate(r.dataSolicitacao)} · ${r.evento?.nome||''}</div>
           <div style="font-size:12px;color:#444;margin-top:2px">👤 ${r.solicitante?.nome||''} · ${r.solicitante?.email||''}</div>
           <div style="font-size:12px;color:#888;margin-top:2px">📦 ${(r.produtos||[]).map(p=>p.descricao+' ('+p.qty+')').join(', ')||'—'}</div>
-          <div style="font-size:12px;color:#0078D4;margin-top:2px">📍 ${r.endereco?.rua||''}, ${r.endereco?.cidade||''} ${r.endereco?.estado||''}</div>
+          <div style="font-size:12px;color:#1a1a1a;margin-top:2px">📍 ${r.endereco?.rua||''}, ${r.endereco?.cidade||''} ${r.endereco?.estado||''}</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
           <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
@@ -11215,11 +11245,11 @@ function renderSolicHistorico(){
     <div class="card" style="margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
-          <strong style="color:#002050">${r.id}</strong>
+          <strong style="color:#111111">${r.id}</strong>
           <span class="status-badge ${statusClass(r.status)}" style="margin-left:8px">${r.status}</span>
           ${r.comAlteracoes?'<span style="font-size:11px;background:#FFF3CD;color:#856404;padding:1px 8px;border-radius:12px;margin-left:6px">⚠️ com alterações</span>':''}
           <div style="font-size:12px;color:#666;margin-top:2px">${r.evento?.nome||''} · ${formatDate(r.dataSolicitacao)}</div>
-          ${r.codigoRastreamento?`<div style="font-size:12px;color:#0078D4;margin-top:2px">📮 ${r.codigoRastreamento}${r.transportadora?' — '+r.transportadora:''}</div>`:''}
+          ${r.codigoRastreamento?`<div style="font-size:12px;color:#1a1a1a;margin-top:2px">📮 ${r.codigoRastreamento}${r.transportadora?' — '+r.transportadora:''}</div>`:''}
           ${r.expedidoPor?`<div style="font-size:11px;color:#888">Expedido por: ${r.expedidoPor}</div>`:''}
         </div>
         <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',false)">👁️ Ver</button>
@@ -11358,7 +11388,7 @@ async function renderAdmUsuarios(){
     const snap=await db.collection('usuarios_solic').get();
     const users=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(!users.length){el.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px">Nenhum usuário cadastrado.</td></tr>';return;}
-    const colors={marketing:'#0078D4',aprovador:'#107C10',logistica:'#D83B01'};
+    const colors={marketing:'#1a1a1a',aprovador:'#107C10',logistica:'#D83B01'};
     const labels={marketing:'Marketing',aprovador:'Aprovador',logistica:'Logística'};
     el.innerHTML=users.map(u=>`<tr>
       <td><strong>${u.nome||'—'}</strong></td>
@@ -11433,7 +11463,7 @@ async function admExcluirUsuario(id,nome){
 
 // ─── CONTROLE DE ROLES ────────────────────────────────────────────────────────
 const FAT_ROLES = {
-  faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#E3F2FD',
+  faturista:  { label: '📋 Faturista',  color: '#1565C0', bg: '#F0F0F0',
     perms: ['ver_fila','criar_pedido','registrar_nf','ver_detalhes','reimprimir_comanda','cancelar_pedido','devolver_pedido'] },
   financeiro: { label: '💳 Financeiro', color: '#2E7D32', bg: '#E8F5E9',
     perms: ['ver_fila','verificar_pagamento','ver_detalhes','cancelar_pedido','devolver_pedido','quarentena','aprovar_quarentena'] },
@@ -11460,7 +11490,7 @@ function fatRoleColor(role){
 const FAT_STATUS_BADGE = {
   pendente:             {bg:'#FFF3E0',color:'#E65100', label:'⏳ Pendente'},
   pagamento_verificado: {bg:'#E8F5E9',color:'#1B5E20', label:'💳 Pag. Verificado'},
-  aguardando_expedicao: {bg:'#E3F2FD',color:'#1565C0', label:'🔔 Ag. Expedição'},
+  aguardando_expedicao: {bg:'#F0F0F0',color:'#1565C0', label:'🔔 Ag. Expedição'},
   em_separacao:         {bg:'#E8EAF6',color:'#283593', label:'🔄 Em Separação'},
   pre_separado:         {bg:'#F3E5F5',color:'#6A1B9A', label:'📋 Pré-Separado'},
   faturado:             {bg:'#FFF9C4',color:'#F57F17', label:'🧾 Faturado'},
@@ -11617,7 +11647,7 @@ function renderFilaPedidos(){
     return `<div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
-          <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}${pagLabel}</div>
+          <div style="font-size:15px;font-weight:700;color:#111111;font-family:monospace">${p.numeroPedidoMesoLog||'—'}${pagLabel}</div>
           <div style="font-size:11px;color:#888;margin-top:2px">Mercus: #${p.numeroPedidoMercus||'—'} · ERP: ${p.pedidoErp||'—'} · ${p.empresaSigla||'—'}${nfLabel}</div>
           <div style="font-size:13px;color:#333;margin-top:4px;font-weight:600">${p.clienteNome||'—'}</div>
           <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
@@ -11638,7 +11668,7 @@ function renderFilaPedidos(){
             ${canNF       && fatUserCan('registrar_nf')        ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
             ${canAnexo    && fatUserCan('registrar_nf')        ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="abrirRegistroNF('${p.id}')">📎 Anexar NF+Etiqueta</button>` : ''}
             ${canFech     && fatUserCan('bipagem')             ? `<button class="btn btn-sm btn-success" onclick="abrirFechamento('${p.id}')">✅ Fechar Caixa</button>` : ''}
-            ${canRePrint  && fatUserCan('reimprimir_comanda')  ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
+            ${canRePrint  && fatUserCan('reimprimir_comanda')  ? `<button class="btn btn-sm" style="background:#F0F0F0;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}')">🖨️ Comanda</button>` : ''}
             ${fatUserCan('ver_detalhes') ? `<button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver</button>` : ''}
             ${canDevolver && fatUserCan('devolver_pedido') ? `<button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80" onclick="devolverPedido('${p.id}','${(p.numeroPedidoMesoLog||'').replace(/'/g,'')}','${p.status}')" title="Devolver pedido para etapa anterior">↩ Devolver</button>` : ''}
             ${canCancel && fatUserCan('cancelar_pedido') ? `<button class="btn btn-sm" style="background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A" onclick="cancelarPedido('${p.id}','${(p.numeroPedidoMesoLog||'').replace(/'/g,'')}')" title="Cancelar pedido">✖ Cancelar</button>` : ''}
@@ -11924,26 +11954,29 @@ function _fatImprimirResumo(pedidoId){
 
   const w = window.open('','_blank','width=900,height=700');
   if(!w){ toast('Permita popups para imprimir.'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="utf-8">
   <title>Resumo Final — ${p.numeroPedidoMesoLog}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}
-    h1{font-size:18px;color:#002050;border-bottom:3px solid #002050;padding-bottom:8px;margin-bottom:16px}
-    h2{font-size:13px;color:#002050;background:#E3F2FD;padding:6px 10px;margin:16px 0 8px;border-left:4px solid #1565C0}
+    h1{font-size:18px;color:#111111;border-bottom:3px solid #111111;padding-bottom:8px;margin-bottom:16px}
+    h2{font-size:13px;color:#111111;background:#F0F0F0;padding:6px 10px;margin:16px 0 8px;border-left:4px solid #1565C0}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:4px}
     .row{display:flex;gap:6px;margin-bottom:3px}
     .lbl{font-weight:700;min-width:140px;color:#555}
     .val{color:#111}
     table{width:100%;border-collapse:collapse;font-size:11px}
-    th{background:#002050;color:#fff;padding:6px 8px;text-align:left}
+    th{background:#111111;color:#fff;padding:6px 8px;text-align:left}
     td{padding:5px 8px;border-bottom:1px solid #e0e0e0}
     tr:nth-child(even) td{background:#f9f9f9}
     .badge{display:inline-block;padding:2px 10px;border-radius:8px;font-weight:700;font-size:11px;background:#E8F5E9;color:#1B5E20}
-    .footer{margin-top:20px;border-top:2px solid #002050;padding-top:10px;font-size:11px;color:#888;text-align:center}
+    .footer{margin-top:20px;border-top:2px solid #111111;padding-top:10px;font-size:11px;color:#888;text-align:center}
     @media print{body{padding:10px}.no-print{display:none}}
   </style></head><body>
-  <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#002050;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir</button>
+  <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#111111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir</button>
   <h1>📋 RESUMO FINAL DO PEDIDO — ${p.numeroPedidoMesoLog}</h1>
 
   <h2>Identificação</h2>
@@ -12451,7 +12484,7 @@ function renderExpedicao(){
     return;
   }
 
-  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#002050;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:8px">
+  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#111111;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:8px">
     <div>
       <div style="font-size:16px;font-weight:700;font-family:monospace">${p.numeroPedidoMesoLog}</div>
       <div style="font-size:12px;opacity:.8;margin-top:2px">${p.clienteNome} · ${p.empresaNome} · ${p.tipoEntrega}</div>
@@ -12473,13 +12506,13 @@ function renderExpedicao(){
 
     html += `<div class="card" style="margin-bottom:10px;padding:14px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-        <span style="font-size:11px;background:#002050;color:#fff;padding:2px 8px;border-radius:4px;font-family:monospace">${it.codigo}</span>
+        <span style="font-size:11px;background:#111111;color:#fff;padding:2px 8px;border-radius:4px;font-family:monospace">${it.codigo}</span>
         <span style="font-size:13px;font-weight:600;flex:1">${it.descricao}</span>
-        <span style="font-size:14px;font-weight:700;color:#002050">${it.quantidade} ${it.unidade}</span>
+        <span style="font-size:14px;font-weight:700;color:#111111">${it.quantidade} ${it.unidade}</span>
       </div>`;
 
     if(sugestoes.length){
-      html += `<div style="font-size:11px;color:#1565C0;margin-bottom:8px;padding:6px 10px;background:#E3F2FD;border-radius:4px">
+      html += `<div style="font-size:11px;color:#1565C0;margin-bottom:8px;padding:6px 10px;background:#F0F0F0;border-radius:4px">
         💡 FIFO: ${sugestoes.map(s=>`Lote ${s.lote||s.numero||'?'} (Val: ${s.dataValidade||'?'}) — ${Math.min(Number(s.quantidade||0), it.quantidade)} disp.`).join(' · ')}
       </div>`;
     }
@@ -12495,7 +12528,7 @@ function renderExpedicao(){
     });
     html += `</div>`;
 
-    html += `<button onclick="fatAdicionarLoteRow(${i})" class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;font-size:11px;margin-top:4px">+ Adicionar Lote</button>
+    html += `<button onclick="fatAdicionarLoteRow(${i})" class="btn btn-sm" style="background:#F0F0F0;color:#0D47A1;border:1px solid #90CAF9;font-size:11px;margin-top:4px">+ Adicionar Lote</button>
     </div>`;
   });
 
@@ -12724,7 +12757,10 @@ function imprimirComanda(pedidoId){
 
   const w = window.open('','_blank','width=400,height=650');
   if(!w){ toast('Permita popups para imprimir.'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Comanda ${p.numeroPedidoMesoLog}</title>
+  w.document.write(`<!DOCTYPE html><html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"><meta charset="utf-8"><title>Comanda ${p.numeroPedidoMesoLog}</title>
   <style>
     @page{size:100mm 150mm;margin:3mm}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -12823,7 +12859,7 @@ function renderFechamento(){
   const todos   = fatBipItems.every(it => it.bipados === it.qtdEsperada);
   const excedido= fatBipItems.some(it => it.bipados > it.qtdEsperada);
 
-  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#002050;color:#fff;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+  let html = `<div class="card" style="margin-bottom:14px;padding:14px 18px;background:#111111;color:#fff;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
     <div>
       <div style="font-size:16px;font-weight:700;font-family:monospace">${p.numeroPedidoMesoLog}</div>
       <div style="font-size:12px;opacity:.8;margin-top:2px">${p.clienteNome} · Fechamento de Caixa</div>
@@ -12836,7 +12872,7 @@ function renderFechamento(){
   <div class="card" style="margin-bottom:14px;padding:16px;text-align:center">
     <div style="font-size:12px;color:#666;margin-bottom:10px">Posicione o cursor no campo abaixo e bipe os itens com o leitor.</div>
     <input type="text" id="fat-scan-input" placeholder="Aguardando leitura do código de barras..."
-      style="width:100%;max-width:500px;padding:12px 16px;border:2px solid #0078D4;border-radius:8px;font-size:14px;text-align:center;outline:none"
+      style="width:100%;max-width:500px;padding:12px 16px;border:2px solid #1a1a1a;border-radius:8px;font-size:14px;text-align:center;outline:none"
       onkeydown="fatHandleScan(event)">
     <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       ${admLoggedIn ? `<button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80" onclick="fatModalMultiplicar()">✖️ Multiplicar (ADM)</button>` : ''}
@@ -12957,7 +12993,7 @@ function _bipAssociarEAN(eanCode){
     <select id="bip-assoc-sel" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px">${opts}</select>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="closeModal('modal-det')" style="flex:1;padding:9px;background:#eee;border:none;border-radius:6px;cursor:pointer">Cancelar</button>
-      <button onclick="_bipConfirmarAssoc('${eanCode}')" style="flex:2;padding:9px;background:#002050;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">✅ Confirmar Bip</button>
+      <button onclick="_bipConfirmarAssoc('${eanCode}')" style="flex:2;padding:9px;background:#111111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600">✅ Confirmar Bip</button>
     </div>`;
   document.getElementById('modal-det').classList.add('open');
 }
@@ -13127,7 +13163,7 @@ function verDetalhesPedido(pedidoId){
     ${p.status === 'pendente' && fatUserCan('verificar_pagamento') ? `<button class="btn btn-sm" style="background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7" onclick="closeModal('modal-det');verificarPagamento('${p.id}')">💳 Verificar Pagamento</button>` : ''}
     ${p.status === 'pre_separado' && fatUserCan('registrar_nf') ? `<button class="btn btn-sm" style="background:#FFF9C4;color:#F57F17;border:1px solid #FFE082" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">🧾 Registrar NF</button>` : ''}
     ${['faturado','nf_anexada'].includes(p.status) && fatUserCan('registrar_nf') ? `<button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:1px solid #80CBC4" onclick="closeModal('modal-det');abrirRegistroNF('${p.id}')">📎 Gerenciar NF+Etiqueta</button>` : ''}
-    ${['pre_separado','faturado','nf_anexada'].includes(p.status) && fatUserCan('reimprimir_comanda') ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
+    ${['pre_separado','faturado','nf_anexada'].includes(p.status) && fatUserCan('reimprimir_comanda') ? `<button class="btn btn-sm" style="background:#F0F0F0;color:#0D47A1;border:1px solid #90CAF9" onclick="imprimirComanda('${p.id}');closeModal('modal-det')">🖨️ Reimprimir Comanda</button>` : ''}
     <button class="btn btn-outline" onclick="closeModal('modal-det')">Fechar</button>`;
   document.getElementById('modal-det').classList.add('open');
 }
@@ -13195,7 +13231,7 @@ function renderHistorico(){
       return `<div class="card" style="margin-bottom:8px;padding:12px 16px;border-left:4px solid ${s.color}">
         <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
           <div style="flex:1;min-width:160px">
-            <div style="font-size:15px;font-weight:700;color:#002050;font-family:monospace">${p.numeroPedidoMesoLog||'—'}</div>
+            <div style="font-size:15px;font-weight:700;color:#111111;font-family:monospace">${p.numeroPedidoMesoLog||'—'}</div>
             <div style="font-size:11px;color:#888;margin-top:1px">Mercus: #${p.numeroPedidoMercus||'—'} · ${p.empresaSigla||'—'} ${p.nfNumero?'· NF: '+p.nfNumero:''}</div>
             <div style="font-size:13px;color:#333;margin-top:3px;font-weight:600">${p.clienteNome||'—'}</div>
             <div style="font-size:11px;color:#666;margin-top:2px">${nItens} item(s) · ${p.tipoEntrega||'—'}</div>
@@ -13206,7 +13242,7 @@ function renderHistorico(){
             ${p.fechadoPor?`<div style="font-size:11px;color:#555">por ${p.fechadoPor}</div>`:''}
             <div style="margin-top:4px">
               <button class="btn btn-sm btn-outline" onclick="verDetalhesPedido('${p.id}')">👁️ Ver Detalhes</button>
-              ${(p.nfAnexada||p.etiquetaAnexada) ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#0D47A1;border:1px solid #90CAF9;margin-left:6px" onclick="_abrirModalImpressao('${p.id}').catch(()=>{})">🖨️ Imprimir</button>` : ''}
+              ${(p.nfAnexada||p.etiquetaAnexada) ? `<button class="btn btn-sm" style="background:#F0F0F0;color:#0D47A1;border:1px solid #90CAF9;margin-left:6px" onclick="_abrirModalImpressao('${p.id}').catch(()=>{})">🖨️ Imprimir</button>` : ''}
               <button class="btn btn-sm" style="background:#F3E5F5;color:#6A1B9A;border:1px solid #CE93D8;margin-left:6px" onclick="_fatImprimirResumo('${p.id}')">📋 Resumo</button>
               ${p.status === 'fechado' && fatUserCan('quarentena') ? `<button class="btn btn-sm" style="background:#FFF8E1;color:#E65100;border:1px solid #FFCC02;margin-left:6px" onclick="registrarDevolucaoCliente('${p.id}')">↩️ Dev. Cliente</button>` : ''}
             </div>
@@ -13307,7 +13343,7 @@ function renderRelatoriosFat(){
       kpiCard('✅','Fechados', nFechados, ((total?((nFechados/total)*100).toFixed(1):'0.0'))+'% do total', '#E8F5E9','#1B5E20') +
       kpiCard('❌','Cancelados', nCancelados, taxaCanc+'% de cancelamento', '#FFEBEE','#B71C1C') +
       kpiCard('⏱️','Ciclo Médio', cicloMedio ? cicloMedio+'h' : '—',
-        cicloMin && cicloMax ? 'mín '+cicloMin+'h · máx '+cicloMax+'h' : 'pedidos fechados insuficientes', '#E3F2FD','#1565C0') +
+        cicloMin && cicloMax ? 'mín '+cicloMin+'h · máx '+cicloMax+'h' : 'pedidos fechados insuficientes', '#F0F0F0','#1565C0') +
       kpiCard('📦','Itens Faturados', totalItens.toLocaleString('pt-BR'), 'soma de qtd nos pedidos fechados', '#F3E5F5','#6A1B9A');
   }
 
@@ -13569,7 +13605,7 @@ function renderQuarentena(){
       return `<div class="card" style="margin-bottom:10px;padding:14px 16px;border-left:4px solid ${statusCfg.color}">
         <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
           <div style="flex:1;min-width:160px">
-            <div style="font-size:14px;font-weight:700;color:#002050">Pedido: ${q.numeroPedido||'—'}</div>
+            <div style="font-size:14px;font-weight:700;color:#111111">Pedido: ${q.numeroPedido||'—'}</div>
             <div style="font-size:12px;color:#666;margin-top:2px">Cliente: ${q.clienteNome||'—'}</div>
             <div style="font-size:12px;color:#666;margin-top:2px">Motivo: <em>${q.motivoDevolucao||'—'}</em></div>
             <div style="font-size:11px;color:#999;margin-top:2px">Registrado em ${dt} por ${q.operador||'—'}</div>
@@ -14081,7 +14117,7 @@ async function recBuscarPorNome(termo){
         :'<span style="font-size:9px;background:#888;color:#fff;border-radius:3px;padding:1px 5px;margin-left:4px">CENTRAL</span>';
       return `<div onclick='recSelecionarNome(${JSON.stringify({id:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||"",dataValidade:it.dataValidade||"",quantidade:it.quantidade||0,barcode:it.barcode||"",_fonte:it._fonte}).replace(/'/g,"\\'")})'
         style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px"
-        onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+        onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='#fff'">
         <strong>${it.descricao}</strong> <span style="color:#666;font-size:11px">${it.codigo}</span>${badge}
         <span style="font-size:10px;color:${cor};font-weight:700;margin-left:6px">${status}</span>
       </div>`;
@@ -14528,7 +14564,7 @@ async function recTransfBuscar(val){
       if(!matches.length){sug.innerHTML='<div style="padding:8px;color:#aaa;font-size:12px">Nenhum produto com estoque.</div>';return;}
       sug.innerHTML=matches.map(it=>`<div onclick='recTransfSelecionar(${JSON.stringify({id:it.id,codigo:it.codigo,descricao:it.descricao,lote:it.lote||"",dataValidade:it.dataValidade||"",quantidade:it.quantidade||0}).replace(/'/g,"\\'")})'
         style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px"
-        onmouseover="this.style.background='#EBF3FB'" onmouseout="this.style.background='#fff'">
+        onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='#fff'">
         <strong>${it.descricao}</strong> <span style="color:#666;font-size:11px">${it.codigo}</span>
         <span style="color:#107C10;font-size:11px;margin-left:6px">${it.quantidade} un · Lote: ${it.lote||'—'}</span>
       </div>`).join('');
@@ -14638,7 +14674,7 @@ async function recRenderAtendentes(){
     const snap=await db.collection('rec_atendentes').orderBy('nome').get();
     if(snap.empty){lista.innerHTML='<div class="card" style="text-align:center;padding:40px;color:#aaa">Nenhum atendente cadastrado.</div>';return;}
     lista.innerHTML=`<table style="width:100%;border-collapse:collapse">
-      <thead><tr style="background:#F0F4F8">
+      <thead><tr style="background:#F4F4F4">
         <th style="padding:8px;text-align:left;font-size:12px;color:#555">Nome</th>
         <th style="padding:8px;text-align:left;font-size:12px;color:#555">Perfil</th>
         <th style="padding:8px;text-align:center;font-size:12px;color:#555">Status</th>
