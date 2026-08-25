@@ -3574,9 +3574,9 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn btn-primary" id="portal-tab-catalogo"   onclick="portalTab('catalogo')"   style="flex:1;min-width:100px">📦 Catálogo</button>
     <button class="btn btn-outline" id="portal-tab-carrinho"   onclick="portalTab('carrinho')"   style="flex:1;min-width:100px">🛒 Carrinho <span id="portal-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:50%;padding:0 6px;font-size:0.75rem;margin-left:4px">0</span></button>
-    <button class="btn btn-outline" id="portal-tab-meus"       onclick="portalTab('meus')"       style="flex:1;min-width:120px">📋 Meus Pedidos</button>
-    <button class="btn btn-outline portal-adm-only" id="portal-tab-adm"        onclick="portalTab('adm')"        style="flex:1;min-width:120px">🗂️ Pedidos ADM</button>
-    <button class="btn btn-outline portal-adm-only" id="portal-tab-clientes"   onclick="portalTab('clientes')"   style="flex:1;min-width:110px">👥 Clientes ADM</button>
+    <button class="btn btn-outline" id="portal-tab-meus-pedidos"       onclick="portalTab('meus-pedidos')"       style="flex:1;min-width:120px">📋 Meus Pedidos</button>
+    <button class="btn btn-outline portal-adm-only" id="portal-tab-pedidos-adm"        onclick="portalTab('pedidos-adm')"        style="flex:1;min-width:120px">🗂️ Pedidos ADM</button>
+    <button class="btn btn-outline portal-adm-only" id="portal-tab-clientes-adm"   onclick="portalTab('clientes-adm')"   style="flex:1;min-width:110px">👥 Clientes ADM</button>
   </div>
 
   <!-- VIEW: Catálogo -->
@@ -3641,7 +3641,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 
   <!-- VIEW: Meus Pedidos -->
-  <div id="portal-view-meus" style="display:none">
+  <div id="portal-view-meus-pedidos" style="display:none">
     <h3 style="margin-bottom:12px">📋 Meus Pedidos</h3>
     <div id="portal-meus-pedidos-lista">
       <p style="color:var(--text-muted)">Carregando...</p>
@@ -3649,7 +3649,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 
   <!-- VIEW: Pedidos ADM -->
-  <div id="portal-view-adm" style="display:none">
+  <div id="portal-view-pedidos-adm" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <h3>🗂️ Todos os Pedidos</h3>
       <button class="btn btn-outline" onclick="portalCarregarTodosPedidos()" style="font-size:0.85rem">🔄 Atualizar</button>
@@ -3660,7 +3660,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 
   <!-- VIEW: Clientes ADM -->
-  <div id="portal-view-clientes" style="display:none">
+  <div id="portal-view-clientes-adm" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <h3>👥 Clientes Cadastrados</h3>
       <button class="btn btn-outline" onclick="portalCarregarClientes()" style="font-size:0.85rem">🔄 Atualizar</button>
@@ -14171,7 +14171,7 @@ let _portalProdutos=[];
 let _portalAbaAtual='catalogo';
 
 function portalInit(){
-  const u=auth.currentUser;
+  const u=firebase.auth().currentUser;
   if(!u){toast('Faça login para acessar o Portal');showPage('home');return;}
   portalTab('catalogo');
   portalCarregarCatalogo();
