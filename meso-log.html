@@ -4719,6 +4719,9 @@ function startListeners(){
   }, err=>console.warn('empresas:', err));
 
   if(unsubPedidosFat) unsubPedidosFat();
+  // Skeleton enquanto Firebase carrega a fila
+  const _fatListaEl = document.getElementById('fat-fila-lista');
+  if(_fatListaEl) _fatListaEl.innerHTML = skeletonCards(5, 72);
   // Sem orderBy: evita exclusão de docs sem campo criadoEm (Firestore omite docs que não têm o campo ordenado)
   // Ordenação feita localmente, após receber todos os documentos
   unsubPedidosFat = db.collection('pedidosFaturamento').onSnapshot(snap=>{
