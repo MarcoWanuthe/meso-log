@@ -407,6 +407,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('pdv')" id="nav-pdv" style="display:none"><span class="icon">🛒</span><span>PDV / Eventos</span></a>
     <a onclick="showPage('faturamento')" id="nav-faturamento"><span class="icon">🧾</span><span>Faturamento</span></a>
     <a onclick="showPage('recepcao')" id="nav-recepcao"><span class="icon">🏪</span><span>Recepção</span></a>
+    <a onclick="showPage('portal')" id="nav-portal"><span class="icon">🛍️</span><span>Portal Pedidos</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -3562,6 +3563,114 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- PAGE PORTAL DE PEDIDOS -->
+<div class="page" id="page-portal">
+  <div class="page-header">
+    <h2>🛍️ Portal de Pedidos</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem">Catálogo · Carrinho · Pedidos</p>
+  </div>
+
+  <!-- Tab Bar -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn btn-primary" id="portal-tab-catalogo"   onclick="portalTab('catalogo')"   style="flex:1;min-width:100px">📦 Catálogo</button>
+    <button class="btn btn-outline" id="portal-tab-carrinho"   onclick="portalTab('carrinho')"   style="flex:1;min-width:100px">🛒 Carrinho <span id="portal-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:50%;padding:0 6px;font-size:0.75rem;margin-left:4px">0</span></button>
+    <button class="btn btn-outline" id="portal-tab-meus"       onclick="portalTab('meus')"       style="flex:1;min-width:120px">📋 Meus Pedidos</button>
+    <button class="btn btn-outline portal-adm-only" id="portal-tab-adm"        onclick="portalTab('adm')"        style="flex:1;min-width:120px">🗂️ Pedidos ADM</button>
+    <button class="btn btn-outline portal-adm-only" id="portal-tab-clientes"   onclick="portalTab('clientes')"   style="flex:1;min-width:110px">👥 Clientes ADM</button>
+  </div>
+
+  <!-- VIEW: Catálogo -->
+  <div id="portal-view-catalogo">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="portal-busca" type="text" class="input" placeholder="🔍 Buscar produto..." oninput="portalBuscar()" style="flex:1">
+    </div>
+    <div id="portal-grid-produtos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+      <p style="color:var(--text-muted)">Carregando catálogo...</p>
+    </div>
+  </div>
+
+  <!-- VIEW: Carrinho -->
+  <div id="portal-view-carrinho" style="display:none">
+    <h3 style="margin-bottom:12px">🛒 Carrinho</h3>
+    <div id="portal-carrinho-lista" style="margin-bottom:16px">
+      <p style="color:var(--text-muted)">Carrinho vazio.</p>
+    </div>
+
+    <div style="background:var(--bg-card);border-radius:10px;padding:16px;margin-bottom:16px">
+      <h4 style="margin-bottom:12px">Dados do Cliente</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="label">CNPJ / CPF</label>
+          <input id="portal-cli-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" oninput="portalCnpjAutoFill(this.value)">
+        </div>
+        <div>
+          <label class="label">Nome / Razão Social</label>
+          <input id="portal-cli-nome" type="text" class="input" placeholder="Nome do cliente">
+        </div>
+        <div>
+          <label class="label">Cidade</label>
+          <input id="portal-cli-cidade" type="text" class="input" placeholder="Cidade">
+        </div>
+        <div>
+          <label class="label">Estado</label>
+          <input id="portal-cli-estado" type="text" class="input" placeholder="UF" maxlength="2" style="text-transform:uppercase">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Forma de Pagamento</label>
+          <select id="portal-cli-pagamento" class="input">
+            <option value="">Selecione...</option>
+            <option>Boleto 30 dias</option>
+            <option>Boleto 28/35 dias</option>
+            <option>Boleto 30/60 dias</option>
+            <option>Boleto 30/60/90 dias</option>
+            <option>À vista</option>
+            <option>Cartão de crédito</option>
+            <option>PIX</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Observações</label>
+          <textarea id="portal-cli-obs" class="input" rows="2" placeholder="Observações do pedido..." style="resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button id="portal-btn-enviar" class="btn btn-success" style="width:100%;font-size:1rem;padding:14px" onclick="portalEnviarPedido()">
+      ✅ Enviar Pedido
+    </button>
+  </div>
+
+  <!-- VIEW: Meus Pedidos -->
+  <div id="portal-view-meus" style="display:none">
+    <h3 style="margin-bottom:12px">📋 Meus Pedidos</h3>
+    <div id="portal-meus-pedidos-lista">
+      <p style="color:var(--text-muted)">Carregando...</p>
+    </div>
+  </div>
+
+  <!-- VIEW: Pedidos ADM -->
+  <div id="portal-view-adm" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>🗂️ Todos os Pedidos</h3>
+      <button class="btn btn-outline" onclick="portalCarregarTodosPedidos()" style="font-size:0.85rem">🔄 Atualizar</button>
+    </div>
+    <div id="portal-todos-pedidos-lista">
+      <p style="color:var(--text-muted)">Carregando...</p>
+    </div>
+  </div>
+
+  <!-- VIEW: Clientes ADM -->
+  <div id="portal-view-clientes" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>👥 Clientes Cadastrados</h3>
+      <button class="btn btn-outline" onclick="portalCarregarClientes()" style="font-size:0.85rem">🔄 Atualizar</button>
+    </div>
+    <div id="portal-clientes-lista">
+      <p style="color:var(--text-muted)">Carregando...</p>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -4023,7 +4132,7 @@ function showPage(p){
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
@@ -4055,6 +4164,7 @@ function showPage(p){
     else if(admLoggedIn){recAtendente={id:'adm',nome:'ADM',perfil:'adm'};recEntrarMain();}
     else{show('rec-lock');hide('rec-main');}
   }
+  if(p==='portal') portalInit();
 }
 
 // ==============================
@@ -14052,6 +14162,245 @@ document.addEventListener('click',e=>{
   const sugT=document.getElementById('rec-transf-sugestoes');
   if(sugT&&!e.target.closest('#rec-transf-sugestoes')&&e.target.id!=='rec-transf-busca')sugT.style.display='none';
 });
+
+// ============================================================
+// PORTAL DE PEDIDOS — substitui Mercus
+// ============================================================
+let _portalCarrinho={};
+let _portalProdutos=[];
+let _portalAbaAtual='catalogo';
+
+function portalInit(){
+  const u=auth.currentUser;
+  if(!u){toast('Faça login para acessar o Portal');showPage('home');return;}
+  portalTab('catalogo');
+  portalCarregarCatalogo();
+}
+
+function portalTab(aba){
+  _portalAbaAtual=aba;
+  ['catalogo','carrinho','meus-pedidos','pedidos-adm','clientes-adm'].forEach(t=>{
+    const btn=document.getElementById('portal-tab-'+t);
+    const view=document.getElementById('portal-view-'+t);
+    if(btn) btn.style.cssText=t===aba?'background:#111;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer':'background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer';
+    if(view) view.style.display=t===aba?'block':'none';
+  });
+  if(aba==='carrinho') portalRenderCarrinho();
+  if(aba==='meus-pedidos') portalCarregarMeusPedidos();
+  if(aba==='pedidos-adm') portalCarregarTodosPedidos();
+  if(aba==='clientes-adm') portalCarregarClientes();
+}
+
+async function portalCarregarCatalogo(){
+  const grid=document.getElementById('portal-grid-produtos');
+  if(!grid)return;
+  grid.innerHTML='<div style="color:#888;padding:20px">Carregando catálogo...</div>';
+  try{
+    const snap=await db.collection('stock').orderBy('nome').get();
+    _portalProdutos=[];
+    snap.forEach(d=>{const dd=d.data();if(dd.quantidade>0||dd.qtd>0)_portalProdutos.push({id:d.id,...dd});});
+    portalRenderCatalogo(_portalProdutos);
+  }catch(e){grid.innerHTML='<div style="color:red;padding:20px">Erro ao carregar: '+e.message+'</div>';}
+}
+
+function portalRenderCatalogo(lista){
+  const grid=document.getElementById('portal-grid-produtos');
+  if(!grid)return;
+  if(!lista.length){grid.innerHTML='<div style="color:#888;padding:20px">Nenhum produto disponível.</div>';return;}
+  grid.innerHTML=lista.map(p=>{
+    const qtdDisp=p.quantidade||p.qtd||0;
+    const preco=p.preco||p.preco_venda||0;
+    const noCarrinho=_portalCarrinho[p.id]?_portalCarrinho[p.id].qtd:0;
+    return '<div style="background:#fff;border:1.5px solid #e8e8e8;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;position:relative">'
+      +'<div style="font-size:12px;color:#888;font-weight:600;letter-spacing:.5px">'+((p.codigo||p.ean||'')+'').substring(0,20)+'</div>'
+      +'<div style="font-size:14px;font-weight:700;color:#111;line-height:1.3">'+p.nome+'</div>'
+      +(p.marca?'<div style="font-size:11px;color:#666">'+p.marca+'</div>':'')
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">'
+      +'<div style="font-size:13px;color:#555">Estoque: <b>'+qtdDisp+'</b></div>'
+      +(preco?'<div style="font-size:15px;font-weight:800;color:#111">'+fmt(preco)+'</div>':'<div style="font-size:12px;color:#aaa">Consultar preço</div>')
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-top:4px">'
+      +'<button onclick="portalAlterarQtdCarrinho(\''+p.id+'\',\''+p.nome.replace(/'/g,'')+'\','+preco+',-1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid #ddd;background:#f5f5f5;font-size:18px;cursor:pointer;line-height:1">−</button>'
+      +'<span id="portal-qtd-'+p.id+'" style="font-size:16px;font-weight:700;min-width:28px;text-align:center">'+noCarrinho+'</span>'
+      +'<button onclick="portalAlterarQtdCarrinho(\''+p.id+'\',\''+p.nome.replace(/'/g,'')+'\','+preco+',1)" style="width:32px;height:32px;border-radius:50%;border:none;background:#111;color:#fff;font-size:18px;cursor:pointer;line-height:1">+</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function portalBuscar(){
+  const q=(document.getElementById('portal-busca')||{}).value||'';
+  const filtrado=q.trim()?_portalProdutos.filter(p=>(p.nome||'').toLowerCase().includes(q.toLowerCase())||(p.codigo||'').toLowerCase().includes(q.toLowerCase())):_portalProdutos;
+  portalRenderCatalogo(filtrado);
+}
+
+function portalAlterarQtdCarrinho(id,nome,preco,delta){
+  if(!_portalCarrinho[id]) _portalCarrinho[id]={id,nome,preco,qtd:0};
+  _portalCarrinho[id].qtd=Math.max(0,(_portalCarrinho[id].qtd||0)+delta);
+  if(_portalCarrinho[id].qtd===0) delete _portalCarrinho[id];
+  const el=document.getElementById('portal-qtd-'+id);
+  if(el) el.textContent=(_portalCarrinho[id]||{qtd:0}).qtd;
+  const totalItens=Object.values(_portalCarrinho).reduce((a,b)=>a+(b.qtd||0),0);
+  const badgeEl=document.getElementById('portal-carrinho-badge');
+  if(badgeEl) badgeEl.textContent=totalItens>0?totalItens:'';
+}
+
+function portalRenderCarrinho(){
+  const cont=document.getElementById('portal-carrinho-lista');
+  if(!cont)return;
+  const itens=Object.values(_portalCarrinho);
+  if(!itens.length){cont.innerHTML='<div style="color:#888;text-align:center;padding:40px 20px">Carrinho vazio. Adicione produtos no catálogo.</div>';return;}
+  const total=itens.reduce((a,b)=>a+(b.preco||0)*(b.qtd||0),0);
+  cont.innerHTML=itens.map(it=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0">'
+    +'<div><div style="font-size:14px;font-weight:700">'+it.nome+'</div>'
+    +'<div style="font-size:12px;color:#888">Qtd: '+it.qtd+(it.preco?' · '+fmt(it.preco*it.qtd):'')+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<button onclick="portalAlterarQtdCarrinho(\''+it.id+'\',\''+it.nome.replace(/'/g,'')+'\','+it.preco+',-1);portalRenderCarrinho()" style="width:28px;height:28px;border-radius:50%;border:1.5px solid #ddd;background:#f5f5f5;cursor:pointer">−</button>'
+    +'<b>'+it.qtd+'</b>'
+    +'<button onclick="portalAlterarQtdCarrinho(\''+it.id+'\',\''+it.nome.replace(/'/g,'')+'\','+it.preco+',1);portalRenderCarrinho()" style="width:28px;height:28px;border-radius:50%;border:none;background:#111;color:#fff;cursor:pointer">+</button>'
+    +'<button onclick="portalRemoverItem(\''+it.id+'\');portalRenderCarrinho()" style="background:none;border:none;color:#e00;cursor:pointer;font-size:18px;margin-left:4px">🗑</button>'
+    +'</div></div>'
+  ).join('')
+  +'<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;font-size:16px;font-weight:800"><span>Total:</span><span>'+fmt(total)+'</span></div>';
+}
+
+function portalRemoverItem(id){delete _portalCarrinho[id];const el=document.getElementById('portal-qtd-'+id);if(el)el.textContent='0';const totalItens=Object.values(_portalCarrinho).reduce((a,b)=>a+(b.qtd||0),0);const badgeEl=document.getElementById('portal-carrinho-badge');if(badgeEl)badgeEl.textContent=totalItens>0?totalItens:'';}
+
+let _portalCnpjTimer=null;
+function portalCnpjAutoFill(val){
+  const digits=val.replace(/\D/g,'');
+  if(digits.length!==14)return;
+  clearTimeout(_portalCnpjTimer);
+  _portalCnpjTimer=setTimeout(async()=>{
+    try{
+      const res=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+digits);
+      if(!res.ok)throw new Error();
+      const d=await res.json();
+      const nomeEl=document.getElementById('portal-cli-nome');
+      const cidEl=document.getElementById('portal-cli-cidade');
+      const estEl=document.getElementById('portal-cli-estado');
+      if(nomeEl&&!nomeEl.value) nomeEl.value=d.nome_fantasia||d.razao_social||'';
+      if(cidEl&&!cidEl.value) cidEl.value=d.municipio||'';
+      if(estEl&&!estEl.value) estEl.value=d.uf||'';
+      toast('✅ CNPJ preenchido: '+(d.nome_fantasia||d.razao_social||digits));
+    }catch(e){toast('⚠️ CNPJ não localizado na Receita Federal.');}
+  },600);
+}
+
+async function portalEnviarPedido(){
+  const itens=Object.values(_portalCarrinho);
+  if(!itens.length){toast('Adicione produtos ao carrinho primeiro.');return;}
+  const cnpj=(document.getElementById('portal-cli-cnpj')||{}).value||'';
+  const nome=(document.getElementById('portal-cli-nome')||{}).value||'';
+  const cidade=(document.getElementById('portal-cli-cidade')||{}).value||'';
+  const estado=(document.getElementById('portal-cli-estado')||{}).value||'';
+  const pagamento=(document.getElementById('portal-cli-pagamento')||{}).value||'';
+  const obs=(document.getElementById('portal-cli-obs')||{}).value||'';
+  if(!nome){toast('Informe o nome do cliente.');return;}
+  if(!pagamento){toast('Informe a condição de pagamento.');return;}
+  const u=auth.currentUser;
+  const total=itens.reduce((a,b)=>a+(b.preco||0)*(b.qtd||0),0);
+  const btn=document.getElementById('portal-btn-enviar');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  try{
+    const docRef=await db.collection('pedidos_portal').add({
+      itens,total,
+      cliente:{cnpj,nome,cidade,estado},
+      pagamento,obs,
+      status:'aguardando',
+      repEmail:u?u.email:'',
+      repNome:u?u.displayName||u.email:'',
+      criadoEm:new Date().toISOString()
+    });
+    // Salvar/atualizar cliente
+    if(cnpj){const cDigits=cnpj.replace(/\D/g,'');await db.collection('clientes_portal').doc(cDigits).set({cnpj:cDigits,nome,cidade,estado,atualizadoEm:new Date().toISOString()},{merge:true});}
+    _portalCarrinho={};
+    document.querySelectorAll('[id^="portal-qtd-"]').forEach(el=>el.textContent='0');
+    const badge=document.getElementById('portal-carrinho-badge');if(badge)badge.textContent='';
+    ['portal-cli-cnpj','portal-cli-nome','portal-cli-cidade','portal-cli-estado','portal-cli-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    (document.getElementById('portal-cli-pagamento')||{}).value='';
+    toast('✅ Pedido #'+docRef.id.substring(0,8).toUpperCase()+' enviado com sucesso!');
+    portalTab('meus-pedidos');
+  }catch(e){toast('Erro ao enviar pedido: '+e.message);}
+  finally{if(btn){btn.disabled=false;btn.textContent='📤 Enviar Pedido';}}
+}
+
+async function portalCarregarMeusPedidos(){
+  const cont=document.getElementById('portal-meus-pedidos-lista');
+  if(!cont)return;
+  cont.innerHTML='<div style="color:#888;padding:20px">Carregando...</div>';
+  const u=auth.currentUser;
+  if(!u){cont.innerHTML='<div style="color:#888;padding:20px">Não autenticado.</div>';return;}
+  try{
+    const snap=await db.collection('pedidos_portal').where('repEmail','==',u.email).orderBy('criadoEm','desc').limit(50).get();
+    if(snap.empty){cont.innerHTML='<div style="color:#888;padding:20px;text-align:center">Nenhum pedido encontrado.</div>';return;}
+    cont.innerHTML=snap.docs.map(d=>{
+      const p=d.data();
+      const statusColor={aguardando:'#F59E0B',confirmado:'#2563EB',faturado:'#059669',cancelado:'#DC2626'}[p.status]||'#888';
+      return '<div style="background:#fff;border:1.5px solid #e8e8e8;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+        +'<div><div style="font-size:12px;color:#888;font-family:monospace">#'+d.id.substring(0,8).toUpperCase()+'</div>'
+        +'<div style="font-size:15px;font-weight:700;margin:4px 0">'+((p.cliente||{}).nome||'—')+'</div>'
+        +'<div style="font-size:12px;color:#666">'+((p.cliente||{}).cidade||'')+' '+((p.cliente||{}).estado||'')+'</div></div>'
+        +'<div style="text-align:right"><span style="background:'+statusColor+';color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">'+p.status.toUpperCase()+'</span>'
+        +'<div style="font-size:16px;font-weight:800;margin-top:6px">'+fmt(p.total||0)+'</div></div></div>'
+        +'<div style="margin-top:10px;font-size:12px;color:#888">'+p.itens.length+' produto(s) · '+p.pagamento+' · '+(p.criadoEm||'').substring(0,10)+'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
+}
+
+async function portalCarregarTodosPedidos(){
+  const cont=document.getElementById('portal-todos-pedidos-lista');
+  if(!cont)return;
+  cont.innerHTML='<div style="color:#888;padding:20px">Carregando...</div>';
+  try{
+    const snap=await db.collection('pedidos_portal').orderBy('criadoEm','desc').limit(100).get();
+    if(snap.empty){cont.innerHTML='<div style="color:#888;padding:20px;text-align:center">Nenhum pedido ainda.</div>';return;}
+    cont.innerHTML=snap.docs.map(d=>{
+      const p=d.data();
+      const statusColor={aguardando:'#F59E0B',confirmado:'#2563EB',faturado:'#059669',cancelado:'#DC2626'}[p.status]||'#888';
+      return '<div style="background:#fff;border:1.5px solid #e8e8e8;border-radius:10px;padding:16px;margin-bottom:12px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        +'<div><div style="font-size:12px;color:#888;font-family:monospace">#'+d.id.substring(0,8).toUpperCase()+' · '+p.repEmail+'</div>'
+        +'<div style="font-size:15px;font-weight:700;margin:4px 0">'+((p.cliente||{}).nome||'—')+'</div>'
+        +'<div style="font-size:12px;color:#666">CNPJ: '+((p.cliente||{}).cnpj||'—')+' · '+((p.cliente||{}).cidade||'')+'/'+((p.cliente||{}).estado||'')+'</div>'
+        +'<div style="font-size:12px;color:#666;margin-top:2px">Pagamento: '+p.pagamento+'</div>'
+        +(p.obs?'<div style="font-size:12px;color:#888;margin-top:2px">Obs: '+p.obs+'</div>':'')
+        +'<div style="margin-top:6px;font-size:12px;color:#555">'+p.itens.map(it=>it.nome+' ('+it.qtd+'x)').join(', ')+'</div></div>'
+        +'<div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+        +'<span style="background:'+statusColor+';color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">'+p.status.toUpperCase()+'</span>'
+        +'<div style="font-size:17px;font-weight:800">'+fmt(p.total||0)+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'
+        +(p.status==='aguardando'?'<button onclick="portalAtualizarStatus(\''+d.id+'\',\'confirmado\')" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Confirmar</button>':'')
+        +(p.status==='confirmado'?'<button onclick="portalAtualizarStatus(\''+d.id+'\',\'faturado\')" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Faturar</button>':'')
+        +(p.status!=='cancelado'&&p.status!=='faturado'?'<button onclick="portalAtualizarStatus(\''+d.id+'\',\'cancelado\')" style="background:#DC2626;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Cancelar</button>':'')
+        +'</div><div style="font-size:11px;color:#aaa">'+(p.criadoEm||'').substring(0,16).replace('T',' ')+'</div></div></div></div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
+}
+
+async function portalAtualizarStatus(docId,novoStatus){
+  try{
+    await db.collection('pedidos_portal').doc(docId).update({status:novoStatus,atualizadoEm:new Date().toISOString()});
+    toast('Status atualizado: '+novoStatus);
+    portalCarregarTodosPedidos();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalCarregarClientes(){
+  const cont=document.getElementById('portal-clientes-lista');
+  if(!cont)return;
+  cont.innerHTML='<div style="color:#888;padding:20px">Carregando...</div>';
+  try{
+    const snap=await db.collection('clientes_portal').orderBy('nome').get();
+    if(snap.empty){cont.innerHTML='<div style="color:#888;padding:20px;text-align:center">Nenhum cliente cadastrado ainda.</div>';return;}
+    cont.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      +'<tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Nome</th><th style="padding:8px;text-align:left">CNPJ</th><th style="padding:8px;text-align:left">Cidade/UF</th></tr>'
+      +snap.docs.map(d=>{const c=d.data();return '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:8px">'+c.nome+'</td><td style="padding:8px;font-family:monospace">'+c.cnpj+'</td><td style="padding:8px">'+c.cidade+'/'+c.estado+'</td></tr>';}).join('')
+      +'</table>';
+  }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
+}
 </script>
 </body>
 </html>
