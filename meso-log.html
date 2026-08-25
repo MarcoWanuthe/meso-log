@@ -409,6 +409,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('recepcao')" id="nav-recepcao"><span class="icon">🏪</span><span>Recepção</span></a>
     <a onclick="showPage('portal')" id="nav-portal"><span class="icon">🛍️</span><span>Portal Pedidos</span></a>
     <a onclick="showPage('filiais')" id="nav-filiais"><span class="icon">🏢</span><span>Filiais</span></a>
+    <a onclick="showPage('fiscal')" id="nav-fiscal"><span class="icon">💸</span><span>Fiscal</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -3672,6 +3673,277 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- PAGE FISCAL -->
+<div class="page" id="page-fiscal">
+  <div class="page-header">
+    <h2>💸 Módulo Fiscal</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem">NF-e emitidas · NF-e recebidas · Remessas · Financeiro</p>
+  </div>
+
+  <!-- KPI Bar -->
+  <div id="fiscal-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px"></div>
+
+  <!-- Tab Bar -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn btn-primary" id="fiscal-tab-emitidas"   onclick="fiscalTab('emitidas')"  style="flex:1;min-width:120px">📄 NF-e Emitidas</button>
+    <button class="btn btn-outline" id="fiscal-tab-recebidas"  onclick="fiscalTab('recebidas')" style="flex:1;min-width:120px">📥 NF-e Recebidas</button>
+    <button class="btn btn-outline" id="fiscal-tab-remessas"   onclick="fiscalTab('remessas')"  style="flex:1;min-width:110px">🔄 Remessas</button>
+    <button class="btn btn-outline" id="fiscal-tab-financeiro" onclick="fiscalTab('financeiro')" style="flex:1;min-width:110px">💰 Financeiro</button>
+    <button class="btn btn-outline" id="fiscal-tab-relatorio"  onclick="fiscalTab('relatorio')"  style="flex:1;min-width:110px">📊 Relatório</button>
+  </div>
+
+  <!-- VIEW: NF-e Emitidas -->
+  <div id="fiscal-view-emitidas">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>NF-e Emitidas</h3>
+      <button class="btn btn-primary" onclick="fiscalAbrirModalNfe('emitida')" style="font-size:0.85rem">+ Registrar NF-e</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <input id="fiscal-busca-emitida" type="text" class="input" placeholder="🔍 Nº NF-e, CNPJ ou cliente..." style="flex:1;min-width:180px" oninput="fiscalFiltrar('emitida')">
+      <select id="fiscal-filtro-status-emitida" class="input" style="width:140px" onchange="fiscalFiltrar('emitida')">
+        <option value="">Todos status</option>
+        <option>Emitida</option><option>Cancelada</option><option>Denegada</option>
+      </select>
+    </div>
+    <div id="fiscal-lista-emitidas"><p style="color:var(--text-muted)">Carregando...</p></div>
+  </div>
+
+  <!-- VIEW: NF-e Recebidas -->
+  <div id="fiscal-view-recebidas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>NF-e Recebidas (Fornecedores)</h3>
+      <button class="btn btn-primary" onclick="fiscalAbrirModalNfe('recebida')" style="font-size:0.85rem">+ Registrar NF-e</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <input id="fiscal-busca-recebida" type="text" class="input" placeholder="🔍 Nº NF-e ou fornecedor..." style="flex:1;min-width:180px" oninput="fiscalFiltrar('recebida')">
+    </div>
+    <div id="fiscal-lista-recebidas"><p style="color:var(--text-muted)">Carregando...</p></div>
+  </div>
+
+  <!-- VIEW: Remessas -->
+  <div id="fiscal-view-remessas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>NF-e de Remessa (Sede → Filial)</h3>
+      <button class="btn btn-primary" onclick="fiscalAbrirModalRemessa()" style="font-size:0.85rem">+ Nova Remessa</button>
+    </div>
+    <div id="fiscal-lista-remessas"><p style="color:var(--text-muted)">Carregando...</p></div>
+  </div>
+
+  <!-- VIEW: Financeiro -->
+  <div id="fiscal-view-financeiro" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>Lançamentos Financeiros</h3>
+      <button class="btn btn-primary" onclick="fiscalAbrirModalLancamento()" style="font-size:0.85rem">+ Lançamento</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="fiscal-tipo-lancamento" class="input" style="width:150px" onchange="fiscalCarregarLancamentos()">
+        <option value="">Todos</option>
+        <option value="receita">Receitas</option>
+        <option value="despesa">Despesas</option>
+      </select>
+      <input id="fiscal-lan-de" type="date" class="input" style="width:140px">
+      <input id="fiscal-lan-ate" type="date" class="input" style="width:140px">
+      <button class="btn btn-primary" onclick="fiscalCarregarLancamentos()" style="font-size:0.85rem">🔍</button>
+    </div>
+    <div id="fiscal-kpi-financeiro" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"></div>
+    <div id="fiscal-lista-lancamentos"><p style="color:var(--text-muted)">Carregando...</p></div>
+  </div>
+
+  <!-- VIEW: Relatório -->
+  <div id="fiscal-view-relatorio" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <select id="fiscal-rel-filial" class="input" style="flex:1;min-width:180px">
+        <option value="">Todas as Filiais/Empresas</option>
+      </select>
+      <input id="fiscal-rel-de" type="date" class="input" style="width:140px">
+      <input id="fiscal-rel-ate" type="date" class="input" style="width:140px">
+      <button class="btn btn-primary" onclick="fiscalGerarRelatorio()" style="font-size:0.85rem">📊 Gerar</button>
+      <button class="btn btn-outline" onclick="fiscalExportarRelatorio()" style="font-size:0.85rem">📥 Excel</button>
+    </div>
+    <div id="fiscal-rel-resultado"><p style="color:var(--text-muted)">Configure os filtros e clique em Gerar.</p></div>
+  </div>
+
+  <!-- Modal NF-e -->
+  <div id="fiscal-modal-nfe" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:100%;max-width:580px;margin:auto">
+      <h3 id="fiscal-modal-nfe-titulo" style="margin-bottom:16px">📄 Registrar NF-e</h3>
+      <input type="hidden" id="fiscal-nfe-docid">
+      <input type="hidden" id="fiscal-nfe-tipo">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="label">Nº NF-e *</label>
+          <input id="fiscal-nfe-numero" type="text" class="input" placeholder="000000000">
+        </div>
+        <div>
+          <label class="label">Série</label>
+          <input id="fiscal-nfe-serie" type="text" class="input" placeholder="1" value="1">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Chave de Acesso (44 dígitos)</label>
+          <input id="fiscal-nfe-chave" type="text" class="input" placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000" maxlength="47">
+        </div>
+        <div>
+          <label class="label">Data de Emissão *</label>
+          <input id="fiscal-nfe-data" type="date" class="input">
+        </div>
+        <div>
+          <label class="label">Status</label>
+          <select id="fiscal-nfe-status" class="input">
+            <option>Emitida</option><option>Cancelada</option><option>Denegada</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">CNPJ Emitente/Destinatário *</label>
+          <input id="fiscal-nfe-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" oninput="fiscalAutoFillCnpj(this.value)">
+        </div>
+        <div>
+          <label class="label">Razão Social *</label>
+          <input id="fiscal-nfe-razao" type="text" class="input" placeholder="Nome da empresa">
+        </div>
+        <div>
+          <label class="label">UF</label>
+          <input id="fiscal-nfe-uf" type="text" class="input" placeholder="SP" maxlength="2" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label class="label">Natureza da Operação</label>
+          <select id="fiscal-nfe-natureza" class="input">
+            <option>Venda de Mercadoria</option>
+            <option>Remessa para Filial</option>
+            <option>Bonificação</option>
+            <option>Devolução de Compra</option>
+            <option>Compra de Mercadoria</option>
+            <option>Transferência</option>
+            <option>Outra</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Valor Total (R$) *</label>
+          <input id="fiscal-nfe-valor" type="number" class="input" placeholder="0,00" step="0.01" min="0">
+        </div>
+        <div>
+          <label class="label">Valor ICMS (R$)</label>
+          <input id="fiscal-nfe-icms" type="number" class="input" placeholder="0,00" step="0.01" min="0">
+        </div>
+        <div>
+          <label class="label">Pedido Meso-LOG (opcional)</label>
+          <input id="fiscal-nfe-pedido" type="text" class="input" placeholder="Nº pedido vinculado">
+        </div>
+        <div>
+          <label class="label">Filial Vinculada</label>
+          <select id="fiscal-nfe-filial" class="input">
+            <option value="">Nenhuma</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Observações</label>
+          <textarea id="fiscal-nfe-obs" class="input" rows="2" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-success" style="flex:2" onclick="fiscalSalvarNfe()">💾 Salvar NF-e</button>
+        <button class="btn btn-outline" style="flex:1" onclick="fiscalFecharModais()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Remessa -->
+  <div id="fiscal-modal-remessa" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:100%;max-width:500px">
+      <h3 style="margin-bottom:16px">🔄 Registrar NF-e de Remessa</h3>
+      <input type="hidden" id="fiscal-rem-docid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="label">Nº NF-e Remessa *</label>
+          <input id="fiscal-rem-numero" type="text" class="input" placeholder="000000">
+        </div>
+        <div>
+          <label class="label">Data *</label>
+          <input id="fiscal-rem-data" type="date" class="input">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Filial Destino *</label>
+          <select id="fiscal-rem-filial" class="input"></select>
+        </div>
+        <div>
+          <label class="label">Valor Total (R$)</label>
+          <input id="fiscal-rem-valor" type="number" class="input" placeholder="0,00" step="0.01">
+        </div>
+        <div>
+          <label class="label">Chave de Acesso</label>
+          <input id="fiscal-rem-chave" type="text" class="input" placeholder="44 dígitos" maxlength="47">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Produtos (resumo)</label>
+          <textarea id="fiscal-rem-produtos" class="input" rows="2" placeholder="Ex: 10x X-PROF STARTER KIT, 5x C-PROF..." style="resize:vertical"></textarea>
+        </div>
+        <div>
+          <label class="label">Status</label>
+          <select id="fiscal-rem-status" class="input">
+            <option>Emitida</option><option>Cancelada</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Obs</label>
+          <input id="fiscal-rem-obs" type="text" class="input" placeholder="Observações">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-success" style="flex:2" onclick="fiscalSalvarRemessa()">💾 Salvar</button>
+        <button class="btn btn-outline" style="flex:1" onclick="fiscalFecharModais()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lançamento Financeiro -->
+  <div id="fiscal-modal-lancamento" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:100%;max-width:460px">
+      <h3 style="margin-bottom:16px">💰 Lançamento Financeiro</h3>
+      <input type="hidden" id="fiscal-lan-docid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="grid-column:1/-1">
+          <label class="label">Tipo *</label>
+          <div style="display:flex;gap:8px">
+            <button id="fiscal-lan-btn-receita" class="btn btn-success" style="flex:1" onclick="fiscalSetTipoLan('receita')">💚 Receita</button>
+            <button id="fiscal-lan-btn-despesa" class="btn btn-outline" style="flex:1;border-color:#e53e3e;color:#e53e3e" onclick="fiscalSetTipoLan('despesa')">❤️ Despesa</button>
+          </div>
+          <input type="hidden" id="fiscal-lan-tipo" value="receita">
+        </div>
+        <div>
+          <label class="label">Descrição *</label>
+          <input id="fiscal-lan-descricao" type="text" class="input" placeholder="Ex: Recebimento NF-e 001234">
+        </div>
+        <div>
+          <label class="label">Valor (R$) *</label>
+          <input id="fiscal-lan-valor" type="number" class="input" placeholder="0,00" step="0.01" min="0">
+        </div>
+        <div>
+          <label class="label">Data *</label>
+          <input id="fiscal-lan-data" type="date" class="input">
+        </div>
+        <div>
+          <label class="label">Categoria</label>
+          <select id="fiscal-lan-categoria" class="input">
+            <option>Venda</option><option>Remessa</option><option>Compra</option>
+            <option>Logística</option><option>Impostos</option><option>Outros</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">NF-e Vinculada (opcional)</label>
+          <input id="fiscal-lan-nfe" type="text" class="input" placeholder="Nº NF-e">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Obs</label>
+          <input id="fiscal-lan-obs" type="text" class="input" placeholder="Observações">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-success" style="flex:2" onclick="fiscalSalvarLancamento()">💾 Salvar</button>
+        <button class="btn btn-outline" style="flex:1" onclick="fiscalFecharModais()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PAGE FILIAIS -->
 <div class="page" id="page-filiais">
   <div class="page-header">
@@ -4272,7 +4544,7 @@ function showPage(p){
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
@@ -4306,6 +4578,7 @@ function showPage(p){
   }
   if(p==='portal') portalInit();
   if(p==='filiais') filInit();
+  if(p==='fiscal') fiscalInit();
 }
 
 // ==============================
@@ -14542,6 +14815,465 @@ async function portalCarregarClientes(){
       +'</table>';
   }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// MÓDULO FISCAL
+// ══════════════════════════════════════════════════════════════════════════
+let _fiscalNfeEmitidas=[];
+let _fiscalNfeRecebidas=[];
+
+async function fiscalInit(){
+  fiscalTab('emitidas');
+  await fiscalPopularFiliaisSelect();
+  fiscalCarregarEmitidas();
+  fiscalCarregarKpis();
+}
+
+function fiscalTab(aba){
+  ['emitidas','recebidas','remessas','financeiro','relatorio'].forEach(t=>{
+    const btn=document.getElementById('fiscal-tab-'+t);
+    const view=document.getElementById('fiscal-view-'+t);
+    if(btn) btn.className=t===aba?'btn btn-primary':'btn btn-outline';
+    if(view) view.style.display=t===aba?'block':'none';
+  });
+  if(aba==='emitidas') fiscalCarregarEmitidas();
+  if(aba==='recebidas') fiscalCarregarRecebidas();
+  if(aba==='remessas') fiscalCarregarRemessas();
+  if(aba==='financeiro') fiscalCarregarLancamentos();
+}
+
+async function fiscalPopularFiliaisSelect(){
+  try{
+    const snap=await db.collection('filiais').where('status','==','ativa').orderBy('uf').get();
+    ['fiscal-nfe-filial','fiscal-rem-filial','fiscal-rel-filial'].forEach(id=>{
+      const sel=document.getElementById(id);
+      if(!sel)return;
+      const first=sel.options[0];
+      sel.innerHTML='';
+      sel.appendChild(first);
+      snap.docs.forEach(d=>{
+        const f=d.data();
+        const opt=document.createElement('option');
+        opt.value=d.id;
+        opt.textContent=f.uf+' — '+f.razaoSocial;
+        sel.appendChild(opt);
+      });
+    });
+  }catch(e){console.warn('fiscalPopularFiliaisSelect:',e);}
+}
+
+async function fiscalCarregarKpis(){
+  const kpi=document.getElementById('fiscal-kpis');
+  if(!kpi)return;
+  try{
+    const [emSnap,recSnap,remSnap,lanSnap]=await Promise.all([
+      db.collection('nfe_emitidas').get(),
+      db.collection('nfe_recebidas').get(),
+      db.collection('nfe_remessas').get(),
+      db.collection('lancamentos_financeiros').get()
+    ]);
+    const totalEmitidas=emSnap.size;
+    const totalRecebidas=recSnap.size;
+    const totalRemessas=remSnap.size;
+    const receitas=lanSnap.docs.filter(d=>d.data().tipo==='receita').reduce((a,d)=>a+(d.data().valor||0),0);
+    const despesas=lanSnap.docs.filter(d=>d.data().tipo==='despesa').reduce((a,d)=>a+(d.data().valor||0),0);
+    kpi.innerHTML=[
+      {icon:'📄',label:'NF-e Emitidas',val:totalEmitidas,cor:'#667eea'},
+      {icon:'📥',label:'NF-e Recebidas',val:totalRecebidas,cor:'#48bb78'},
+      {icon:'🔄',label:'Remessas',val:totalRemessas,cor:'#ed8936'},
+      {icon:'💚',label:'Receitas',val:'R$ '+fmt(receitas),cor:'#276749'},
+      {icon:'❤️',label:'Despesas',val:'R$ '+fmt(despesas),cor:'#c53030'},
+      {icon:'💰',label:'Saldo',val:'R$ '+fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
+    ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:12px;border-left:3px solid '+k.cor+';text-align:center">'
+      +'<div style="font-size:1.3rem">'+k.icon+'</div>'
+      +'<div style="font-size:1.1rem;font-weight:700;color:'+k.cor+'">'+k.val+'</div>'
+      +'<div style="font-size:0.75rem;color:var(--text-muted)">'+k.label+'</div></div>').join('');
+  }catch(e){console.warn('fiscalCarregarKpis:',e);}
+}
+
+async function fiscalCarregarEmitidas(){
+  const cont=document.getElementById('fiscal-lista-emitidas');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('nfe_emitidas').orderBy('criadoEm','desc').limit(200).get();
+    _fiscalNfeEmitidas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    fiscalRenderNfe('emitida',_fiscalNfeEmitidas);
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+async function fiscalCarregarRecebidas(){
+  const cont=document.getElementById('fiscal-lista-recebidas');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('nfe_recebidas').orderBy('criadoEm','desc').limit(200).get();
+    _fiscalNfeRecebidas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    fiscalRenderNfe('recebida',_fiscalNfeRecebidas);
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function fiscalFiltrar(tipo){
+  const busca=document.getElementById('fiscal-busca-'+tipo).value.toLowerCase();
+  const status=document.getElementById('fiscal-filtro-status-'+tipo)?document.getElementById('fiscal-filtro-status-'+tipo).value:'';
+  const lista=tipo==='emitida'?_fiscalNfeEmitidas:_fiscalNfeRecebidas;
+  const filtrado=lista.filter(n=>{
+    const matchBusca=!busca||(n.numero&&n.numero.includes(busca))||(n.cnpj&&n.cnpj.includes(busca))||(n.razaoSocial&&n.razaoSocial.toLowerCase().includes(busca));
+    const matchStatus=!status||n.status===status;
+    return matchBusca&&matchStatus;
+  });
+  fiscalRenderNfe(tipo,filtrado);
+}
+
+function fiscalRenderNfe(tipo,lista){
+  const contId=tipo==='emitida'?'fiscal-lista-emitidas':'fiscal-lista-recebidas';
+  const cont=document.getElementById(contId);
+  if(!cont)return;
+  if(!lista.length){cont.innerHTML='<p style="color:var(--text-muted)">Nenhuma NF-e encontrada.</p>';return;}
+  const statusCor={Emitida:'#276749',Cancelada:'#c53030',Denegada:'#dd6b20'};
+  cont.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'
+    +lista.map(n=>{
+      const cor=statusCor[n.status]||'#666';
+      const badge='<span style="background:'+cor+';color:#fff;padding:2px 8px;border-radius:20px;font-size:0.75rem">'+n.status+'</span>';
+      return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;border-left:4px solid '+cor+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">'
+        +'<div>'
+        +'<span style="font-weight:700;font-size:1rem">NF-e '+n.numero+(n.serie?' · Série '+n.serie:'')+'</span>'
+        +(n.chave?'<div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-top:2px">'+n.chave+'</div>':'')
+        +'</div>'+badge+'</div>'
+        +'<div style="margin-top:6px;font-size:0.85rem;color:var(--text-muted)">'
+        +'📅 '+n.data+' · 🏢 '+n.razaoSocial+(n.uf?' ('+n.uf+')':'')
+        +' · 💰 R$ '+fmt(n.valor||0)
+        +(n.icms?' · ICMS R$ '+fmt(n.icms):'')
+        +(n.natureza?' · '+n.natureza:'')
+        +(n.obs?'<br>📝 '+n.obs:'')
+        +'</div>'
+        +'<div style="display:flex;gap:6px;margin-top:8px">'
+        +(n.chave?'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalCopiarChave(\''+n.chave+'\')">📋 Chave</button>':'')
+        +'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalEditarNfe(\''+n.id+'\',\''+tipo+'\')">✏️</button>'
+        +'<button class="btn btn-danger" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalExcluirNfe(\''+n.id+'\',\''+tipo+'\')">🗑</button>'
+        +'</div></div>';
+    }).join('')+'</div>';
+}
+
+async function fiscalCarregarRemessas(){
+  const cont=document.getElementById('fiscal-lista-remessas');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('nfe_remessas').orderBy('criadoEm','desc').limit(200).get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted)">Nenhuma remessa registrada.</p>';return;}
+    const statusCor={Emitida:'#276749',Cancelada:'#c53030'};
+    cont.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'
+      +snap.docs.map(d=>{
+        const r=d.data();
+        const cor=statusCor[r.status]||'#666';
+        return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;border-left:4px solid '+cor+'">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">'
+          +'<span style="font-weight:700">NF-e Remessa '+r.numero+'</span>'
+          +'<span style="background:'+cor+';color:#fff;padding:2px 8px;border-radius:20px;font-size:0.75rem">'+r.status+'</span>'
+          +'</div>'
+          +'<div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px">'
+          +'📅 '+r.data+' · 🏢 '+r.filialNome+' ('+r.filialUf+')'
+          +(r.valor?' · 💰 R$ '+fmt(r.valor):'')
+          +(r.produtos?'<br>📦 '+r.produtos:'')
+          +(r.obs?'<br>📝 '+r.obs:'')
+          +'</div>'
+          +'<div style="margin-top:8px;display:flex;gap:6px">'
+          +(r.chave?'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalCopiarChave(\''+r.chave+'\')">📋 Chave</button>':'')
+          +'<button class="btn btn-danger" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalExcluirRemessa(\''+d.id+'\')">🗑</button>'
+          +'</div></div>';
+      }).join('')+'</div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function fiscalAbrirModalNfe(tipo){
+  document.getElementById('fiscal-nfe-docid').value='';
+  document.getElementById('fiscal-nfe-tipo').value=tipo;
+  document.getElementById('fiscal-modal-nfe-titulo').textContent=tipo==='emitida'?'📄 Registrar NF-e Emitida':'📥 Registrar NF-e Recebida';
+  ['fiscal-nfe-numero','fiscal-nfe-serie','fiscal-nfe-chave','fiscal-nfe-cnpj','fiscal-nfe-razao','fiscal-nfe-uf','fiscal-nfe-pedido','fiscal-nfe-obs'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=id==='fiscal-nfe-serie'?'1':'';
+  });
+  document.getElementById('fiscal-nfe-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fiscal-nfe-status').value='Emitida';
+  document.getElementById('fiscal-nfe-valor').value='';
+  document.getElementById('fiscal-nfe-icms').value='';
+  document.getElementById('fiscal-nfe-filial').value='';
+  document.getElementById('fiscal-modal-nfe').style.display='flex';
+}
+
+async function fiscalEditarNfe(docId,tipo){
+  const col=tipo==='emitida'?'nfe_emitidas':'nfe_recebidas';
+  const doc=await db.collection(col).doc(docId).get();
+  const n=doc.data();
+  document.getElementById('fiscal-nfe-docid').value=docId;
+  document.getElementById('fiscal-nfe-tipo').value=tipo;
+  document.getElementById('fiscal-modal-nfe-titulo').textContent='✏️ Editar NF-e';
+  document.getElementById('fiscal-nfe-numero').value=n.numero||'';
+  document.getElementById('fiscal-nfe-serie').value=n.serie||'1';
+  document.getElementById('fiscal-nfe-chave').value=n.chave||'';
+  document.getElementById('fiscal-nfe-data').value=n.data||'';
+  document.getElementById('fiscal-nfe-status').value=n.status||'Emitida';
+  document.getElementById('fiscal-nfe-cnpj').value=n.cnpj||'';
+  document.getElementById('fiscal-nfe-razao').value=n.razaoSocial||'';
+  document.getElementById('fiscal-nfe-uf').value=n.uf||'';
+  document.getElementById('fiscal-nfe-natureza').value=n.natureza||'Venda de Mercadoria';
+  document.getElementById('fiscal-nfe-valor').value=n.valor||'';
+  document.getElementById('fiscal-nfe-icms').value=n.icms||'';
+  document.getElementById('fiscal-nfe-pedido').value=n.pedido||'';
+  document.getElementById('fiscal-nfe-filial').value=n.filialId||'';
+  document.getElementById('fiscal-nfe-obs').value=n.obs||'';
+  document.getElementById('fiscal-modal-nfe').style.display='flex';
+}
+
+async function fiscalAutoFillCnpj(val){
+  const cnpj=val.replace(/\D/g,'');
+  if(cnpj.length!==14)return;
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpj);
+    if(!r.ok)return;
+    const d=await r.json();
+    document.getElementById('fiscal-nfe-razao').value=d.razao_social||'';
+    document.getElementById('fiscal-nfe-uf').value=d.uf||'';
+  }catch(e){}
+}
+
+async function fiscalSalvarNfe(){
+  const numero=document.getElementById('fiscal-nfe-numero').value.trim();
+  const valor=parseFloat(document.getElementById('fiscal-nfe-valor').value)||0;
+  const tipo=document.getElementById('fiscal-nfe-tipo').value;
+  if(!numero){toast('Informe o número da NF-e');return;}
+  const filialId=document.getElementById('fiscal-nfe-filial').value;
+  let filialNome='';
+  if(filialId){
+    try{const fd=await db.collection('filiais').doc(filialId).get();filialNome=fd.data().razaoSocial||'';}catch(e){}
+  }
+  const dados={
+    numero,
+    serie:document.getElementById('fiscal-nfe-serie').value.trim(),
+    chave:document.getElementById('fiscal-nfe-chave').value.replace(/\s/g,''),
+    data:document.getElementById('fiscal-nfe-data').value,
+    status:document.getElementById('fiscal-nfe-status').value,
+    cnpj:document.getElementById('fiscal-nfe-cnpj').value.trim(),
+    razaoSocial:document.getElementById('fiscal-nfe-razao').value.trim(),
+    uf:document.getElementById('fiscal-nfe-uf').value.trim().toUpperCase(),
+    natureza:document.getElementById('fiscal-nfe-natureza').value,
+    valor,
+    icms:parseFloat(document.getElementById('fiscal-nfe-icms').value)||0,
+    pedido:document.getElementById('fiscal-nfe-pedido').value.trim(),
+    filialId,filialNome,
+    obs:document.getElementById('fiscal-nfe-obs').value.trim(),
+    atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const col=tipo==='emitida'?'nfe_emitidas':'nfe_recebidas';
+  const docId=document.getElementById('fiscal-nfe-docid').value;
+  try{
+    if(docId){await db.collection(col).doc(docId).update(dados);}
+    else{dados.criadoEm=firebase.firestore.FieldValue.serverTimestamp();await db.collection(col).add(dados);}
+    toast('NF-e salva!');
+    fiscalFecharModais();
+    if(tipo==='emitida')fiscalCarregarEmitidas();else fiscalCarregarRecebidas();
+    fiscalCarregarKpis();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function fiscalExcluirNfe(docId,tipo){
+  if(!confirm('Excluir esta NF-e?'))return;
+  const col=tipo==='emitida'?'nfe_emitidas':'nfe_recebidas';
+  try{await db.collection(col).doc(docId).delete();toast('NF-e excluída.');if(tipo==='emitida')fiscalCarregarEmitidas();else fiscalCarregarRecebidas();fiscalCarregarKpis();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+function fiscalAbrirModalRemessa(){
+  document.getElementById('fiscal-rem-docid').value='';
+  ['fiscal-rem-numero','fiscal-rem-chave','fiscal-rem-produtos','fiscal-rem-obs'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('fiscal-rem-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fiscal-rem-valor').value='';
+  document.getElementById('fiscal-rem-status').value='Emitida';
+  document.getElementById('fiscal-rem-filial').value='';
+  document.getElementById('fiscal-modal-remessa').style.display='flex';
+}
+
+async function fiscalSalvarRemessa(){
+  const numero=document.getElementById('fiscal-rem-numero').value.trim();
+  const filialId=document.getElementById('fiscal-rem-filial').value;
+  if(!numero){toast('Informe o número da NF-e de remessa');return;}
+  if(!filialId){toast('Selecione a filial destino');return;}
+  let filialNome='',filialUf='';
+  try{const fd=await db.collection('filiais').doc(filialId).get();filialNome=fd.data().razaoSocial||'';filialUf=fd.data().uf||'';}catch(e){}
+  const dados={
+    numero,filialId,filialNome,filialUf,
+    data:document.getElementById('fiscal-rem-data').value,
+    valor:parseFloat(document.getElementById('fiscal-rem-valor').value)||0,
+    chave:document.getElementById('fiscal-rem-chave').value.replace(/\s/g,''),
+    produtos:document.getElementById('fiscal-rem-produtos').value.trim(),
+    status:document.getElementById('fiscal-rem-status').value,
+    obs:document.getElementById('fiscal-rem-obs').value.trim(),
+    criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('nfe_remessas').add(dados);
+    toast('Remessa registrada!');
+    fiscalFecharModais();
+    fiscalCarregarRemessas();
+    fiscalCarregarKpis();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function fiscalExcluirRemessa(docId){
+  if(!confirm('Excluir esta remessa?'))return;
+  try{await db.collection('nfe_remessas').doc(docId).delete();toast('Remessa excluída.');fiscalCarregarRemessas();fiscalCarregarKpis();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+function fiscalSetTipoLan(tipo){
+  document.getElementById('fiscal-lan-tipo').value=tipo;
+  document.getElementById('fiscal-lan-btn-receita').className=tipo==='receita'?'btn btn-success':'btn btn-outline';
+  document.getElementById('fiscal-lan-btn-despesa').style.cssText=tipo==='despesa'?'flex:1;background:#e53e3e;color:#fff;border:none;border-radius:8px;padding:8px':'flex:1;border-color:#e53e3e;color:#e53e3e;background:transparent;border:1px solid #e53e3e;border-radius:8px;padding:8px';
+}
+
+function fiscalAbrirModalLancamento(){
+  document.getElementById('fiscal-lan-docid').value='';
+  ['fiscal-lan-descricao','fiscal-lan-obs','fiscal-lan-nfe'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('fiscal-lan-valor').value='';
+  document.getElementById('fiscal-lan-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fiscal-lan-categoria').value='Venda';
+  fiscalSetTipoLan('receita');
+  document.getElementById('fiscal-modal-lancamento').style.display='flex';
+}
+
+async function fiscalSalvarLancamento(){
+  const desc=document.getElementById('fiscal-lan-descricao').value.trim();
+  const valor=parseFloat(document.getElementById('fiscal-lan-valor').value)||0;
+  const data=document.getElementById('fiscal-lan-data').value;
+  if(!desc||!valor||!data){toast('Preencha descrição, valor e data');return;}
+  const dados={
+    tipo:document.getElementById('fiscal-lan-tipo').value,
+    descricao:desc,valor,data,
+    categoria:document.getElementById('fiscal-lan-categoria').value,
+    nfe:document.getElementById('fiscal-lan-nfe').value.trim(),
+    obs:document.getElementById('fiscal-lan-obs').value.trim(),
+    criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('lancamentos_financeiros').add(dados);
+    toast('Lançamento salvo!');
+    fiscalFecharModais();
+    fiscalCarregarLancamentos();
+    fiscalCarregarKpis();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function fiscalCarregarLancamentos(){
+  const cont=document.getElementById('fiscal-lista-lancamentos');
+  const kpi=document.getElementById('fiscal-kpi-financeiro');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  const tipoFiltro=document.getElementById('fiscal-tipo-lancamento').value;
+  const de=document.getElementById('fiscal-lan-de').value;
+  const ate=document.getElementById('fiscal-lan-ate').value;
+  try{
+    let q=db.collection('lancamentos_financeiros').orderBy('data','desc').limit(500);
+    if(tipoFiltro) q=q.where('tipo','==',tipoFiltro);
+    const snap=await q.get();
+    let docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(de) docs=docs.filter(x=>x.data>=de);
+    if(ate) docs=docs.filter(x=>x.data<=ate);
+    const receitas=docs.filter(d=>d.tipo==='receita').reduce((a,d)=>a+d.valor,0);
+    const despesas=docs.filter(d=>d.tipo==='despesa').reduce((a,d)=>a+d.valor,0);
+    if(kpi) kpi.innerHTML=[
+      {icon:'💚',label:'Receitas',val:'R$ '+fmt(receitas),cor:'#276749'},
+      {icon:'❤️',label:'Despesas',val:'R$ '+fmt(despesas),cor:'#c53030'},
+      {icon:'💰',label:'Saldo',val:'R$ '+fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
+    ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:12px;text-align:center;border-left:3px solid '+k.cor+'"><div style="font-size:1.2rem;font-weight:700;color:'+k.cor+'">'+k.val+'</div><div style="font-size:0.75rem;color:var(--text-muted)">'+k.icon+' '+k.label+'</div></div>').join('');
+    if(!docs.length){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum lançamento encontrado.</p>';return;}
+    cont.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.85rem">'
+      +'<tr style="background:var(--bg-hover)"><th style="padding:8px;text-align:left">Data</th><th style="padding:8px;text-align:left">Descrição</th><th style="padding:8px;text-align:left">Categoria</th><th style="padding:8px;text-align:center">Tipo</th><th style="padding:8px;text-align:right">Valor</th><th style="padding:8px;text-align:center">Ações</th></tr>'
+      +docs.map(l=>'<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:8px;white-space:nowrap">'+l.data+'</td>'
+        +'<td style="padding:8px">'+l.descricao+(l.nfe?'<br><span style="font-size:0.75rem;color:var(--text-muted)">NF-e '+l.nfe+'</span>':'')+'</td>'
+        +'<td style="padding:8px">'+l.categoria+'</td>'
+        +'<td style="padding:8px;text-align:center"><span style="background:'+(l.tipo==='receita'?'#c6f6d5;color:#276749':'#fed7d7;color:#c53030')+';padding:2px 8px;border-radius:20px;font-size:0.75rem">'+(l.tipo==='receita'?'💚 Receita':'❤️ Despesa')+'</span></td>'
+        +'<td style="padding:8px;text-align:right;font-weight:700;color:'+(l.tipo==='receita'?'#276749':'#c53030')+'">R$ '+fmt(l.valor)+'</td>'
+        +'<td style="padding:8px;text-align:center"><button class="btn btn-danger" style="font-size:0.75rem;padding:4px 8px" onclick="fiscalExcluirLancamento(\''+l.id+'\')">🗑</button></td>'
+        +'</tr>').join('')+'</table></div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+async function fiscalExcluirLancamento(docId){
+  if(!confirm('Excluir lançamento?'))return;
+  try{await db.collection('lancamentos_financeiros').doc(docId).delete();toast('Lançamento excluído.');fiscalCarregarLancamentos();fiscalCarregarKpis();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+async function fiscalGerarRelatorio(){
+  const cont=document.getElementById('fiscal-rel-resultado');
+  const filialId=document.getElementById('fiscal-rel-filial').value;
+  const de=document.getElementById('fiscal-rel-de').value;
+  const ate=document.getElementById('fiscal-rel-ate').value;
+  cont.innerHTML='<p style="color:var(--text-muted)">Gerando...</p>';
+  try{
+    const [emSnap,remSnap,lanSnap]=await Promise.all([
+      db.collection('nfe_emitidas').orderBy('data','desc').get(),
+      db.collection('nfe_remessas').orderBy('data','desc').get(),
+      db.collection('lancamentos_financeiros').orderBy('data','desc').get()
+    ]);
+    let emitidas=emSnap.docs.map(d=>d.data());
+    let remessas=remSnap.docs.map(d=>d.data());
+    let lancamentos=lanSnap.docs.map(d=>d.data());
+    if(filialId){emitidas=emitidas.filter(n=>n.filialId===filialId);remessas=remessas.filter(r=>r.filialId===filialId);}
+    if(de){emitidas=emitidas.filter(n=>n.data>=de);remessas=remessas.filter(r=>r.data>=de);lancamentos=lancamentos.filter(l=>l.data>=de);}
+    if(ate){emitidas=emitidas.filter(n=>n.data<=ate);remessas=remessas.filter(r=>r.data<=ate);lancamentos=lancamentos.filter(l=>l.data<=ate);}
+    const totalNfe=emitidas.reduce((a,n)=>a+(n.valor||0),0);
+    const totalRem=remessas.reduce((a,r)=>a+(r.valor||0),0);
+    const receitas=lancamentos.filter(l=>l.tipo==='receita').reduce((a,l)=>a+l.valor,0);
+    const despesas=lancamentos.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+l.valor,0);
+    cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px">'
+      +[{l:'NF-e Emitidas',v:emitidas.length+' · R$ '+fmt(totalNfe),c:'#667eea'},
+        {l:'Remessas',v:remessas.length+' · R$ '+fmt(totalRem),c:'#ed8936'},
+        {l:'Receitas',v:'R$ '+fmt(receitas),c:'#276749'},
+        {l:'Despesas',v:'R$ '+fmt(despesas),c:'#c53030'},
+        {l:'Saldo',v:'R$ '+fmt(receitas-despesas),c:(receitas-despesas)>=0?'#276749':'#c53030'}
+       ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:14px;border-left:3px solid '+k.c+'"><div style="font-weight:700;color:'+k.c+'">'+k.v+'</div><div style="font-size:0.75rem;color:var(--text-muted)">'+k.l+'</div></div>').join('')
+      +'</div>'
+      +'<h4 style="margin-bottom:8px">NF-e Emitidas ('+emitidas.length+')</h4>'
+      +'<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:0.8rem">'
+      +'<tr style="background:var(--bg-hover)"><th style="padding:6px;text-align:left">Data</th><th style="padding:6px;text-align:left">NF-e</th><th style="padding:6px;text-align:left">Destinatário</th><th style="padding:6px;text-align:left">Natureza</th><th style="padding:6px;text-align:right">Valor</th><th style="padding:6px;text-align:center">Status</th></tr>'
+      +emitidas.map(n=>'<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">'+n.data+'</td><td style="padding:6px;font-weight:700">'+n.numero+'</td><td style="padding:6px">'+n.razaoSocial+'</td><td style="padding:6px">'+n.natureza+'</td><td style="padding:6px;text-align:right">R$ '+fmt(n.valor||0)+'</td><td style="padding:6px;text-align:center">'+n.status+'</td></tr>').join('')
+      +'</table></div>';
+    window._fiscalRelDados={emitidas,remessas,lancamentos};
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function fiscalExportarRelatorio(){
+  if(!window._fiscalRelDados){toast('Gere o relatório primeiro');return;}
+  const {emitidas,remessas,lancamentos}=window._fiscalRelDados;
+  const rows=[['=== NF-e EMITIDAS ==='],['Data','Nº NF-e','Destinatário','UF','Natureza','Valor','ICMS','Status']]
+    .concat(emitidas.map(n=>[n.data,n.numero,n.razaoSocial,n.uf,n.natureza,n.valor||0,n.icms||0,n.status]))
+    .concat([[''],['=== REMESSAS ==='],['Data','Nº NF-e','Filial','UF','Valor','Status']])
+    .concat(remessas.map(r=>[r.data,r.numero,r.filialNome,r.filialUf,r.valor||0,r.status]))
+    .concat([[''],['=== LANÇAMENTOS FINANCEIROS ==='],['Data','Descrição','Categoria','Tipo','Valor']])
+    .concat(lancamentos.map(l=>[l.data,l.descricao,l.categoria,l.tipo,l.valor]));
+  const csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='relatorio_fiscal_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function fiscalCopiarChave(chave){
+  navigator.clipboard.writeText(chave).then(()=>toast('Chave copiada!')).catch(()=>{
+    const el=document.createElement('textarea');el.value=chave;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);toast('Chave copiada!');
+  });
+}
+
+function fiscalFecharModais(){
+  ['fiscal-modal-nfe','fiscal-modal-remessa','fiscal-modal-lancamento'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+}
+// ══════════════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════════════
 // MÓDULO FILIAIS & ESTOQUE VIRTUAL
