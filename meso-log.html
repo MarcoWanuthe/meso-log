@@ -11051,6 +11051,7 @@ if(typeof firebase!=='undefined'&&typeof firebase.auth==='function'){
 let solicUser = null;
 
 async function solicDoLogin(){
+  if(!rateLimit('solic-login',5,60)){toast('⚠️ Muitas tentativas. Aguarde 1 minuto.');return;}
   const usuario=(document.getElementById('solic-login-user')?.value||'').trim();
   const senha=document.getElementById('solic-login-pass')?.value||'';
   const errEl=document.getElementById('solic-login-err');
@@ -14178,6 +14179,7 @@ function recRemoverItem(i){recCarrinho.splice(i,1);recRenderCarrinho();}
 function recLimparCarrinho(){if(!recCarrinho.length)return;if(!confirm('Limpar o carrinho?'))return;recCarrinho=[];recRenderCarrinho();}
 
 async function recFinalizarVenda(){
+  if(!rateLimit('rec-venda',5,30)){toast('⚠️ Muitas finalizações simultâneas. Aguarde.');return;}
   if(!recCarrinho.length){toast('Carrinho vazio.');return;}
   const cliNome=(document.getElementById('rec-cli-nome')||{}).value?.trim()||'';
   const cliCpf=(document.getElementById('rec-cli-cpf')||{}).value?.trim()||'';
@@ -14843,8 +14845,39 @@ document.addEventListener('click',e=>{
 });
 
 // ============================================================
+// ══════════════════════════════════════════════════════════════════════════
+// SEGURANÇA — Rate Limiting global (baseado nas 20 tasks do guia AI Makers)
+// ══════════════════════════════════════════════════════════════════════════
+const _rl={};
+function rateLimit(chave,maxTentativas,janelaSeg){
+  const agora=Date.now();
+  if(!_rl[chave])_rl[chave]=[];
+  _rl[chave]=_rl[chave].filter(t=>agora-t<janelaSeg*1000);
+  if(_rl[chave].length>=maxTentativas)return false;
+  _rl[chave].push(agora);
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// UX — Skeleton Loading (baseado na Dica 02 do guia AI Makers)
+// ══════════════════════════════════════════════════════════════════════════
+function skeletonCards(n,altura){
+  return '<div style="display:flex;flex-direction:column;gap:10px">'
+    +Array.from({length:n},()=>'<div style="background:linear-gradient(90deg,var(--bg-hover) 25%,var(--bg-card) 50%,var(--bg-hover) 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:10px;height:'+altura+'px"></div>').join('')
+    +'</div>';
+}
+// CSS da animação skeleton (injetado uma vez)
+(function(){
+  if(document.getElementById('sk-style'))return;
+  const s=document.createElement('style');
+  s.id='sk-style';
+  s.textContent='@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}';
+  document.head.appendChild(s);
+})();
+
+// ══════════════════════════════════════════════════════════════════════════
 // PORTAL DE PEDIDOS — substitui Mercus
-// ============================================================
+// ══════════════════════════════════════════════════════════════════════════
 let _portalCarrinho={};
 let _portalProdutos=[];
 let _portalAbaAtual='catalogo';
@@ -14871,6 +14904,8 @@ function portalTab(aba){
 }
 
 async function portalCarregarCatalogo(){
+  const cont=document.getElementById('portal-grid-produtos');
+  if(cont)cont.innerHTML=skeletonCards(6,80);
   const grid=document.getElementById('portal-grid-produtos');
   if(!grid)return;
   grid.innerHTML='<div style="color:#888;padding:20px">Carregando catálogo...</div>';
@@ -14967,6 +15002,7 @@ function portalCnpjAutoFill(val){
 }
 
 async function portalEnviarPedido(){
+  if(!rateLimit('portal-pedido',3,60)){toast('⚠️ Muitas tentativas. Aguarde 1 minuto.');return;}
   const itens=Object.values(_portalCarrinho);
   if(!itens.length){toast('Adicione produtos ao carrinho primeiro.');return;}
   const cnpj=(document.getElementById('portal-cli-cnpj')||{}).value||'';
@@ -15855,7 +15891,7 @@ async function filPopularSelectFiliais(){
 async function filCarregarFiliais(){
   const cont=document.getElementById('fil-lista-filiais');
   if(!cont)return;
-  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  cont.innerHTML=skeletonCards(4,90);
   try{
     const snap=await db.collection('filiais').orderBy('uf').get();
     if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted)">Nenhuma filial cadastrada.</p>';return;}
