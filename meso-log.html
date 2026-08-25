@@ -3663,12 +3663,171 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
   <!-- VIEW: Clientes ADM -->
   <div id="portal-view-clientes-adm" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <h3>👥 Clientes Cadastrados</h3>
-      <button class="btn btn-outline" onclick="portalCarregarClientes()" style="font-size:0.85rem">🔄 Atualizar</button>
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="portal-cli-tab-clientes" onclick="portalCliTab('clientes')" style="font-size:0.85rem">👥 Clientes</button>
+      <button class="btn btn-outline" id="portal-cli-tab-representantes" onclick="portalCliTab('representantes')" style="font-size:0.85rem">🧑‍💼 Representantes</button>
+      <button class="btn btn-outline" id="portal-cli-tab-tabelas" onclick="portalCliTab('tabelas')" style="font-size:0.85rem">💲 Tabelas de Preço</button>
     </div>
-    <div id="portal-clientes-lista">
-      <p style="color:var(--text-muted)">Carregando...</p>
+
+    <!-- Sub-view: Clientes -->
+    <div id="portal-cli-view-clientes">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <input type="text" class="input" placeholder="🔍 Buscar cliente..." style="flex:1;max-width:300px" oninput="portalFiltrarClientes(this.value)">
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="portalCarregarClientes()" style="font-size:0.85rem">🔄</button>
+          <button class="btn btn-primary" onclick="portalAbrirModalCliente()" style="font-size:0.85rem">➕ Novo Cliente</button>
+        </div>
+      </div>
+      <div id="portal-clientes-lista"><p style="color:var(--text-muted)">Carregando...</p></div>
+    </div>
+
+    <!-- Sub-view: Representantes -->
+    <div id="portal-cli-view-representantes" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <h4 style="margin:0">🧑‍💼 Representantes</h4>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="portalCarregarRepresentantes()" style="font-size:0.85rem">🔄</button>
+          <button class="btn btn-primary" onclick="portalAbrirModalRep()" style="font-size:0.85rem">➕ Novo Representante</button>
+        </div>
+      </div>
+      <div id="portal-rep-lista"><p style="color:var(--text-muted)">Carregando...</p></div>
+    </div>
+
+    <!-- Sub-view: Tabelas de Preço -->
+    <div id="portal-cli-view-tabelas" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <h4 style="margin:0">💲 Tabelas de Preço</h4>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="portalCarregarTabelas()" style="font-size:0.85rem">🔄</button>
+          <button class="btn btn-primary" onclick="portalAbrirModalTabela()" style="font-size:0.85rem">➕ Nova Tabela</button>
+        </div>
+      </div>
+      <div id="portal-tabelas-lista"><p style="color:var(--text-muted)">Carregando...</p></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Cadastro de Cliente -->
+  <div id="portal-modal-cliente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border-radius:16px;padding:24px;width:min(560px,95vw);max-height:90vh;overflow-y:auto">
+      <h3 id="portal-modal-cli-titulo" style="margin-bottom:16px">👥 Novo Cliente</h3>
+      <input type="hidden" id="portal-cli-docid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="label">CNPJ *</label>
+          <input id="portal-cli-modal-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" maxlength="18" oninput="portalCliCnpjAutoFill(this.value)">
+        </div>
+        <div>
+          <label class="label">Razão Social *</label>
+          <input id="portal-cli-modal-nome" type="text" class="input" placeholder="Nome da empresa">
+        </div>
+        <div>
+          <label class="label">Cidade</label>
+          <input id="portal-cli-modal-cidade" type="text" class="input" placeholder="Cidade">
+        </div>
+        <div>
+          <label class="label">UF</label>
+          <input id="portal-cli-modal-uf" type="text" class="input" placeholder="UF" maxlength="2">
+        </div>
+        <div>
+          <label class="label">Email</label>
+          <input id="portal-cli-modal-email" type="email" class="input" placeholder="email@empresa.com">
+        </div>
+        <div>
+          <label class="label">Telefone</label>
+          <input id="portal-cli-modal-tel" type="text" class="input" placeholder="(00) 00000-0000">
+        </div>
+        <div>
+          <label class="label">Representante</label>
+          <select id="portal-cli-modal-rep" class="input">
+            <option value="">— Nenhum —</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Tabela de Preço</label>
+          <select id="portal-cli-modal-tabela" class="input">
+            <option value="">— Padrão —</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Observações</label>
+          <textarea id="portal-cli-modal-obs" class="input" rows="2" placeholder="Observações gerais..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="portalSalvarCliente()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Cadastro de Representante -->
+  <div id="portal-modal-rep" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border-radius:16px;padding:24px;width:min(480px,95vw)">
+      <h3 id="portal-modal-rep-titulo" style="margin-bottom:16px">🧑‍💼 Novo Representante</h3>
+      <input type="hidden" id="portal-rep-docid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="label">Nome *</label>
+          <input id="portal-rep-nome" type="text" class="input" placeholder="Nome completo">
+        </div>
+        <div>
+          <label class="label">Email *</label>
+          <input id="portal-rep-email" type="email" class="input" placeholder="rep@mesoestetic.com">
+        </div>
+        <div>
+          <label class="label">Telefone</label>
+          <input id="portal-rep-tel" type="text" class="input" placeholder="(00) 00000-0000">
+        </div>
+        <div>
+          <label class="label">Região / UF</label>
+          <input id="portal-rep-regiao" type="text" class="input" placeholder="Ex: SP, Sul, Nordeste">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Observações</label>
+          <textarea id="portal-rep-obs" class="input" rows="2" placeholder="Observações..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="portalSalvarRep()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Tabela de Preço -->
+  <div id="portal-modal-tabela" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border-radius:16px;padding:24px;width:min(440px,95vw)">
+      <h3 style="margin-bottom:16px">💲 Tabela de Preço</h3>
+      <input type="hidden" id="portal-tab-docid">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label class="label">Nome da Tabela *</label>
+          <input id="portal-tab-nome" type="text" class="input" placeholder="Ex: Tabela Varejo, Tabela Distribuidora">
+        </div>
+        <div>
+          <label class="label">Desconto Base (%)</label>
+          <input id="portal-tab-desconto" type="number" class="input" placeholder="0" min="0" max="100" step="0.5">
+        </div>
+        <div>
+          <label class="label">Segmento</label>
+          <select id="portal-tab-segmento" class="input">
+            <option>Varejo</option>
+            <option>Distribuidora</option>
+            <option>Clínica</option>
+            <option>Spa</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Observações</label>
+          <textarea id="portal-tab-obs" class="input" rows="2" placeholder="Condições especiais..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="portalSalvarTabela()">💾 Salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -14602,7 +14761,7 @@ function portalTab(aba){
   if(aba==='carrinho') portalRenderCarrinho();
   if(aba==='meus-pedidos') portalCarregarMeusPedidos();
   if(aba==='pedidos-adm') portalCarregarTodosPedidos();
-  if(aba==='clientes-adm') portalCarregarClientes();
+  if(aba==='clientes-adm') portalCliTab('clientes');
 }
 
 async function portalCarregarCatalogo(){
@@ -14802,18 +14961,287 @@ async function portalAtualizarStatus(docId,novoStatus){
   }catch(e){toast('Erro: '+e.message);}
 }
 
+let _portalClientes=[];
+
+function portalCliTab(sub){
+  ['clientes','representantes','tabelas'].forEach(s=>{
+    const btn=document.getElementById('portal-cli-tab-'+s);
+    const view=document.getElementById('portal-cli-view-'+s);
+    if(btn) btn.className=s===sub?'btn btn-primary':'btn btn-outline';
+    if(view) view.style.display=s===sub?'block':'none';
+  });
+  if(sub==='clientes') portalCarregarClientes();
+  if(sub==='representantes') portalCarregarRepresentantes();
+  if(sub==='tabelas') portalCarregarTabelas();
+}
+
 async function portalCarregarClientes(){
   const cont=document.getElementById('portal-clientes-lista');
   if(!cont)return;
-  cont.innerHTML='<div style="color:#888;padding:20px">Carregando...</div>';
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
   try{
     const snap=await db.collection('clientes_portal').orderBy('nome').get();
-    if(snap.empty){cont.innerHTML='<div style="color:#888;padding:20px;text-align:center">Nenhum cliente cadastrado ainda.</div>';return;}
-    cont.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      +'<tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Nome</th><th style="padding:8px;text-align:left">CNPJ</th><th style="padding:8px;text-align:left">Cidade/UF</th></tr>'
-      +snap.docs.map(d=>{const c=d.data();return '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:8px">'+c.nome+'</td><td style="padding:8px;font-family:monospace">'+c.cnpj+'</td><td style="padding:8px">'+c.cidade+'/'+c.estado+'</td></tr>';}).join('')
-      +'</table>';
-  }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
+    _portalClientes=snap.docs.map(d=>({id:d.id,...d.data()}));
+    portalRenderClientes(_portalClientes);
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function portalFiltrarClientes(busca){
+  const b=busca.toLowerCase();
+  const filtrado=b?_portalClientes.filter(c=>(c.nome||'').toLowerCase().includes(b)||(c.cnpj||'').includes(b)||(c.cidade||'').toLowerCase().includes(b)):_portalClientes;
+  portalRenderClientes(filtrado);
+}
+
+function portalRenderClientes(lista){
+  const cont=document.getElementById('portal-clientes-lista');
+  if(!cont)return;
+  if(!lista.length){cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Nenhum cliente encontrado.</p>';return;}
+  cont.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.85rem">'
+    +'<tr style="background:var(--bg-hover)"><th style="padding:8px;text-align:left">Razão Social</th><th style="padding:8px;text-align:left">CNPJ</th><th style="padding:8px;text-align:left">Cidade/UF</th><th style="padding:8px;text-align:left">Representante</th><th style="padding:8px;text-align:center">Ações</th></tr>'
+    +lista.map(c=>'<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="padding:8px;font-weight:600">'+c.nome+'</td>'
+      +'<td style="padding:8px;font-family:monospace;font-size:0.8rem">'+c.cnpj+'</td>'
+      +'<td style="padding:8px">'+(c.cidade||'')+(c.uf?'/'+c.uf:'')+'</td>'
+      +'<td style="padding:8px">'+(c.repNome||'—')+'</td>'
+      +'<td style="padding:8px;text-align:center;white-space:nowrap">'
+      +'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 8px;margin-right:4px" onclick="portalAbrirModalCliente(\''+c.id+'\')">✏️</button>'
+      +'<button class="btn btn-danger" style="font-size:0.75rem;padding:4px 8px" onclick="portalExcluirCliente(\''+c.id+'\',\''+c.nome+'\')">🗑</button>'
+      +'</td></tr>').join('')+'</table></div>';
+}
+
+async function portalAbrirModalCliente(docId){
+  await _portalPopularSelectsModal();
+  document.getElementById('portal-cli-docid').value=docId||'';
+  document.getElementById('portal-modal-cli-titulo').textContent=docId?'✏️ Editar Cliente':'👥 Novo Cliente';
+  ['portal-cli-modal-cnpj','portal-cli-modal-nome','portal-cli-modal-cidade','portal-cli-modal-uf','portal-cli-modal-email','portal-cli-modal-tel','portal-cli-modal-obs'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('portal-cli-modal-rep').value='';
+  document.getElementById('portal-cli-modal-tabela').value='';
+  if(docId){
+    try{
+      const doc=await db.collection('clientes_portal').doc(docId).get();
+      const c=doc.data();
+      document.getElementById('portal-cli-modal-cnpj').value=c.cnpj||'';
+      document.getElementById('portal-cli-modal-nome').value=c.nome||'';
+      document.getElementById('portal-cli-modal-cidade').value=c.cidade||'';
+      document.getElementById('portal-cli-modal-uf').value=c.uf||'';
+      document.getElementById('portal-cli-modal-email').value=c.email||'';
+      document.getElementById('portal-cli-modal-tel').value=c.telefone||'';
+      document.getElementById('portal-cli-modal-obs').value=c.obs||'';
+      document.getElementById('portal-cli-modal-rep').value=c.repId||'';
+      document.getElementById('portal-cli-modal-tabela').value=c.tabelaId||'';
+    }catch(e){}
+  }
+  document.getElementById('portal-modal-cliente').style.display='flex';
+}
+
+async function _portalPopularSelectsModal(){
+  const selRep=document.getElementById('portal-cli-modal-rep');
+  const selTab=document.getElementById('portal-cli-modal-tabela');
+  if(!selRep||!selTab)return;
+  try{
+    const [rSnap,tSnap]=await Promise.all([
+      db.collection('representantes').orderBy('nome').get(),
+      db.collection('tabelas_preco').orderBy('nome').get()
+    ]);
+    selRep.innerHTML='<option value="">— Nenhum —</option>'+rSnap.docs.map(d=>'<option value="'+d.id+'">'+d.data().nome+'</option>').join('');
+    selTab.innerHTML='<option value="">— Padrão —</option>'+tSnap.docs.map(d=>'<option value="'+d.id+'">'+d.data().nome+'</option>').join('');
+  }catch(e){}
+}
+
+async function portalCliCnpjAutoFill(val){
+  const cnpj=val.replace(/\D/g,'');
+  if(cnpj.length!==14)return;
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpj);
+    if(!r.ok)return;
+    const d=await r.json();
+    document.getElementById('portal-cli-modal-nome').value=d.razao_social||'';
+    document.getElementById('portal-cli-modal-cidade').value=d.municipio||'';
+    document.getElementById('portal-cli-modal-uf').value=d.uf||'';
+  }catch(e){}
+}
+
+async function portalSalvarCliente(){
+  const cnpj=document.getElementById('portal-cli-modal-cnpj').value.trim();
+  const nome=document.getElementById('portal-cli-modal-nome').value.trim();
+  if(!cnpj||!nome){toast('CNPJ e Razão Social são obrigatórios');return;}
+  const repId=document.getElementById('portal-cli-modal-rep').value;
+  let repNome='';
+  if(repId){try{const rd=await db.collection('representantes').doc(repId).get();repNome=rd.data().nome||'';}catch(e){}}
+  const tabelaId=document.getElementById('portal-cli-modal-tabela').value;
+  let tabelaNome='';
+  if(tabelaId){try{const td=await db.collection('tabelas_preco').doc(tabelaId).get();tabelaNome=td.data().nome||'';}catch(e){}}
+  const dados={
+    cnpj,nome,
+    cidade:document.getElementById('portal-cli-modal-cidade').value.trim(),
+    uf:document.getElementById('portal-cli-modal-uf').value.trim().toUpperCase(),
+    email:document.getElementById('portal-cli-modal-email').value.trim(),
+    telefone:document.getElementById('portal-cli-modal-tel').value.trim(),
+    obs:document.getElementById('portal-cli-modal-obs').value.trim(),
+    repId,repNome,tabelaId,tabelaNome,
+    atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const docId=document.getElementById('portal-cli-docid').value;
+  try{
+    if(docId){await db.collection('clientes_portal').doc(docId).update(dados);}
+    else{dados.criadoEm=firebase.firestore.FieldValue.serverTimestamp();await db.collection('clientes_portal').add(dados);}
+    toast('Cliente salvo!');
+    portalFecharModaisAdm();
+    portalCarregarClientes();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalExcluirCliente(docId,nome){
+  if(!confirm('Excluir cliente "'+nome+'"?'))return;
+  try{await db.collection('clientes_portal').doc(docId).delete();toast('Cliente excluído.');portalCarregarClientes();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalCarregarRepresentantes(){
+  const cont=document.getElementById('portal-rep-lista');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('representantes').orderBy('nome').get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Nenhum representante cadastrado.</p>';return;}
+    cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">'
+      +snap.docs.map(d=>{
+        const r=d.data();
+        return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;border-left:3px solid #667eea">'
+          +'<div style="font-weight:700;font-size:1rem">'+r.nome+'</div>'
+          +'<div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">'
+          +(r.email?'📧 '+r.email+'<br>':'')
+          +(r.telefone?'📞 '+r.telefone+'<br>':'')
+          +(r.regiao?'📍 '+r.regiao:'')
+          +'</div>'
+          +'<div style="display:flex;gap:6px;margin-top:10px">'
+          +'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 10px" onclick="portalAbrirModalRep(\''+d.id+'\')">✏️</button>'
+          +'<button class="btn btn-danger" style="font-size:0.75rem;padding:4px 10px" onclick="portalExcluirRep(\''+d.id+'\',\''+r.nome+'\')">🗑</button>'
+          +'</div></div>';
+      }).join('')+'</div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+async function portalAbrirModalRep(docId){
+  document.getElementById('portal-rep-docid').value=docId||'';
+  document.getElementById('portal-modal-rep-titulo').textContent=docId?'✏️ Editar Representante':'🧑‍💼 Novo Representante';
+  ['portal-rep-nome','portal-rep-email','portal-rep-tel','portal-rep-regiao','portal-rep-obs'].forEach(id=>{document.getElementById(id).value='';});
+  if(docId){
+    try{
+      const doc=await db.collection('representantes').doc(docId).get();
+      const r=doc.data();
+      document.getElementById('portal-rep-nome').value=r.nome||'';
+      document.getElementById('portal-rep-email').value=r.email||'';
+      document.getElementById('portal-rep-tel').value=r.telefone||'';
+      document.getElementById('portal-rep-regiao').value=r.regiao||'';
+      document.getElementById('portal-rep-obs').value=r.obs||'';
+    }catch(e){}
+  }
+  document.getElementById('portal-modal-rep').style.display='flex';
+}
+
+async function portalSalvarRep(){
+  const nome=document.getElementById('portal-rep-nome').value.trim();
+  const email=document.getElementById('portal-rep-email').value.trim();
+  if(!nome||!email){toast('Nome e email são obrigatórios');return;}
+  const dados={
+    nome,email,
+    telefone:document.getElementById('portal-rep-tel').value.trim(),
+    regiao:document.getElementById('portal-rep-regiao').value.trim(),
+    obs:document.getElementById('portal-rep-obs').value.trim(),
+    atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const docId=document.getElementById('portal-rep-docid').value;
+  try{
+    if(docId){await db.collection('representantes').doc(docId).update(dados);}
+    else{dados.criadoEm=firebase.firestore.FieldValue.serverTimestamp();await db.collection('representantes').add(dados);}
+    toast('Representante salvo!');
+    portalFecharModaisAdm();
+    portalCarregarRepresentantes();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalExcluirRep(docId,nome){
+  if(!confirm('Excluir representante "'+nome+'"?'))return;
+  try{await db.collection('representantes').doc(docId).delete();toast('Excluído.');portalCarregarRepresentantes();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalCarregarTabelas(){
+  const cont=document.getElementById('portal-tabelas-lista');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('tabelas_preco').orderBy('nome').get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Nenhuma tabela cadastrada.</p>';return;}
+    const segCor={Varejo:'#667eea',Distribuidora:'#48bb78',Clínica:'#ed8936',Spa:'#9f7aea',Outros:'#a0aec0'};
+    cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">'
+      +snap.docs.map(d=>{
+        const t=d.data();
+        const cor=segCor[t.segmento]||'#a0aec0';
+        return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;border-left:3px solid '+cor+'">'
+          +'<div style="font-weight:700;font-size:1rem">'+t.nome+'</div>'
+          +'<div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">'
+          +'<span style="background:'+cor+';color:#fff;padding:1px 8px;border-radius:20px;font-size:0.75rem">'+t.segmento+'</span>'
+          +(t.desconto?' · Desconto: '+t.desconto+'%':'')
+          +(t.obs?'<br>📝 '+t.obs:'')
+          +'</div>'
+          +'<div style="display:flex;gap:6px;margin-top:10px">'
+          +'<button class="btn btn-outline" style="font-size:0.75rem;padding:4px 10px" onclick="portalAbrirModalTabela(\''+d.id+'\')">✏️</button>'
+          +'<button class="btn btn-danger" style="font-size:0.75rem;padding:4px 10px" onclick="portalExcluirTabela(\''+d.id+'\',\''+t.nome+'\')">🗑</button>'
+          +'</div></div>';
+      }).join('')+'</div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+async function portalAbrirModalTabela(docId){
+  document.getElementById('portal-tab-docid').value=docId||'';
+  ['portal-tab-nome','portal-tab-obs'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('portal-tab-desconto').value='';
+  document.getElementById('portal-tab-segmento').value='Varejo';
+  if(docId){
+    try{
+      const doc=await db.collection('tabelas_preco').doc(docId).get();
+      const t=doc.data();
+      document.getElementById('portal-tab-nome').value=t.nome||'';
+      document.getElementById('portal-tab-desconto').value=t.desconto||'';
+      document.getElementById('portal-tab-segmento').value=t.segmento||'Varejo';
+      document.getElementById('portal-tab-obs').value=t.obs||'';
+    }catch(e){}
+  }
+  document.getElementById('portal-modal-tabela').style.display='flex';
+}
+
+async function portalSalvarTabela(){
+  const nome=document.getElementById('portal-tab-nome').value.trim();
+  if(!nome){toast('Informe o nome da tabela');return;}
+  const dados={
+    nome,
+    desconto:parseFloat(document.getElementById('portal-tab-desconto').value)||0,
+    segmento:document.getElementById('portal-tab-segmento').value,
+    obs:document.getElementById('portal-tab-obs').value.trim(),
+    atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const docId=document.getElementById('portal-tab-docid').value;
+  try{
+    if(docId){await db.collection('tabelas_preco').doc(docId).update(dados);}
+    else{dados.criadoEm=firebase.firestore.FieldValue.serverTimestamp();await db.collection('tabelas_preco').add(dados);}
+    toast('Tabela salva!');
+    portalFecharModaisAdm();
+    portalCarregarTabelas();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function portalExcluirTabela(docId,nome){
+  if(!confirm('Excluir tabela "'+nome+'"?'))return;
+  try{await db.collection('tabelas_preco').doc(docId).delete();toast('Excluída.');portalCarregarTabelas();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+function portalFecharModaisAdm(){
+  ['portal-modal-cliente','portal-modal-rep','portal-modal-tabela'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════
