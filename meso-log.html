@@ -408,6 +408,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('faturamento')" id="nav-faturamento"><span class="icon">🧾</span><span>Faturamento</span></a>
     <a onclick="showPage('recepcao')" id="nav-recepcao"><span class="icon">🏪</span><span>Recepção</span></a>
     <a onclick="showPage('portal')" id="nav-portal"><span class="icon">🛍️</span><span>Portal Pedidos</span></a>
+    <a onclick="showPage('filiais')" id="nav-filiais"><span class="icon">🏢</span><span>Filiais</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -3671,6 +3672,145 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- PAGE FILIAIS -->
+<div class="page" id="page-filiais">
+  <div class="page-header">
+    <h2>🏢 Filiais & Estoque Virtual</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem">Gestão multi-entidade — estoque físico único · alocação virtual por CNPJ/UF</p>
+  </div>
+
+  <!-- Tab Bar -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn btn-primary" id="fil-tab-filiais"       onclick="filTab('filiais')"      style="flex:1;min-width:110px">🏢 Filiais</button>
+    <button class="btn btn-outline" id="fil-tab-estoque"       onclick="filTab('estoque')"      style="flex:1;min-width:130px">📦 Estoque Virtual</button>
+    <button class="btn btn-outline" id="fil-tab-transferir"    onclick="filTab('transferir')"   style="flex:1;min-width:130px">🔄 Transferência</button>
+    <button class="btn btn-outline" id="fil-tab-historico"     onclick="filTab('historico')"    style="flex:1;min-width:110px">📋 Histórico</button>
+  </div>
+
+  <!-- VIEW: Filiais -->
+  <div id="fil-view-filiais">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3>Filiais Cadastradas</h3>
+      <button class="btn btn-primary" onclick="filAbrirModalCadastro()" style="font-size:0.85rem">+ Nova Filial</button>
+    </div>
+    <div id="fil-lista-filiais"><p style="color:var(--text-muted)">Carregando...</p></div>
+  </div>
+
+  <!-- VIEW: Estoque Virtual -->
+  <div id="fil-view-estoque" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <select id="fil-sel-filial-estoque" class="input" style="flex:1;min-width:200px" onchange="filCarregarEstoqueVirtual()">
+        <option value="">— Selecione a Filial —</option>
+      </select>
+      <button class="btn btn-outline" onclick="filCarregarEstoqueVirtual()" style="font-size:0.85rem">🔄 Atualizar</button>
+      <button class="btn btn-outline" onclick="filExportarEstoque()" style="font-size:0.85rem">📥 Excel</button>
+    </div>
+    <div id="fil-kpi-estoque" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div id="fil-tabela-estoque"><p style="color:var(--text-muted)">Selecione uma filial para ver o estoque virtual.</p></div>
+  </div>
+
+  <!-- VIEW: Transferência -->
+  <div id="fil-view-transferir" style="display:none">
+    <div style="background:var(--bg-card);border-radius:10px;padding:18px;max-width:600px">
+      <h3 style="margin-bottom:14px">🔄 Transferir Estoque Sede → Filial</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="grid-column:1/-1">
+          <label class="label">Filial Destino *</label>
+          <select id="fil-transf-filial" class="input">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Produto (código ou nome)</label>
+          <input id="fil-transf-busca" type="text" class="input" placeholder="Digite código ou nome..." oninput="filBuscarProduto(this.value)">
+          <div id="fil-transf-sugestoes" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;display:none;max-height:180px;overflow-y:auto;margin-top:2px"></div>
+        </div>
+        <div id="fil-transf-info" style="grid-column:1/-1;display:none;background:var(--bg-hover);border-radius:8px;padding:10px;font-size:0.9rem"></div>
+        <div>
+          <label class="label">Quantidade *</label>
+          <input id="fil-transf-qtd" type="number" class="input" min="1" placeholder="0">
+        </div>
+        <div>
+          <label class="label">Nº NF-e Remessa</label>
+          <input id="fil-transf-nfe" type="text" class="input" placeholder="Opcional">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Observação</label>
+          <input id="fil-transf-obs" type="text" class="input" placeholder="Motivo da transferência...">
+        </div>
+      </div>
+      <button class="btn btn-success" style="width:100%;padding:12px;font-size:1rem" onclick="filConfirmarTransferencia()">✅ Confirmar Transferência</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Histórico -->
+  <div id="fil-view-historico" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <select id="fil-hist-filial" class="input" style="flex:1;min-width:180px" onchange="filCarregarHistorico()">
+        <option value="">— Todas as Filiais —</option>
+      </select>
+      <input id="fil-hist-de" type="date" class="input" style="width:140px">
+      <input id="fil-hist-ate" type="date" class="input" style="width:140px">
+      <button class="btn btn-primary" onclick="filCarregarHistorico()" style="font-size:0.85rem">🔍 Filtrar</button>
+    </div>
+    <div id="fil-lista-historico"><p style="color:var(--text-muted)">Selecione um filtro e clique em Filtrar.</p></div>
+  </div>
+
+  <!-- Modal Cadastro Filial -->
+  <div id="fil-modal-cadastro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:100%;max-width:480px;margin:16px">
+      <h3 style="margin-bottom:16px">🏢 Cadastrar / Editar Filial</h3>
+      <input type="hidden" id="fil-modal-docid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="grid-column:1/-1">
+          <label class="label">Razão Social *</label>
+          <input id="fil-modal-razao" type="text" class="input" placeholder="Mesoestetic Pharma SP Ltda">
+        </div>
+        <div>
+          <label class="label">CNPJ *</label>
+          <input id="fil-modal-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" oninput="filCnpjAutoFill(this.value)">
+        </div>
+        <div>
+          <label class="label">UF *</label>
+          <select id="fil-modal-uf" class="input">
+            <option value="">UF</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+            <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+            <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+            <option selected>SP</option><option>SE</option><option>TO</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Cidade</label>
+          <input id="fil-modal-cidade" type="text" class="input" placeholder="São Paulo">
+        </div>
+        <div>
+          <label class="label">Responsável</label>
+          <input id="fil-modal-responsavel" type="text" class="input" placeholder="Nome do gestor">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">E-mail</label>
+          <input id="fil-modal-email" type="email" class="input" placeholder="filial@mesoestetic.com.br">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label">Status</label>
+          <select id="fil-modal-status" class="input">
+            <option value="ativa">Ativa</option>
+            <option value="inativa">Inativa</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-success" style="flex:2" onclick="filSalvarFilial()">💾 Salvar</button>
+        <button class="btn btn-outline" style="flex:1" onclick="filFecharModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -4132,7 +4272,7 @@ function showPage(p){
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
@@ -4165,6 +4305,7 @@ function showPage(p){
     else{show('rec-lock');hide('rec-main');}
   }
   if(p==='portal') portalInit();
+  if(p==='filiais') filInit();
 }
 
 // ==============================
@@ -14401,6 +14542,345 @@ async function portalCarregarClientes(){
       +'</table>';
   }catch(e){cont.innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';}
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// MÓDULO FILIAIS & ESTOQUE VIRTUAL
+// ══════════════════════════════════════════════════════════════════════════
+let _filProdutos=[];
+
+function filInit(){
+  filTab('filiais');
+  filCarregarFiliais();
+  filPopularSelectFiliais();
+}
+
+function filTab(aba){
+  ['filiais','estoque','transferir','historico'].forEach(t=>{
+    const btn=document.getElementById('fil-tab-'+t);
+    const view=document.getElementById('fil-view-'+t);
+    if(btn){
+      if(t===aba){btn.className='btn btn-primary';btn.style.cssText='flex:1;min-width:110px';}
+      else{btn.className='btn btn-outline';btn.style.cssText='flex:1;min-width:110px';}
+    }
+    if(view) view.style.display=t===aba?'block':'none';
+  });
+}
+
+async function filPopularSelectFiliais(){
+  try{
+    const snap=await db.collection('filiais').where('status','==','ativa').orderBy('uf').get();
+    ['fil-sel-filial-estoque','fil-transf-filial','fil-hist-filial'].forEach(id=>{
+      const sel=document.getElementById(id);
+      if(!sel)return;
+      const first=sel.options[0];
+      sel.innerHTML='';
+      sel.appendChild(first);
+      snap.docs.forEach(d=>{
+        const f=d.data();
+        const opt=document.createElement('option');
+        opt.value=d.id;
+        opt.textContent=f.uf+' — '+f.razaoSocial;
+        sel.appendChild(opt);
+      });
+    });
+  }catch(e){console.warn('filPopularSelectFiliais:',e);}
+}
+
+async function filCarregarFiliais(){
+  const cont=document.getElementById('fil-lista-filiais');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('filiais').orderBy('uf').get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted)">Nenhuma filial cadastrada.</p>';return;}
+    cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'
+      +snap.docs.map(d=>{
+        const f=d.data();
+        const badge=f.status==='ativa'?'<span style="background:#c6f6d5;color:#276749;padding:2px 8px;border-radius:20px;font-size:0.75rem">Ativa</span>':'<span style="background:#fed7d7;color:#9b2c2c;padding:2px 8px;border-radius:20px;font-size:0.75rem">Inativa</span>';
+        return '<div style="background:var(--bg-card);border-radius:10px;padding:16px;border-left:4px solid #667eea">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+          +'<div><div style="font-weight:700;font-size:1rem">🏢 '+f.uf+' — '+f.razaoSocial+'</div>'
+          +'<div style="font-family:monospace;font-size:0.8rem;color:var(--text-muted);margin-top:2px">CNPJ: '+f.cnpj+'</div></div>'+badge+'</div>'
+          +'<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:10px">📍 '+f.cidade+' / '+f.uf+(f.responsavel?' · 👤 '+f.responsavel:'')+(f.email?' · 📧 '+f.email:'')+'</div>'
+          +'<div style="display:flex;gap:6px">'
+          +'<button class="btn btn-outline" style="flex:1;font-size:0.8rem" onclick="filVerEstoque(\''+d.id+'\',\''+f.uf+' — '+f.razaoSocial+'\')">📦 Ver Estoque</button>'
+          +'<button class="btn btn-outline" style="flex:1;font-size:0.8rem" onclick="filEditarFilial(\''+d.id+'\')">✏️ Editar</button>'
+          +'<button class="btn btn-danger" style="font-size:0.8rem;padding:6px 10px" onclick="filExcluirFilial(\''+d.id+'\',\''+f.razaoSocial+'\')">🗑</button>'
+          +'</div></div>';
+      }).join('')+'</div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function filAbrirModalCadastro(){
+  document.getElementById('fil-modal-docid').value='';
+  ['fil-modal-razao','fil-modal-cnpj','fil-modal-cidade','fil-modal-responsavel','fil-modal-email'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('fil-modal-uf').value='SP';
+  document.getElementById('fil-modal-status').value='ativa';
+  document.getElementById('fil-modal-cadastro').style.display='flex';
+}
+
+async function filEditarFilial(docId){
+  try{
+    const doc=await db.collection('filiais').doc(docId).get();
+    const f=doc.data();
+    document.getElementById('fil-modal-docid').value=docId;
+    document.getElementById('fil-modal-razao').value=f.razaoSocial||'';
+    document.getElementById('fil-modal-cnpj').value=f.cnpj||'';
+    document.getElementById('fil-modal-uf').value=f.uf||'SP';
+    document.getElementById('fil-modal-cidade').value=f.cidade||'';
+    document.getElementById('fil-modal-responsavel').value=f.responsavel||'';
+    document.getElementById('fil-modal-email').value=f.email||'';
+    document.getElementById('fil-modal-status').value=f.status||'ativa';
+    document.getElementById('fil-modal-cadastro').style.display='flex';
+  }catch(e){toast('Erro ao carregar filial: '+e.message);}
+}
+
+function filFecharModal(){
+  document.getElementById('fil-modal-cadastro').style.display='none';
+}
+
+async function filCnpjAutoFill(val){
+  const cnpj=val.replace(/\D/g,'');
+  if(cnpj.length!==14)return;
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpj);
+    if(!r.ok)return;
+    const d=await r.json();
+    document.getElementById('fil-modal-razao').value=d.razao_social||'';
+    document.getElementById('fil-modal-cidade').value=d.municipio||'';
+    document.getElementById('fil-modal-uf').value=d.uf||'SP';
+  }catch(e){}
+}
+
+async function filSalvarFilial(){
+  const razao=document.getElementById('fil-modal-razao').value.trim();
+  const cnpj=document.getElementById('fil-modal-cnpj').value.trim();
+  const uf=document.getElementById('fil-modal-uf').value;
+  if(!razao||!cnpj||!uf){toast('Preencha Razão Social, CNPJ e UF');return;}
+  const dados={
+    razaoSocial:razao,cnpj,uf,
+    cidade:document.getElementById('fil-modal-cidade').value.trim(),
+    responsavel:document.getElementById('fil-modal-responsavel').value.trim(),
+    email:document.getElementById('fil-modal-email').value.trim(),
+    status:document.getElementById('fil-modal-status').value,
+    atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const docId=document.getElementById('fil-modal-docid').value;
+  try{
+    if(docId){await db.collection('filiais').doc(docId).update(dados);toast('Filial atualizada!');}
+    else{dados.criadoEm=firebase.firestore.FieldValue.serverTimestamp();await db.collection('filiais').add(dados);toast('Filial cadastrada!');}
+    filFecharModal();
+    filCarregarFiliais();
+    filPopularSelectFiliais();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function filExcluirFilial(docId,nome){
+  if(!confirm('Excluir filial "'+nome+'"? O histórico de estoque virtual será mantido.'))return;
+  try{
+    await db.collection('filiais').doc(docId).delete();
+    toast('Filial excluída.');
+    filCarregarFiliais();
+    filPopularSelectFiliais();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function filVerEstoque(docId,nome){
+  filTab('estoque');
+  const sel=document.getElementById('fil-sel-filial-estoque');
+  if(sel)sel.value=docId;
+  filCarregarEstoqueVirtual();
+}
+
+async function filCarregarEstoqueVirtual(){
+  const filialId=document.getElementById('fil-sel-filial-estoque').value;
+  const cont=document.getElementById('fil-tabela-estoque');
+  const kpi=document.getElementById('fil-kpi-estoque');
+  if(!filialId){cont.innerHTML='<p style="color:var(--text-muted)">Selecione uma filial.</p>';kpi.innerHTML='';return;}
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    const snap=await db.collection('estoque_filial').where('filialId','==',filialId).orderBy('produto').get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum produto alocado para esta filial.</p>';kpi.innerHTML='';return;}
+    const itens=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const totalItens=itens.length;
+    const totalQtd=itens.reduce((a,b)=>a+(b.qtd||0),0);
+    const vencendo=itens.filter(i=>{if(!i.validade)return false;const dias=(new Date(i.validade)-new Date())/86400000;return dias>=0&&dias<=90;}).length;
+    kpi.innerHTML=[
+      {icon:'📦',label:'Produtos',val:totalItens},
+      {icon:'🔢',label:'Total Unidades',val:totalQtd},
+      {icon:'⚠️',label:'Venc. 90d',val:vencendo},
+    ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:12px;text-align:center"><div style="font-size:1.4rem">'+k.icon+'</div><div style="font-size:1.3rem;font-weight:700">'+k.val+'</div><div style="font-size:0.75rem;color:var(--text-muted)">'+k.label+'</div></div>').join('');
+    cont.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.88rem">'
+      +'<tr style="background:var(--bg-hover)"><th style="padding:8px;text-align:left">Código</th><th style="padding:8px;text-align:left">Produto</th><th style="padding:8px;text-align:left">Lote</th><th style="padding:8px;text-align:center">Validade</th><th style="padding:8px;text-align:center">Qtd Alocada</th><th style="padding:8px;text-align:center">NF-e Remessa</th><th style="padding:8px;text-align:center">Ações</th></tr>'
+      +itens.map(i=>{
+        const dias=i.validade?(new Date(i.validade)-new Date())/86400000:null;
+        const vencCor=dias===null?'':dias<0?'color:#e53e3e':dias<=30?'color:#e53e3e':dias<=90?'color:#dd6b20':'color:#276749';
+        return '<tr style="border-bottom:1px solid var(--border)">'
+          +'<td style="padding:8px;font-family:monospace;font-size:0.8rem">'+i.codigo+'</td>'
+          +'<td style="padding:8px">'+i.produto+'</td>'
+          +'<td style="padding:8px;font-family:monospace">'+i.lote+'</td>'
+          +'<td style="padding:8px;text-align:center;'+vencCor+'">'+i.validade+'</td>'
+          +'<td style="padding:8px;text-align:center;font-weight:700">'+i.qtd+'</td>'
+          +'<td style="padding:8px;text-align:center;font-size:0.8rem">'+( i.nfe||'—')+'</td>'
+          +'<td style="padding:8px;text-align:center"><button class="btn btn-danger" style="font-size:0.75rem;padding:4px 8px" onclick="filDarBaixaVirtual(\''+i.id+'\',\''+i.produto+'\','+i.qtd+')">📤 Baixa</button></td>'
+          +'</tr>';
+      }).join('')+'</table></div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+async function filDarBaixaVirtual(docId,produto,qtdAtual){
+  const qtd=parseInt(prompt('Qtd a dar baixa em "'+produto+'" (disponível: '+qtdAtual+'):'));
+  if(!qtd||qtd<=0)return;
+  if(qtd>qtdAtual){toast('Quantidade maior que o disponível!');return;}
+  try{
+    if(qtd===qtdAtual){
+      await db.collection('estoque_filial').doc(docId).delete();
+    }else{
+      await db.collection('estoque_filial').doc(docId).update({qtd:firebase.firestore.FieldValue.increment(-qtd)});
+    }
+    await db.collection('transferencias_filial').add({
+      tipo:'baixa',produto,qtd,docRef:docId,
+      criadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Baixa registrada!');
+    filCarregarEstoqueVirtual();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function filBuscarProduto(val){
+  const sug=document.getElementById('fil-transf-sugestoes');
+  if(!val||val.length<2){sug.style.display='none';return;}
+  const termo=val.toLowerCase();
+  const matches=_filProdutos.filter(p=>p.codigo.toLowerCase().includes(termo)||p.nome.toLowerCase().includes(termo)).slice(0,8);
+  if(!matches.length&&_filProdutos.length===0){
+    // Carregar produtos do stock
+    try{
+      const snap=await db.collection('stock').orderBy('nome').get();
+      _filProdutos=snap.docs.map(d=>({id:d.id,...d.data()}));
+      return filBuscarProduto(val);
+    }catch(e){return;}
+  }
+  if(!matches.length){sug.style.display='none';return;}
+  sug.style.display='block';
+  sug.innerHTML=matches.map(p=>'<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.88rem" onmousedown="filSelecionarProduto(\''+p.id+'\')">'
+    +'<strong>'+p.codigo+'</strong> — '+p.nome
+    +(p.qtd!==undefined?' <span style="color:var(--text-muted);font-size:0.8rem">(Sede: '+p.qtd+' un)</span>':'')
+    +'</div>').join('');
+}
+
+async function filSelecionarProduto(stockDocId){
+  const sug=document.getElementById('fil-transf-sugestoes');
+  sug.style.display='none';
+  const prod=_filProdutos.find(p=>p.id===stockDocId)||await db.collection('stock').doc(stockDocId).get().then(d=>({id:d.id,...d.data()}));
+  document.getElementById('fil-transf-busca').value=prod.codigo+' — '+prod.nome;
+  document.getElementById('fil-transf-busca').dataset.stockId=stockDocId;
+  document.getElementById('fil-transf-busca').dataset.codigo=prod.codigo||'';
+  document.getElementById('fil-transf-busca').dataset.nome=prod.nome||'';
+  document.getElementById('fil-transf-busca').dataset.lote=prod.lote||'';
+  document.getElementById('fil-transf-busca').dataset.validade=prod.validade||'';
+  const info=document.getElementById('fil-transf-info');
+  info.style.display='block';
+  info.innerHTML='<strong>'+prod.codigo+'</strong> — '+prod.nome
+    +'<br>Lote: <strong>'+(prod.lote||'—')+'</strong> · Validade: <strong>'+(prod.validade||'—')+'</strong>'
+    +' · Estoque sede: <strong>'+(prod.qtd||0)+' un</strong>';
+}
+
+async function filConfirmarTransferencia(){
+  const filialId=document.getElementById('fil-transf-filial').value;
+  const busca=document.getElementById('fil-transf-busca');
+  const stockDocId=busca.dataset.stockId;
+  const qtd=parseInt(document.getElementById('fil-transf-qtd').value);
+  const nfe=document.getElementById('fil-transf-nfe').value.trim();
+  const obs=document.getElementById('fil-transf-obs').value.trim();
+  if(!filialId){toast('Selecione a filial destino');return;}
+  if(!stockDocId){toast('Selecione um produto');return;}
+  if(!qtd||qtd<=0){toast('Informe a quantidade');return;}
+  const codigo=busca.dataset.codigo;
+  const nome=busca.dataset.nome;
+  const lote=busca.dataset.lote;
+  const validade=busca.dataset.validade;
+  // Verificar estoque sede
+  try{
+    const stockDoc=await db.collection('stock').doc(stockDocId).get();
+    const qtdSede=stockDoc.data().qtd||0;
+    if(qtd>qtdSede){toast('Estoque insuficiente na sede! Disponível: '+qtdSede+' un');return;}
+    const filDoc=await db.collection('filiais').doc(filialId).get();
+    const filial=filDoc.data();
+    const batch=db.batch();
+    // Reduzir estoque sede
+    batch.update(db.collection('stock').doc(stockDocId),{qtd:firebase.firestore.FieldValue.increment(-qtd)});
+    // Criar/atualizar estoque virtual filial
+    const estoqueRef=db.collection('estoque_filial').doc(filialId+'_'+stockDocId);
+    const estoqueDoc=await estoqueRef.get();
+    if(estoqueDoc.exists){
+      batch.update(estoqueRef,{qtd:firebase.firestore.FieldValue.increment(qtd)});
+    }else{
+      batch.set(estoqueRef,{filialId,filialNome:filial.razaoSocial,filialUf:filial.uf,stockDocId,codigo,produto:nome,lote,validade,qtd,nfe,criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    // Histórico
+    const histRef=db.collection('transferencias_filial').doc();
+    batch.set(histRef,{tipo:'transferencia_sede_filial',filialId,filialNome:filial.razaoSocial,filialUf:filial.uf,stockDocId,codigo,produto:nome,lote,validade,qtd,nfe,obs,criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    await batch.commit();
+    toast('✅ Transferência confirmada! '+qtd+' un de '+nome+' → '+filial.uf);
+    document.getElementById('fil-transf-filial').value='';
+    document.getElementById('fil-transf-busca').value='';
+    delete busca.dataset.stockId;
+    document.getElementById('fil-transf-qtd').value='';
+    document.getElementById('fil-transf-nfe').value='';
+    document.getElementById('fil-transf-obs').value='';
+    document.getElementById('fil-transf-info').style.display='none';
+    document.getElementById('fil-transf-sugestoes').style.display='none';
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function filCarregarHistorico(){
+  const cont=document.getElementById('fil-lista-historico');
+  const filialId=document.getElementById('fil-hist-filial').value;
+  const de=document.getElementById('fil-hist-de').value;
+  const ate=document.getElementById('fil-hist-ate').value;
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
+  try{
+    let q=db.collection('transferencias_filial').orderBy('criadoEm','desc').limit(200);
+    if(filialId) q=q.where('filialId','==',filialId);
+    const snap=await q.get();
+    let docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(de){const d=new Date(de);docs=docs.filter(x=>x.criadoEm&&x.criadoEm.toDate()>=d);}
+    if(ate){const d=new Date(ate);d.setHours(23,59,59);docs=docs.filter(x=>x.criadoEm&&x.criadoEm.toDate()<=d);}
+    if(!docs.length){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum registro encontrado.</p>';return;}
+    cont.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.85rem">'
+      +'<tr style="background:var(--bg-hover)"><th style="padding:8px;text-align:left">Data</th><th style="padding:8px;text-align:left">Tipo</th><th style="padding:8px;text-align:left">Filial</th><th style="padding:8px;text-align:left">Produto</th><th style="padding:8px;text-align:left">Lote</th><th style="padding:8px;text-align:center">Qtd</th><th style="padding:8px;text-align:left">NF-e</th><th style="padding:8px;text-align:left">Obs</th></tr>'
+      +docs.map(h=>{
+        const dt=h.criadoEm?h.criadoEm.toDate().toLocaleDateString('pt-BR'):'—';
+        const tipo=h.tipo==='transferencia_sede_filial'?'🔄 Remessa':'📤 Baixa';
+        return '<tr style="border-bottom:1px solid var(--border)">'
+          +'<td style="padding:8px;white-space:nowrap">'+dt+'</td>'
+          +'<td style="padding:8px">'+tipo+'</td>'
+          +'<td style="padding:8px">'+(h.filialUf||'')+(h.filialNome?' — '+h.filialNome:'')+'</td>'
+          +'<td style="padding:8px">'+h.produto+'</td>'
+          +'<td style="padding:8px;font-family:monospace;font-size:0.8rem">'+(h.lote||'—')+'</td>'
+          +'<td style="padding:8px;text-align:center;font-weight:700">'+h.qtd+'</td>'
+          +'<td style="padding:8px;font-size:0.8rem">'+(h.nfe||'—')+'</td>'
+          +'<td style="padding:8px;font-size:0.8rem;color:var(--text-muted)">'+(h.obs||'')+'</td>'
+          +'</tr>';
+      }).join('')+'</table></div>';
+  }catch(e){cont.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+}
+
+function filExportarEstoque(){
+  const cont=document.getElementById('fil-tabela-estoque');
+  const tabela=cont.querySelector('table');
+  if(!tabela){toast('Carregue o estoque primeiro');return;}
+  const rows=Array.from(tabela.querySelectorAll('tr'));
+  const csv=rows.map(r=>Array.from(r.querySelectorAll('th,td')).slice(0,-1).map(c=>'"'+c.innerText.replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='estoque_filial_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+// ══════════════════════════════════════════════════════════════════════════
 </script>
 </body>
 </html>
