@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-08-26-SEC3 -->
+<!-- meso-log v2026-08-26-SEC4 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12001,6 +12001,7 @@ function platShowError(msg){
 }
 
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function logErro(modulo,fn,e){const msg=e&&e.message?e.message:String(e);console.error('['+modulo+'] '+fn+':', e);toast('Erro em '+fn+': '+msg);}
 async function hashSenha(s){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -17209,8 +17210,6 @@ let _cliTodos=[], _cliFiltrados=[], _cliPage=1;
 const _cliPageSize=15;
 let _cliDocs=[], _cliEditDocId=null;
 var _CLI_TIPO_LABEL={alvara:'Alvará de Funcionamento',autorizacao:'Autorização de Funcionamento',crm:'CRM/CRO/Registro',vigilancia:'Vigilância Sanitária',contrato:'Contrato',outro:'Outro'};
-
-function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function clientesInit(){await clientesCarregar();}
 
