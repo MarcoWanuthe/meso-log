@@ -393,6 +393,37 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+
+<!-- PLATFORM LOGIN OVERLAY -->
+<div id="plat-login-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#111;border:1px solid #222;padding:40px;width:360px;max-width:90vw">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:10px;color:#555;letter-spacing:3px;text-transform:uppercase">MESOESTETIC PHARMA GROUP BR</div>
+      <h1 style="color:#fff;font-size:22px;font-weight:700;margin:8px 0 0;letter-spacing:-0.5px">MESO-LOG</h1>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Usuário</label>
+      <input type="text" id="plat-login-username" placeholder="ex: joao.silva" autocomplete="username"
+        style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+        onkeydown="if(event.key==='Enter')document.getElementById('plat-login-senha').focus()">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Senha</label>
+      <input type="password" id="plat-login-senha" placeholder="..." autocomplete="current-password"
+        style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+        onkeydown="if(event.key==='Enter')platLogin()">
+    </div>
+    <p id="plat-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
+    <button id="plat-login-btn" onclick="platLogin()"
+      style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
+      ENTRAR
+    </button>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #222;text-align:center;font-size:11px;color:#444">
+      Plataforma restrita &middot; acesso autorizado apenas
+    </div>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div class="logo">
@@ -434,6 +465,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <div class="badges">
       <span class="badge-live"><span class="online-dot"></span>Tempo Real</span>
       <span class="badge">Solicitação de Materiais</span>
+    </div>
+    <div id="plat-topbar-user" style="display:none;align-items:center;gap:10px;margin-left:auto">
+      <span id="plat-topbar-nome" style="font-size:12px;color:#555;font-weight:600"></span>
+      <button onclick="platLogout()" style="background:#111;color:#fff;border:none;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit">SAIR</button>
     </div>
   </div>
   <div id="content">
@@ -1263,6 +1298,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="admTab('produtos',this)">Gerenciar Produtos</button>
           <button onclick="admTab('config',this)">Configurações</button>
           <button onclick="admTab('usuarios',this)">👥 Usuários Solic.</button>
+          <button onclick="admTab('acesso',this)">🔐 Controle de Acesso</button>
         </div>
         <!-- SOLICITAÇÕES ADM -->
         <div id="adm-solicitacoes">
@@ -1410,6 +1446,76 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
     </div>
 
+
+        <!-- CONTROLE DE ACESSO — ACL -->
+        <div id="adm-acesso" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:14px" id="plat-usr-form-title">&#10133; Novo Usuário da Plataforma</h3>
+            <input type="hidden" id="plat-usr-id">
+            <div class="form-row">
+              <div class="form-group"><label>Nome Completo</label><input type="text" id="plat-usr-nome" placeholder="Nome do usuário"></div>
+              <div class="form-group"><label>Usuário (login)</label><input type="text" id="plat-usr-username" placeholder="ex: joao.silva" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Senha</label>
+                <input type="text" id="plat-usr-senha" placeholder="Senha">
+                <p id="plat-usr-senha-hint" style="display:none;font-size:11px;color:#888;margin-top:2px">Deixe em branco para manter a senha atual</p>
+              </div>
+              <div class="form-group"><label>E-mail (opcional)</label><input type="email" id="plat-usr-email" placeholder="email@empresa.com"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Status</label>
+                <select id="plat-usr-ativo" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px;width:100%">
+                  <option value="true">Ativo</option>
+                  <option value="false">Inativo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Acesso ADM</label>
+                <select id="plat-usr-isadm" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px;width:100%">
+                  <option value="false">Não</option>
+                  <option value="true">Sim — Acesso Total</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <label style="font-size:12px;font-weight:600;color:#111;display:block;margin-bottom:10px">Permissões por Módulo</label>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;background:#f8f8f8;padding:14px;border:1px solid #eee">
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-solicitacoes"> Solicitações &amp; Envios</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-estoque"> Estoque</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-operacoes"> Operações</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-faturamento"> Faturamento</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-recepcao"> Recepção</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-portal"> Portal Pedidos</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-filiais"> Filiais</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-fiscal"> Fiscal</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-pdv"> PDV / Eventos</label>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button class="btn btn-success" onclick="platAdmSalvar()">&#128190; Salvar Usuário</button>
+              <button class="btn btn-outline" onclick="platAdmLimparForm()">Limpar</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:13px;color:#111111;font-weight:700;margin-bottom:12px">Matriz de Permissões</h3>
+            <div style="overflow-x:auto">
+              <table class="prod-table" style="min-width:700px">
+                <thead><tr>
+                  <th style="text-align:left;min-width:130px">Usuário</th>
+                  <th>Solic.</th><th>Estoque</th><th>Ops</th><th>Fat.</th>
+                  <th>Rec.</th><th>Portal</th><th>Filiais</th><th>Fiscal</th>
+                  <th>PDV</th><th>ADM</th><th>Status</th><th>Ações</th>
+                </tr></thead>
+                <tbody id="plat-acesso-tbody">
+                  <tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
     <!-- MÓDULO OPERAÇÕES (2+3+4) — ADM ONLY -->
     <div class="page" id="page-operacoes">
@@ -4364,6 +4470,7 @@ let allProducts = [];
 let allShipments = [];
 let allCarriers = [];
 let admLoggedIn = false;
+let platUser = null;
 let currentStep = 1;
 let cart = [];
 let trackPage = 1, admPage = 1;
@@ -4580,6 +4687,7 @@ function initFirebase(cfg){
     document.getElementById('setup-screen').style.display='none';
     if(identityEmail) showIdentityBar();
     toast('✅ Conectado ao Firebase!');
+    platShowLogin();
   }catch(e){
     document.getElementById('setup-err').textContent='Erro ao conectar: '+e.message;
     document.getElementById('setup-screen').style.display='flex';
@@ -4811,12 +4919,21 @@ function showPage(p){
     pdvTab('ajuda',document.getElementById('pdv-tab-ajuda'));
     return;
   }
+  // Platform ACL permission guard
+  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',adm:'__adm__',pdv:'pdv'};
+  if(platUser&&_PM[p]!==undefined){const _pk=_PM[p];const _ok=_pk==='__adm__'?platUser.isAdm:platUser.permissoes[_pk];if(!_ok){toast('⛔ Sem permissão para acessar este módulo.');showPage('home');return;}}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
   const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
+  // Platform ACL module bypass
+  if(platUser){if(p==='solicitacoes'&&!solicUser&&platUser.permissoes.solicitacoes){solicUser={id:platUser.id,nome:platUser.nome,username:platUser.username,perfil:'logistica'};}
+  if(p==='faturamento'&&!fatUser&&platUser.permissoes.faturamento){fatUser={nome:platUser.nome,sobrenome:'',username:platUser.username,role:'faturista'};}
+  if(p==='operacoes'&&!opsLoggedIn&&(platUser.permissoes.operacoes||platUser.isAdm)){opsLoggedIn=true;}
+  if(p==='recepcao'&&!recAtendente&&platUser.permissoes.recepcao){recAtendente={id:platUser.id,nome:platUser.nome,username:platUser.username,perfil:'atendente'};}
+  if(p==='pdv'&&!pdvVendedorAtivo&&(platUser.permissoes.pdv||platUser.isAdm)){pdvVendedorAtivo={id:platUser.id,nome:platUser.nome,perfil:'supervisor'};}}
   if(p==='solicitacoes'){
     if(solicUser){solicSetupForRole(solicUser.perfil);}
     else{
@@ -5386,12 +5503,13 @@ function admLogin(){
 }
 
 function admTab(tab,btn){
-  ['solicitacoes','produtos','config','usuarios'].forEach(t=>{const el=document.getElementById('adm-'+t);if(el)el.style.display=t===tab?'':'none';});
+  ['solicitacoes','produtos','config','usuarios','acesso'].forEach(t=>{const el=document.getElementById('adm-'+t);if(el)el.style.display=t===tab?'':'none';});
   document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(tab==='solicitacoes')renderAdmTable();
   if(tab==='produtos')renderAdmProds();
   if(tab==='usuarios')renderAdmUsuarios();
+  if(tab==='acesso')platAdmCarregar();
 }
 
 let admAllRows=[];
@@ -11458,6 +11576,265 @@ async function admExcluirUsuario(id,nome){
     toast('🗑 Usuário removido.');
     renderAdmUsuarios();
   }catch(e){alert('Erro: '+e.message);}
+}
+
+
+// ============================
+// PLATFORM ACL FUNCTIONS
+// ============================
+
+function platShowLogin(){
+  const ov=document.getElementById('plat-login-overlay');
+  if(ov){ov.style.display='flex';}
+  setTimeout(()=>{const u=document.getElementById('plat-login-username');if(u)u.focus();},150);
+}
+
+function platShowError(msg){
+  const el=document.getElementById('plat-login-erro');
+  if(!el)return;
+  el.textContent=msg;
+  el.style.display=msg?'':'none';
+}
+
+async function platLogin(){
+  const username=(document.getElementById('plat-login-username')?.value||'').trim().toLowerCase();
+  const senha=document.getElementById('plat-login-senha')?.value||'';
+  platShowError('');
+  if(!username||!senha){platShowError('Preencha usuário e senha.');return;}
+  if(!rateLimit('plat-login',5,60)){platShowError('Muitas tentativas. Aguarde 1 minuto.');return;}
+  const btn=document.getElementById('plat-login-btn');
+  if(btn){btn.disabled=true;btn.textContent='Autenticando...';}
+  try{
+    // 1. Checar senha master ADM (configuracoes/geral.senhaAdm)
+    let masterOk=false;
+    try{
+      const cfgDoc=await db.collection('configuracoes').doc('geral').get();
+      const mPwd=cfgDoc.exists?cfgDoc.data().senhaAdm:null;
+      if(username==='adm'&&mPwd&&senha===mPwd)masterOk=true;
+    }catch(_){}
+
+    if(masterOk){
+      platUser={id:'adm',nome:'Administrador',username:'adm',isAdm:true,
+        permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true}};
+      admLoggedIn=true;
+      platApplyPermissions();
+      document.getElementById('plat-login-overlay').style.display='none';
+      document.getElementById('plat-login-senha').value='';
+      toast('Bem-vindo, Administrador!');
+      return;
+    }
+
+    // 2. Buscar em usuarios_plataforma
+    let snap;
+    try{
+      snap=await db.collection('usuarios_plataforma').where('username','==',username).limit(1).get();
+    }catch(e){
+      platShowError('Erro ao verificar credenciais: '+e.message);
+      if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+      return;
+    }
+
+    if(snap.empty){
+      // Primeiro acesso: se não há usuários cadastrados, aceita adm com senha padrão
+      try{
+        const totalSnap=await db.collection('usuarios_plataforma').limit(1).get();
+        if(totalSnap.empty&&username==='adm'){
+          platUser={id:'adm',nome:'Administrador',username:'adm',isAdm:true,
+            permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true}};
+          admLoggedIn=true;
+          platApplyPermissions();
+          document.getElementById('plat-login-overlay').style.display='none';
+          document.getElementById('plat-login-senha').value='';
+          toast('Primeiro acesso — configure a senha ADM em Configuracoes.');
+          return;
+        }
+      }catch(_){}
+      platShowError('Usuário ou senha incorretos.');
+      if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+      return;
+    }
+
+    const doc=snap.docs[0];
+    const data=doc.data();
+    if(data.senha!==senha){platShowError('Usuário ou senha incorretos.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
+    if(data.ativo===false){platShowError('Conta inativa. Contate o administrador.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
+
+    platUser={id:doc.id,nome:data.nome,username:data.username,isAdm:data.isAdm||false,permissoes:data.permissoes||{}};
+    if(platUser.isAdm)admLoggedIn=true;
+    platApplyPermissions();
+    document.getElementById('plat-login-overlay').style.display='none';
+    document.getElementById('plat-login-senha').value='';
+    toast('Bem-vindo, '+platUser.nome+'!');
+    try{await db.collection('plat_audit_log').add({acao:'login',usuario:platUser.username,nome:platUser.nome,ts:firebase.firestore.FieldValue.serverTimestamp()});}catch(_){}
+
+  }catch(e){
+    platShowError('Erro: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+}
+
+function platLogout(){
+  if(!confirm('Sair da plataforma?'))return;
+  platUser=null;
+  admLoggedIn=false;
+  solicUser=null;
+  fatUser=null;
+  recAtendente=null;
+  opsLoggedIn=false;
+  pdvVendedorAtivo=null;
+  const userBar=document.getElementById('plat-topbar-user');if(userBar)userBar.style.display='none';
+  const errEl=document.getElementById('plat-login-erro');if(errEl){errEl.textContent='';errEl.style.display='none';}
+  platShowLogin();
+  showPage('home');
+}
+
+function platApplyPermissions(){
+  if(!platUser)return;
+  const p=platUser.permissoes||{};
+  const navMap={
+    'nav-solicitacoes':!!p.solicitacoes,
+    'nav-envios':!!p.solicitacoes,
+    'nav-estoque':!!p.estoque,
+    'nav-adm':!!platUser.isAdm,
+    'nav-operacoes':!!(p.operacoes||platUser.isAdm),
+    'nav-pdv':!!(p.pdv||platUser.isAdm),
+    'nav-faturamento':!!p.faturamento,
+    'nav-recepcao':!!p.recepcao,
+    'nav-portal':!!p.portal,
+    'nav-filiais':!!p.filiais,
+    'nav-fiscal':!!p.fiscal
+  };
+  Object.entries(navMap).forEach(([id,allowed])=>{
+    const el=document.getElementById(id);if(el)el.style.display=allowed?'':'none';
+  });
+  const userBar=document.getElementById('plat-topbar-user');
+  const nomeEl=document.getElementById('plat-topbar-nome');
+  if(userBar)userBar.style.display='flex';
+  if(nomeEl)nomeEl.textContent=platUser.nome+(platUser.isAdm?' (ADM)':'');
+}
+
+// ─── ADM: CRUD Usuários da Plataforma ─────────────────────────────────────────
+const PLAT_MODULOS=[
+  {key:'solicitacoes',label:'Solic.'},
+  {key:'estoque',label:'Estoque'},
+  {key:'operacoes',label:'Ops'},
+  {key:'faturamento',label:'Fat.'},
+  {key:'recepcao',label:'Rec.'},
+  {key:'portal',label:'Portal'},
+  {key:'filiais',label:'Filiais'},
+  {key:'fiscal',label:'Fiscal'},
+  {key:'pdv',label:'PDV'},
+];
+
+async function platAdmCarregar(){
+  const tbody=document.getElementById('plat-acesso-tbody');
+  if(!tbody)return;
+  tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
+  try{
+    const snap=await db.collection('usuarios_plataforma').orderBy('nome').get();
+    if(snap.empty){
+      tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
+      return;
+    }
+    tbody.innerHTML=snap.docs.map(doc=>{
+      const d=doc.data();
+      const p=d.permissoes||{};
+      const nm=d.nome||'';
+      const un=d.username||'';
+      const cells=PLAT_MODULOS.map(m=>`<td style="text-align:center"><input type="checkbox" ${p[m.key]?'checked':''} onchange="platAdmTogglePerm('${doc.id}','${m.key}',this)"></td>`).join('');
+      const safenm=nm.replace(/'/g,"\\'");
+      return '<tr>'
+        +'<td style="font-weight:600;white-space:nowrap">'+nm+'<br><span style="font-weight:400;font-size:11px;color:#888">@'+un+'</span></td>'
+        +cells
+        +'<td style="text-align:center"><input type="checkbox" '+(d.isAdm?'checked':'')+' onchange="platAdmTogglePerm(\''+doc.id+'\',\'__adm__\',this)"></td>'
+        +'<td style="text-align:center"><span style="color:'+(d.ativo!==false?'#107C10':'#D13438')+';font-weight:600">'+(d.ativo!==false?'Ativo':'Inativo')+'</span></td>'
+        +'<td style="white-space:nowrap">'
+        +'<button class="btn btn-outline btn-sm" onclick="platAdmEditar(\''+doc.id+'\')">&#9998; Editar</button> '
+        +'<button class="btn btn-sm" style="background:#D13438;color:#fff;border:none;padding:4px 8px;font-size:11px;cursor:pointer" onclick="platAdmExcluir(\''+doc.id+'\',\''+safenm+'\')">&#128465;</button>'
+        +'</td></tr>';
+    }).join('');
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="13" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
+  }
+}
+
+async function platAdmTogglePerm(userId,permKey,checkbox){
+  try{
+    const update=permKey==='__adm__'?{isAdm:checkbox.checked}:{['permissoes.'+permKey]:checkbox.checked};
+    await db.collection('usuarios_plataforma').doc(userId).update(update);
+    toast(checkbox.checked?'Permissão concedida':'Permissão revogada');
+  }catch(e){
+    toast('Erro: '+e.message);
+    checkbox.checked=!checkbox.checked;
+  }
+}
+
+async function platAdmSalvar(){
+  const id=document.getElementById('plat-usr-id')?.value||'';
+  const nome=(document.getElementById('plat-usr-nome')?.value||'').trim();
+  const username=(document.getElementById('plat-usr-username')?.value||'').trim().toLowerCase();
+  const senha=document.getElementById('plat-usr-senha')?.value||'';
+  const email=(document.getElementById('plat-usr-email')?.value||'').trim();
+  const ativo=document.getElementById('plat-usr-ativo')?.value!=='false';
+  const isAdm=document.getElementById('plat-usr-isadm')?.value==='true';
+  if(!nome||!username){toast('Preencha nome e usuário.');return;}
+  if(!id&&!senha){toast('Informe uma senha para o novo usuário.');return;}
+  const permissoes={};
+  PLAT_MODULOS.forEach(m=>{permissoes[m.key]=!!(document.getElementById('plat-perm-'+m.key)?.checked);});
+  try{
+    const data={nome,username,ativo,isAdm,permissoes,atualizadoEm:new Date().toISOString(),operadoPor:platUser?.username||'adm'};
+    if(email)data.email=email;
+    if(senha)data.senha=senha;
+    if(id){
+      await db.collection('usuarios_plataforma').doc(id).update(data);
+      toast('Usuário atualizado!');
+    }else{
+      data.criadoEm=new Date().toISOString();
+      data.criadoPor=platUser?.username||'adm';
+      await db.collection('usuarios_plataforma').add(data);
+      toast('Usuário criado!');
+    }
+    platAdmLimparForm();
+    platAdmCarregar();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function platAdmLimparForm(){
+  ['plat-usr-id','plat-usr-nome','plat-usr-username','plat-usr-senha','plat-usr-email'].forEach(eid=>{
+    const el=document.getElementById(eid);if(el)el.value='';
+  });
+  const atv=document.getElementById('plat-usr-ativo');if(atv)atv.value='true';
+  const isadm=document.getElementById('plat-usr-isadm');if(isadm)isadm.value='false';
+  PLAT_MODULOS.forEach(m=>{const cb=document.getElementById('plat-perm-'+m.key);if(cb)cb.checked=false;});
+  const title=document.getElementById('plat-usr-form-title');if(title)title.textContent='Novo Usuário da Plataforma';
+  const hint=document.getElementById('plat-usr-senha-hint');if(hint)hint.style.display='none';
+}
+
+function platAdmEditar(id){
+  db.collection('usuarios_plataforma').doc(id).get().then(doc=>{
+    if(!doc.exists)return;
+    const d=doc.data();const p=d.permissoes||{};
+    document.getElementById('plat-usr-id').value=id;
+    document.getElementById('plat-usr-nome').value=d.nome||'';
+    document.getElementById('plat-usr-username').value=d.username||'';
+    document.getElementById('plat-usr-senha').value='';
+    document.getElementById('plat-usr-email').value=d.email||'';
+    document.getElementById('plat-usr-ativo').value=String(d.ativo!==false);
+    document.getElementById('plat-usr-isadm').value=String(!!d.isAdm);
+    PLAT_MODULOS.forEach(m=>{const cb=document.getElementById('plat-perm-'+m.key);if(cb)cb.checked=!!p[m.key];});
+    const title=document.getElementById('plat-usr-form-title');if(title)title.textContent='Editar Usuário';
+    const hint=document.getElementById('plat-usr-senha-hint');if(hint)hint.style.display='';
+    document.getElementById('plat-usr-nome')?.focus();
+  }).catch(e=>toast('Erro: '+e.message));
+}
+
+async function platAdmExcluir(id,nome){
+  if(!confirm('Excluir usuário "'+nome+'"?'))return;
+  try{
+    await db.collection('usuarios_plataforma').doc(id).delete();
+    toast('Usuário removido.');
+    platAdmCarregar();
+  }catch(e){toast('Erro: '+e.message);}
 }
 
 // ============================
