@@ -442,6 +442,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('faturamento')" id="nav-faturamento"><span class="icon">🧾</span><span>Faturamento</span></a>
     <a onclick="showPage('recepcao')" id="nav-recepcao"><span class="icon">🏪</span><span>Recepção</span></a>
     <a onclick="showPage('portal')" id="nav-portal"><span class="icon">🛍️</span><span>Portal Pedidos</span></a>
+    <a onclick="showPage('clientes')" id="nav-clientes"><span class="icon">👥</span><span>Clientes</span></a>
     <a onclick="showPage('filiais')" id="nav-filiais"><span class="icon">🏢</span><span>Filiais</span></a>
     <a onclick="showPage('fiscal')" id="nav-fiscal"><span class="icon">💸</span><span>Fiscal</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
@@ -1490,6 +1491,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-recepcao"> Recepção</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-portal"> Portal Pedidos</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-filiais"> Filiais</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-clientes"> Clientes</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-fiscal"> Fiscal</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-pdv"> PDV / Eventos</label>
               </div>
@@ -1510,7 +1512,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   <th>PDV</th><th>ADM</th><th>Status</th><th>Ações</th>
                 </tr></thead>
                 <tbody id="plat-acesso-tbody">
-                  <tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
+                  <tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
                 </tbody>
               </table>
             </div>
@@ -4619,6 +4621,245 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   </div>
 </div>
 
+<!-- PAGE CLIENTES -->
+<div class="page" id="page-clientes">
+  <div class="page-header">
+    <h2>&#128101; Clientes</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem">Cadastro e gest&#227;o de clientes &#8212; &#225;rea de sa&#250;de</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <input type="text" id="cli-busca" class="input" placeholder="Nome ou CNPJ/CPF..." oninput="clientesFiltrar()" style="flex:2;min-width:200px">
+    <select id="cli-filtro-status" class="input" onchange="clientesFiltrar()" style="flex:1;min-width:120px">
+      <option value="">Todos os status</option><option value="ativo">Ativo</option>
+      <option value="inativo">Inativo</option><option value="prospect">Prospect</option>
+    </select>
+    <select id="cli-filtro-segmento" class="input" onchange="clientesFiltrar()" style="flex:1;min-width:150px">
+      <option value="">Todos os segmentos</option>
+      <option>Biom&#233;dico</option><option>Cliente Final</option><option>Dentista</option>
+      <option>Distribuidor</option><option>Enfermeiro</option><option>Esteticista</option>
+      <option>Farmac&#234;utico</option><option>Fisioterapeuta</option><option>Franquia</option><option>M&#233;dico</option>
+    </select>
+    <select id="cli-filtro-uf" class="input" onchange="clientesFiltrar()" style="min-width:75px">
+      <option value="">UF</option>
+      <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+      <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+      <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+      <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+      <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+      <option>SE</option><option>TO</option>
+    </select>
+    <button class="btn btn-primary" onclick="clientesAbrirModal()" style="white-space:nowrap">+ Cadastrar</button>
+    <button class="btn btn-outline" onclick="clientesImportarExcel()" style="white-space:nowrap">&#128229; Importar</button>
+    <button class="btn btn-outline" onclick="clientesExportar()" style="white-space:nowrap">&#128228; Exportar</button>
+  </div>
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px">
+      <h4 style="margin:0 0 12px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">&#128202; Carteira</h4>
+      <div style="display:flex;justify-content:center;margin-bottom:8px">
+        <canvas id="cli-carteira-chart" width="180" height="180"></canvas>
+      </div>
+      <div id="cli-carteira-stats"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn btn-outline" onclick="clientesCarregar()" style="width:100%;font-size:12px">&#128260; Atualizar</button>
+      </div>
+    </div>
+    <div>
+      <div id="cli-lista-info" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg-secondary);text-align:left">
+              <th style="padding:8px 10px">Nome / Raz&#227;o Social</th>
+              <th style="padding:8px 10px">CNPJ/CPF</th>
+              <th style="padding:8px 10px">Segmento</th>
+              <th style="padding:8px 10px">Cidade/UF</th>
+              <th style="padding:8px 10px">Telefone</th>
+              <th style="padding:8px 10px">Status</th>
+              <th style="padding:8px 10px">Docs</th>
+              <th style="padding:8px 10px">A&#231;&#245;es</th>
+            </tr>
+          </thead>
+          <tbody id="cli-lista-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="cli-paginacao" style="display:flex;gap:5px;justify-content:center;margin-top:12px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+  <input type="file" id="cli-import-input" accept=".xlsx,.csv" style="display:none" onchange="clientesProcessarImport(event)">
+</div>
+<!-- Modal Cliente -->
+<div id="modal-cliente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;overflow-y:auto">
+  <div style="background:var(--card);border-radius:10px;max-width:720px;margin:30px auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+      <h3 id="cli-modal-titulo" style="margin:0;font-size:16px">Cadastrar Cliente</h3>
+      <button onclick="clientesFecharModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1">&#10005;</button>
+    </div>
+    <div style="display:flex;border-bottom:1px solid var(--border);padding:0 20px;background:var(--bg-secondary)">
+      <button id="cli-mtab-dados"      onclick="clientesTabModal('dados')"      style="padding:10px 16px;border:none;border-bottom:2px solid #111;background:none;font-weight:700;cursor:pointer;font-size:13px">Dados</button>
+      <button id="cli-mtab-endereco"   onclick="clientesTabModal('endereco')"   style="padding:10px 16px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:13px;color:var(--text-muted)">Endere&#231;o</button>
+      <button id="cli-mtab-documentos" onclick="clientesTabModal('documentos')" style="padding:10px 16px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:13px;color:var(--text-muted)">Documentos</button>
+      <button id="cli-mtab-obs"        onclick="clientesTabModal('obs')"        style="padding:10px 16px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:13px;color:var(--text-muted)">Obs &amp; Tags</button>
+    </div>
+    <div style="padding:20px">
+      <div id="cli-mview-dados">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nome / Raz&#227;o Social *</label>
+            <input id="cli-m-nome" class="input" style="width:100%" placeholder="Nome completo ou raz&#227;o social">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo</label>
+            <select id="cli-m-tipo" class="input" style="width:100%" onchange="clientesTipo(this.value)">
+              <option value="pj">Pessoa Jur&#237;dica</option><option value="pf">Pessoa F&#237;sica</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status</label>
+            <select id="cli-m-status" class="input" style="width:100%">
+              <option value="ativo">Ativo</option><option value="inativo">Inativo</option><option value="prospect">Prospect</option>
+            </select>
+          </div>
+          <div id="cli-m-cnpj-wrap">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">CNPJ</label>
+            <div style="display:flex;gap:6px">
+              <input id="cli-m-cnpj" class="input" style="flex:1" placeholder="00.000.000/0001-00" oninput="clientesCnpjMask(this)">
+              <button class="btn btn-outline btn-sm" onclick="clientesCnpjAutoFill()" style="white-space:nowrap">&#128269; Buscar</button>
+            </div>
+          </div>
+          <div id="cli-m-cpf-wrap" style="display:none">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">CPF</label>
+            <input id="cli-m-cpf" class="input" style="width:100%" placeholder="000.000.000-00">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">IE / Inscri&#231;&#227;o Estadual</label>
+            <input id="cli-m-ie" class="input" style="width:100%" placeholder="Isento ou n&#250;mero">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Segmento</label>
+            <select id="cli-m-segmento" class="input" style="width:100%">
+              <option value="">&#8212; Selecione &#8212;</option>
+              <option>Biom&#233;dico</option><option>Cliente Final</option><option>Dentista</option>
+              <option>Distribuidor</option><option>Enfermeiro</option><option>Esteticista</option>
+              <option>Farmac&#234;utico</option><option>Fisioterapeuta</option><option>Franquia</option><option>M&#233;dico</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rede / Grupo</label>
+            <input id="cli-m-rede" class="input" style="width:100%" placeholder="Nome da rede ou grupo">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label>
+            <input id="cli-m-tel" class="input" style="width:100%" placeholder="(00) 00000-0000">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">E-mail</label>
+            <input id="cli-m-email" class="input" type="email" style="width:100%" placeholder="contato@email.com">
+          </div>
+          <div style="grid-column:1/-1">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nome do Contato Principal</label>
+            <input id="cli-m-contato" class="input" style="width:100%" placeholder="Nome do respons&#225;vel pelo contato">
+          </div>
+        </div>
+      </div>
+      <div id="cli-mview-endereco" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">CEP</label>
+            <div style="display:flex;gap:6px">
+              <input id="cli-m-cep" class="input" style="flex:1" placeholder="00000-000" oninput="clientesCepMask(this)">
+              <button class="btn btn-outline btn-sm" onclick="clientesCepBuscar()">&#128269;</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">UF</label>
+            <select id="cli-m-uf" class="input" style="width:100%">
+              <option value="">&#8212;</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+              <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+              <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+              <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+              <option>SE</option><option>TO</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Logradouro</label>
+            <input id="cli-m-logradouro" class="input" style="width:100%" placeholder="Rua, Avenida...">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">N&#250;mero</label>
+            <input id="cli-m-numero" class="input" style="width:100%" placeholder="N&#186;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Complemento</label>
+            <input id="cli-m-complemento" class="input" style="width:100%" placeholder="Sala, andar...">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Bairro</label>
+            <input id="cli-m-bairro" class="input" style="width:100%" placeholder="Bairro">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Cidade</label>
+            <input id="cli-m-cidade" class="input" style="width:100%" placeholder="Cidade">
+          </div>
+        </div>
+      </div>
+      <div id="cli-mview-documentos" style="display:none">
+        <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px">Anexe documentos da &#225;rea de sa&#250;de &#8212; Alvar&#225;, Autoriza&#231;&#227;o de Funcionamento, CRM/CRO, Vigil&#226;ncia Sanit&#225;ria etc. (PDF/imagem, m&#225;x. 1 MB)</p>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:2;min-width:160px">
+            <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Tipo</label>
+            <select id="cli-doc-tipo" class="input" style="width:100%">
+              <option value="alvara">Alvar&#225; de Funcionamento</option>
+              <option value="autorizacao">Autoriza&#231;&#227;o de Funcionamento</option>
+              <option value="crm">CRM / CRO / Registro</option>
+              <option value="vigilancia">Vigil&#226;ncia Sanit&#225;ria</option>
+              <option value="contrato">Contrato</option>
+              <option value="outro">Outro Documento</option>
+            </select>
+          </div>
+          <div style="flex:2;min-width:130px">
+            <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Nome / Descri&#231;&#227;o</label>
+            <input id="cli-doc-nome" class="input" style="width:100%" placeholder="Ex.: Alvar&#225; 2025">
+          </div>
+          <div style="min-width:130px">
+            <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Validade</label>
+            <input id="cli-doc-validade" type="date" class="input" style="width:100%">
+          </div>
+          <label class="btn btn-outline" style="cursor:pointer;white-space:nowrap;align-self:flex-end">
+            &#128206; Anexar
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="clientesDocUpload(this)">
+          </label>
+        </div>
+        <div id="cli-docs-lista"></div>
+      </div>
+      <div id="cli-mview-obs" style="display:none">
+        <div style="display:grid;gap:14px">
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tags</label>
+            <input id="cli-m-tags" class="input" style="width:100%" placeholder="#tag1 #tag2 #fullface2027">
+            <p style="font-size:11px;color:var(--text-muted);margin:4px 0 0">Separe tags com espa&#231;o, use # no in&#237;cio</p>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observa&#231;&#245;es</label>
+            <textarea id="cli-m-obs" class="input" rows="6" style="width:100%;resize:vertical" placeholder="Informa&#231;&#245;es adicionais sobre o cliente..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="cli-m-docid">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-top:1px solid var(--border);gap:8px">
+      <button id="cli-btn-excluir" onclick="clientesExcluirModal()" style="display:none;color:#D13438;border:1px solid #D13438;background:transparent;cursor:pointer;border-radius:6px;padding:6px 14px;font-size:13px">&#128465; Excluir</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="clientesFecharModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="clientesSalvar()">&#128190; Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -5082,13 +5323,13 @@ function showPage(p){
     return;
   }
   // Platform ACL permission guard
-  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',adm:'__adm__',pdv:'pdv'};
+  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv'};
   if(platUser&&_PM[p]!==undefined){const _pk=_PM[p];const _ok=_pk==='__adm__'?platUser.isAdm:platUser.permissoes[_pk];if(!_ok){toast('⛔ Sem permissão para acessar este módulo.');showPage('home');return;}}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal',clientes:'👥 Clientes'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   // Platform ACL module bypass
   if(platUser){if(p==='solicitacoes'&&!solicUser&&platUser.permissoes.solicitacoes){solicUser={id:platUser.id,nome:platUser.nome,username:platUser.username,perfil:'logistica'};}
@@ -5128,6 +5369,7 @@ function showPage(p){
   }
   if(p==='portal') portalInit();
   if(p==='filiais') filInit();
+  if(p==='clientes') clientesInit();
   if(p==='fiscal') fiscalInit();
 }
 
@@ -11777,7 +12019,7 @@ async function platLogin(){
 
     if(masterOk){
       platUser={id:'adm',nome:'Administrador',username:'adm',isAdm:true,
-        permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true}};
+        permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true,clientes:true}};
       admLoggedIn=true;
       platApplyPermissions();
       document.getElementById('plat-login-overlay').style.display='none';
@@ -11802,7 +12044,7 @@ async function platLogin(){
         const totalSnap=await db.collection('usuarios_plataforma').limit(1).get();
         if(totalSnap.empty&&username==='adm'){
           platUser={id:'adm',nome:'Administrador',username:'adm',isAdm:true,
-            permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true}};
+            permissoes:{solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true,clientes:true}};
           admLoggedIn=true;
           platApplyPermissions();
           document.getElementById('plat-login-overlay').style.display='none';
@@ -11864,7 +12106,8 @@ function platApplyPermissions(){
     'nav-recepcao':!!p.recepcao,
     'nav-portal':!!p.portal,
     'nav-filiais':!!p.filiais,
-    'nav-fiscal':!!p.fiscal
+    'nav-fiscal':!!p.fiscal,
+    'nav-clientes':!!p.clientes
   };
   Object.entries(navMap).forEach(([id,allowed])=>{
     const el=document.getElementById(id);if(el)el.style.display=allowed?'':'none';
@@ -11886,16 +12129,17 @@ const PLAT_MODULOS=[
   {key:'filiais',label:'Filiais'},
   {key:'fiscal',label:'Fiscal'},
   {key:'pdv',label:'PDV'},
+  {key:'clientes',label:'Clientes'},
 ];
 
 async function platAdmCarregar(){
   const tbody=document.getElementById('plat-acesso-tbody');
   if(!tbody)return;
-  tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
   try{
     const snap=await db.collection('usuarios_plataforma').orderBy('nome').get();
     if(snap.empty){
-      tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
       return;
     }
     tbody.innerHTML=snap.docs.map(doc=>{
@@ -11916,7 +12160,7 @@ async function platAdmCarregar(){
         +'</td></tr>';
     }).join('');
   }catch(e){
-    tbody.innerHTML='<tr><td colspan="13" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
   }
 }
 
@@ -16952,6 +17196,390 @@ function filExportarEstoque(){
   a.download='estoque_filial_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
+// ══════════════════════════════════════════════════════════════════════════
+// MODULO CLIENTES
+// ══════════════════════════════════════════════════════════════════════════
+let _cliTodos=[], _cliFiltrados=[], _cliPage=1;
+const _cliPageSize=15;
+let _cliDocs=[], _cliEditDocId=null;
+var _CLI_TIPO_LABEL={alvara:'Alvará de Funcionamento',autorizacao:'Autorização de Funcionamento',crm:'CRM/CRO/Registro',vigilancia:'Vigilância Sanitária',contrato:'Contrato',outro:'Outro'};
+
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function clientesInit(){await clientesCarregar();}
+
+async function clientesCarregar(){
+  var tbody=document.getElementById('cli-lista-tbody');
+  if(tbody)tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">Carregando...</td></tr>';
+  try{
+    var snap=await db.collection('clientes_portal').orderBy('nome').get();
+    _cliTodos=snap.docs.map(function(d){var x=d.data();x.docId=d.id;return x;});
+    _cliFiltrados=_cliTodos.slice();
+    _cliPage=1;
+    clientesRenderCarteira(_cliTodos);
+    clientesRenderLista();
+  }catch(e){
+    if(tbody)tbody.innerHTML='<tr><td colspan="8" style="color:red;padding:16px">Erro: '+e.message+'</td></tr>';
+  }
+}
+
+function clientesFiltrar(){
+  var busca=(document.getElementById('cli-busca')?.value||'').toLowerCase().trim();
+  var status=document.getElementById('cli-filtro-status')?.value||'';
+  var segmento=document.getElementById('cli-filtro-segmento')?.value||'';
+  var uf=document.getElementById('cli-filtro-uf')?.value||'';
+  _cliFiltrados=_cliTodos.filter(function(c){
+    if(busca){
+      var nm=(c.nome||'').toLowerCase();
+      var cn=(c.cnpj||c.cpf||'').replace(/\D/g,'');
+      var bq=busca.replace(/\D/g,'');
+      if(!nm.includes(busca)&&!(bq.length>3&&cn.includes(bq)))return false;
+    }
+    if(status&&c.status!==status)return false;
+    if(segmento&&c.segmento!==segmento)return false;
+    var cuf=(c.endereco&&c.endereco.uf)||'';
+    if(uf&&cuf!==uf)return false;
+    return true;
+  });
+  _cliPage=1;
+  clientesRenderLista();
+}
+
+function clientesRenderLista(){
+  var tbody=document.getElementById('cli-lista-tbody');
+  var info=document.getElementById('cli-lista-info');
+  if(!tbody)return;
+  var total=_cliFiltrados.length;
+  var pages=Math.max(1,Math.ceil(total/_cliPageSize));
+  if(_cliPage>pages)_cliPage=1;
+  var start=(_cliPage-1)*_cliPageSize;
+  var slice=_cliFiltrados.slice(start,start+_cliPageSize);
+  if(info){
+    var txt=total+' cliente'+(total!==1?'s':'');
+    if(total!==_cliTodos.length)txt+=' (filtrado'+(total!==1?'s':'')+' de '+_cliTodos.length+')';
+    info.textContent=txt;
+  }
+  if(!slice.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum cliente encontrado.</td></tr>';
+    clientesRenderPag(pages);return;
+  }
+  var SC={ativo:'#22C55E',inativo:'#EF4444',prospect:'#F59E0B'};
+  var SL={ativo:'Ativo',inativo:'Inativo',prospect:'Prospect'};
+  tbody.innerHTML=slice.map(function(c){
+    var st=c.status||'ativo';
+    var ndoc=(c.documentos||[]).length;
+    var docB=ndoc?'<span style="background:#EFF6FF;color:#1D4ED8;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600">'+ndoc+' doc'+(ndoc!==1?'s':'')+'</span>':'<span style="color:var(--text-muted)">&#8212;</span>';
+    var cidade=(c.endereco&&c.endereco.cidade)||'';
+    var ufS=(c.endereco&&c.endereco.uf)||'';
+    var loc=cidade?(cidade+(ufS?'/'+ufS:'')):(ufS||'&#8212;');
+    return '<tr style="border-bottom:1px solid var(--border)">'
+      +'<td style="padding:9px 10px;font-weight:600">'+_esc(c.nome||'')+'<br><span style="font-size:11px;font-weight:400;color:var(--text-muted)">'+_esc(c.contato||'')+'</span></td>'
+      +'<td style="padding:9px 10px;font-family:monospace;font-size:12px">'+_esc(c.cnpj||c.cpf||'&#8212;')+'</td>'
+      +'<td style="padding:9px 10px">'+_esc(c.segmento||'&#8212;')+'</td>'
+      +'<td style="padding:9px 10px">'+loc+'</td>'
+      +'<td style="padding:9px 10px">'+_esc(c.telefone||'&#8212;')+'</td>'
+      +'<td style="padding:9px 10px"><span style="background:'+SC[st]+'20;color:'+SC[st]+';border-radius:10px;padding:3px 10px;font-size:12px;font-weight:600">'+SL[st]+'</span></td>'
+      +'<td style="padding:9px 10px">'+docB+'</td>'
+      +'<td style="padding:9px 10px;white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="clientesAbrirModal(\''+c.docId+'\')">&#9998; Editar</button></td>'
+      +'</tr>';
+  }).join('');
+  clientesRenderPag(pages);
+}
+
+function clientesRenderPag(pages){
+  var el=document.getElementById('cli-paginacao');if(!el)return;
+  if(pages<=1){el.innerHTML='';return;}
+  var h='';
+  for(var i=1;i<=pages;i++){
+    var a=i===_cliPage;
+    h+='<button onclick="cliGoPage('+i+')" style="padding:4px 11px;border-radius:4px;border:1px solid '+(a?'#111':'var(--border)')+';background:'+(a?'#111':'transparent')+';color:'+(a?'#fff':'inherit')+';cursor:pointer;font-size:12px">'+i+'</button>';
+  }
+  el.innerHTML=h;
+}
+function cliGoPage(n){_cliPage=n;clientesRenderLista();}
+
+function clientesRenderCarteira(todos){
+  var ativos=0,inativos=0,prospects=0;
+  todos.forEach(function(c){if(c.status==='ativo')ativos++;else if(c.status==='inativo')inativos++;else if(c.status==='prospect')prospects++;else ativos++;});
+  var total=todos.length||1;
+  var canvas=document.getElementById('cli-carteira-chart');if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var cx=90,cy=90,r=72,ri=46;
+  ctx.clearRect(0,0,180,180);
+  var segs=[{val:ativos,color:'#22C55E'},{val:inativos,color:'#EF4444'},{val:prospects,color:'#F59E0B'}];
+  var start=-Math.PI/2;
+  if(!ativos&&!inativos&&!prospects){
+    ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle='#e5e7eb';ctx.fill();
+  }else{
+    segs.forEach(function(s){
+      if(!s.val)return;
+      var angle=(s.val/total)*2*Math.PI;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,start+angle);ctx.closePath();
+      ctx.fillStyle=s.color;ctx.fill();start+=angle;
+    });
+  }
+  ctx.beginPath();ctx.arc(cx,cy,ri,0,2*Math.PI);
+  try{ctx.fillStyle=window.getComputedStyle(document.body).backgroundColor||'#fff';}catch(_){ctx.fillStyle='#fff';}
+  ctx.fill();
+  ctx.fillStyle='#111';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(todos.length,cx,cy-7);ctx.font='11px sans-serif';ctx.fillStyle='#888';ctx.fillText('clientes',cx,cy+10);
+  var stats=document.getElementById('cli-carteira-stats');
+  if(stats)stats.innerHTML=[{label:'Ativos',val:ativos,pct:Math.round(ativos/total*100),color:'#22C55E'},{label:'Inativos',val:inativos,pct:Math.round(inativos/total*100),color:'#EF4444'},{label:'Prospects',val:prospects,pct:Math.round(prospects/total*100),color:'#F59E0B'}].map(function(s){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">'
+      +'<span style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:'+s.color+';display:inline-block;flex-shrink:0"></span><span style="font-size:13px">'+s.label+'</span></span>'
+      +'<span style="font-weight:700;font-size:14px">'+s.val+'<span style="font-size:10px;font-weight:400;color:var(--text-muted);margin-left:4px">'+s.pct+'%</span></span>'
+      +'</div>';
+  }).join('');
+}
+
+function clientesAbrirModal(docId){
+  _cliEditDocId=docId||null;_cliDocs=[];
+  var titulo=document.getElementById('cli-modal-titulo');
+  var btnX=document.getElementById('cli-btn-excluir');
+  if(titulo)titulo.textContent=docId?'Editar Cliente':'Cadastrar Cliente';
+  if(btnX)btnX.style.display=docId?'':'none';
+  ['cli-m-nome','cli-m-cnpj','cli-m-cpf','cli-m-ie','cli-m-rede','cli-m-tel','cli-m-email','cli-m-contato',
+   'cli-m-cep','cli-m-logradouro','cli-m-numero','cli-m-complemento','cli-m-bairro','cli-m-cidade',
+   'cli-m-tags','cli-m-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var tp=document.getElementById('cli-m-tipo');if(tp)tp.value='pj';
+  var st=document.getElementById('cli-m-status');if(st)st.value='ativo';
+  var sg=document.getElementById('cli-m-segmento');if(sg)sg.value='';
+  var uf=document.getElementById('cli-m-uf');if(uf)uf.value='';
+  var di=document.getElementById('cli-m-docid');if(di)di.value=docId||'';
+  clientesTipo('pj');clientesTabModal('dados');clientesRenderDocsList();
+  if(docId){
+    var cli=_cliTodos.find(function(c){return c.docId===docId;});
+    if(cli){
+      var sv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+      sv('cli-m-nome',cli.nome);sv('cli-m-cnpj',cli.cnpj);sv('cli-m-cpf',cli.cpf);
+      sv('cli-m-ie',cli.ie);sv('cli-m-rede',cli.rede);sv('cli-m-tel',cli.telefone);
+      sv('cli-m-email',cli.email);sv('cli-m-contato',cli.contato);
+      var tp2=document.getElementById('cli-m-tipo');if(tp2)tp2.value=cli.tipo||'pj';clientesTipo(cli.tipo||'pj');
+      var st2=document.getElementById('cli-m-status');if(st2)st2.value=cli.status||'ativo';
+      var sg2=document.getElementById('cli-m-segmento');if(sg2)sg2.value=cli.segmento||'';
+      if(cli.endereco){
+        sv('cli-m-cep',cli.endereco.cep);sv('cli-m-logradouro',cli.endereco.logradouro);
+        sv('cli-m-numero',cli.endereco.numero);sv('cli-m-complemento',cli.endereco.complemento);
+        sv('cli-m-bairro',cli.endereco.bairro);sv('cli-m-cidade',cli.endereco.cidade);
+        var uf2=document.getElementById('cli-m-uf');if(uf2)uf2.value=cli.endereco.uf||'';
+      }
+      sv('cli-m-tags',cli.tags);sv('cli-m-obs',cli.obs);
+      _cliDocs=(cli.documentos||[]).map(function(d){return Object.assign({},d);});
+      clientesRenderDocsList();
+    }
+  }
+  document.getElementById('modal-cliente').style.display='';
+}
+
+function clientesFecharModal(){document.getElementById('modal-cliente').style.display='none';_cliDocs=[];}
+
+function clientesTabModal(aba){
+  ['dados','endereco','documentos','obs'].forEach(function(a){
+    var v=document.getElementById('cli-mview-'+a);var t=document.getElementById('cli-mtab-'+a);
+    if(v)v.style.display=a===aba?'':'none';
+    if(t){t.style.borderBottomColor=a===aba?'#111':'transparent';t.style.fontWeight=a===aba?'700':'400';t.style.color=a===aba?'inherit':'var(--text-muted)';}
+  });
+}
+
+function clientesTipo(tipo){
+  var pj=document.getElementById('cli-m-cnpj-wrap');var pf=document.getElementById('cli-m-cpf-wrap');
+  if(pj)pj.style.display=tipo==='pj'?'':'none';if(pf)pf.style.display=tipo==='pf'?'':'none';
+}
+
+function clientesCnpjMask(el){
+  var v=el.value.replace(/\D/g,'').slice(0,14);
+  if(v.length>12)v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if(v.length>8)v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if(v.length>5)v=v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if(v.length>2)v=v.slice(0,2)+'.'+v.slice(2);
+  el.value=v;
+}
+
+function clientesCepMask(el){
+  var v=el.value.replace(/\D/g,'').slice(0,8);
+  if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);el.value=v;
+}
+
+async function clientesCnpjAutoFill(){
+  var raw=(document.getElementById('cli-m-cnpj')?.value||'').replace(/\D/g,'');
+  if(raw.length!==14){toast('CNPJ inválido');return;}
+  toast('Buscando CNPJ...');
+  try{
+    var r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+raw);
+    if(!r.ok){toast('CNPJ não encontrado');return;}
+    var d=await r.json();
+    var sv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+    sv('cli-m-nome',d.razao_social);
+    var tel=(d.ddd_telefone_1||'').replace(/[^0-9]/g,'');
+    if(tel.length>=10)tel='('+tel.slice(0,2)+') '+tel.slice(2);
+    sv('cli-m-tel',tel);sv('cli-m-email',d.email||'');
+    var cep=(d.cep||'').replace(/\D/g,'');
+    if(cep.length===8)cep=cep.slice(0,5)+'-'+cep.slice(5);
+    sv('cli-m-cep',cep);sv('cli-m-logradouro',d.logradouro);sv('cli-m-numero',d.numero);
+    sv('cli-m-complemento',d.complemento);sv('cli-m-bairro',d.bairro);sv('cli-m-cidade',d.municipio);
+    var ufEl=document.getElementById('cli-m-uf');if(ufEl)ufEl.value=d.uf||'';
+    var ieEl=document.getElementById('cli-m-ie');if(ieEl&&!ieEl.value)ieEl.value='Isento';
+    toast('CNPJ preenchido!');
+  }catch(e){toast('Erro ao buscar CNPJ: '+e.message);}
+}
+
+async function clientesCepBuscar(){
+  var cep=(document.getElementById('cli-m-cep')?.value||'').replace(/\D/g,'');
+  if(cep.length!==8){toast('CEP inválido');return;}
+  try{
+    var r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    var d=await r.json();if(d.erro){toast('CEP não encontrado');return;}
+    var sv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+    sv('cli-m-logradouro',d.logradouro);sv('cli-m-complemento',d.complemento);
+    sv('cli-m-bairro',d.bairro);sv('cli-m-cidade',d.localidade);
+    var ufEl=document.getElementById('cli-m-uf');if(ufEl)ufEl.value=d.uf||'';
+    toast('Endereço preenchido!');
+  }catch(e){toast('Erro ao buscar CEP');}
+}
+
+function clientesDocUpload(input){
+  var file=input.files[0];if(!file)return;
+  if(file.size>1048576){toast('Arquivo muito grande (máx. 1 MB)');input.value='';return;}
+  var tipo=document.getElementById('cli-doc-tipo')?.value||'outro';
+  var nome=(document.getElementById('cli-doc-nome')?.value||'').trim()||file.name;
+  var validade=document.getElementById('cli-doc-validade')?.value||'';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    _cliDocs.push({tipo:tipo,nome:nome,validade:validade,base64:e.target.result,tamanho:file.size,mimeType:file.type});
+    clientesRenderDocsList();input.value='';
+    var dn=document.getElementById('cli-doc-nome');if(dn)dn.value='';
+    var dv=document.getElementById('cli-doc-validade');if(dv)dv.value='';
+    toast('Documento anexado!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clientesDocRemover(idx){_cliDocs.splice(idx,1);clientesRenderDocsList();}
+
+function clientesDocAbrir(idx){
+  var doc=_cliDocs[idx];if(!doc||!doc.base64)return;
+  var win=window.open('','_blank');
+  if(win)win.document.write('<html><body style="margin:0"><iframe src="'+doc.base64+'" style="width:100%;height:100vh;border:none"></iframe></body></html>');
+}
+
+function clientesRenderDocsList(){
+  var el=document.getElementById('cli-docs-lista');if(!el)return;
+  if(!_cliDocs.length){el.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px 0">Nenhum documento anexado. Use o botão acima para anexar.</p>';return;}
+  var today=new Date().toISOString().slice(0,10);
+  el.innerHTML=_cliDocs.map(function(d,i){
+    var kb=Math.round((d.tamanho||0)/1024);
+    var icon=(d.mimeType&&d.mimeType.startsWith('image'))?'&#128444;':'&#128196;';
+    var venc=d.validade?'Válido até '+d.validade:'Sem validade';
+    var vc=d.validade&&d.validade<today?'#EF4444':'var(--text-muted)';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px">'
+      +'<span style="font-size:22px;flex-shrink:0">'+icon+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(d.nome)+'</div>'
+      +'<div style="font-size:11px;color:var(--text-muted)">'+_esc(_CLI_TIPO_LABEL[d.tipo]||d.tipo)+' &middot; '+kb+'KB</div>'
+      +'<div style="font-size:11px;color:'+vc+'">'+_esc(venc)+'</div>'
+      +'</div>'
+      +'<button class="btn btn-outline btn-sm" onclick="clientesDocAbrir('+i+')" title="Visualizar">&#128065;</button>'
+      +'<button onclick="clientesDocRemover('+i+')" style="background:#FEE2E2;color:#991B1B;border:none;cursor:pointer;border-radius:4px;padding:4px 8px;flex-shrink:0">&#10005;</button>'
+      +'</div>';
+  }).join('');
+}
+
+async function clientesSalvar(){
+  var g=function(id){return(document.getElementById(id)?.value||'').trim();};
+  var nome=g('cli-m-nome');if(!nome){toast('Informe o nome do cliente');return;}
+  var tipo=g('cli-m-tipo')||'pj';
+  var dados={
+    nome:nome,tipo:tipo,status:g('cli-m-status')||'ativo',
+    cnpj:tipo==='pj'?g('cli-m-cnpj'):'',cpf:tipo==='pf'?g('cli-m-cpf'):'',
+    ie:g('cli-m-ie'),segmento:g('cli-m-segmento'),rede:g('cli-m-rede'),
+    telefone:g('cli-m-tel'),email:g('cli-m-email'),contato:g('cli-m-contato'),
+    endereco:{cep:g('cli-m-cep'),logradouro:g('cli-m-logradouro'),numero:g('cli-m-numero'),
+      complemento:g('cli-m-complemento'),bairro:g('cli-m-bairro'),cidade:g('cli-m-cidade'),uf:g('cli-m-uf')},
+    documentos:_cliDocs.map(function(d){return Object.assign({},d);}),
+    tags:g('cli-m-tags'),obs:g('cli-m-obs'),
+    atualizadoEm:new Date().toISOString(),operadoPor:platUser?platUser.username:''
+  };
+  try{
+    var docId=document.getElementById('cli-m-docid')?.value||'';
+    if(docId){await db.collection('clientes_portal').doc(docId).update(dados);toast('Cliente atualizado!');}
+    else{dados.criadoEm=new Date().toISOString();dados.criadoPor=platUser?platUser.username:'';await db.collection('clientes_portal').add(dados);toast('Cliente cadastrado!');}
+    clientesFecharModal();clientesCarregar();
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+async function clientesExcluirModal(){
+  var docId=document.getElementById('cli-m-docid')?.value||'';if(!docId)return;
+  var cli=_cliTodos.find(function(c){return c.docId===docId;});
+  if(!confirm('Excluir cliente "'+((cli&&cli.nome)||docId)+'"? Esta ação não pode ser desfeita.'))return;
+  try{await db.collection('clientes_portal').doc(docId).delete();toast('Cliente excluído');clientesFecharModal();clientesCarregar();}
+  catch(e){toast('Erro: '+e.message);}
+}
+
+function clientesExportar(){
+  if(!_cliFiltrados.length){toast('Nenhum cliente para exportar');return;}
+  var hdrs=['Nome','Tipo','CNPJ','CPF','IE','Segmento','Status','Rede','Telefone','Email','Contato','CEP','Logradouro','Numero','Complemento','Bairro','Cidade','UF','Tags','Obs'];
+  var rows=_cliFiltrados.map(function(c){
+    var e=c.endereco||{};
+    return [c.nome||'',c.tipo||'',c.cnpj||'',c.cpf||'',c.ie||'',c.segmento||'',c.status||'',c.rede||'',
+      c.telefone||'',c.email||'',c.contato||'',e.cep||'',e.logradouro||'',e.numero||'',
+      e.complemento||'',e.bairro||'',e.cidade||'',e.uf||'',c.tags||'',c.obs||''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');
+  });
+  var csv='﻿'+[hdrs.join(',')].concat(rows).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='clientes_'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('Exportado!');
+}
+
+function clientesImportarExcel(){var inp=document.getElementById('cli-import-input');if(inp)inp.click();}
+
+async function clientesProcessarImport(ev){
+  var file=ev.target.files[0];if(!file)return;
+  toast('Processando importacao...');
+  try{
+    if(!window.XLSX){
+      await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    var buf=await file.arrayBuffer();
+    var wb=XLSX.read(buf,{type:'array'});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(!rows.length){toast('Planilha vazia');ev.target.value='';return;}
+    function get(row){
+      var keys=Array.prototype.slice.call(arguments,1);
+      for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var v=row[k]||row[k.toLowerCase()]||row[k.toUpperCase()];if(v)return String(v).trim();}
+      return '';
+    }
+    var ok=0,errs=0,allDocs=[];
+    rows.forEach(function(row){
+      try{
+        var nome=get(row,'Nome','Razao Social','razao_social','NOME','Razão Social ou Nome Completo','RAZÃO SOCIAL');
+        if(!nome)return;
+        allDocs.push({nome:nome,tipo:'pj',cnpj:get(row,'CNPJ','cnpj'),cpf:get(row,'CPF','cpf'),
+          ie:get(row,'IE','ie','Inscricao Estadual'),segmento:get(row,'Segmento','segmento'),
+          status:(get(row,'Status','status')||'ativo').toLowerCase(),rede:get(row,'Rede','rede'),
+          telefone:get(row,'Telefone','telefone','Fone'),email:get(row,'Email','email','E-mail'),
+          contato:get(row,'Contato','contato','Nome do Contato'),
+          endereco:{cep:get(row,'CEP','cep'),logradouro:get(row,'Logradouro','logradouro','Endereco'),
+            numero:get(row,'Numero','numero'),complemento:get(row,'Complemento','complemento'),
+            bairro:get(row,'Bairro','bairro'),cidade:get(row,'Cidade','cidade','Municipio'),
+            uf:get(row,'UF','uf','Estado')},
+          documentos:[],tags:get(row,'Tags','tags'),obs:get(row,'Obs','obs','Observacoes'),
+          criadoEm:new Date().toISOString(),criadoPor:platUser?platUser.username:'import',
+          atualizadoEm:new Date().toISOString(),operadoPor:platUser?platUser.username:'import'});
+        ok++;
+      }catch(_){errs++;}
+    });
+    var bsz=400;
+    for(var i=0;i<allDocs.length;i+=bsz){
+      var batch=db.batch();
+      allDocs.slice(i,i+bsz).forEach(function(d){var ref=db.collection('clientes_portal').doc();batch.set(ref,d);});
+      await batch.commit();
+    }
+    toast('Importados: '+ok+' clientes'+(errs?' ('+errs+' erros)':''));
+    clientesCarregar();
+  }catch(e){toast('Erro na importacao: '+e.message);}
+  ev.target.value='';
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 </script>
 </body>
