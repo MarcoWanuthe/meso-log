@@ -3782,110 +3782,322 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
 <!-- PAGE PORTAL DE PEDIDOS -->
 <div class="page" id="page-portal">
-  <div class="page-header">
-    <h2>🛍️ Portal de Pedidos</h2>
-    <p style="color:var(--text-muted);font-size:0.85rem">Catálogo · Carrinho · Pedidos</p>
+
+<style>
+.ptl-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.ptl-b-orc{background:#fef3c7;color:#92400e}.ptl-b-conf{background:#dbeafe;color:#1e40af}
+.ptl-b-agfin{background:#fed7aa;color:#9a3412}.ptl-b-apr{background:#d1fae5;color:#065f46}
+.ptl-b-fatx{background:#ede9fe;color:#5b21b6}.ptl-b-exp{background:#d1fae5;color:#064e3b}
+.ptl-b-can{background:#fee2e2;color:#991b1b}
+.ptl-sec{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}
+.ptl-sec-hdr{background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.ptl-sec-num{width:22px;height:22px;border-radius:50%;background:#111;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ptl-sec-body{padding:14px 16px}
+.ptl-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.ptl-tbl th{background:#f3f4f6;padding:7px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;white-space:nowrap;border-bottom:1px solid #e5e7eb}
+.ptl-tbl td{padding:6px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+.ptl-tbl tr:last-child td{border-bottom:none}
+.ptl-tbl input[type=number]{width:72px;padding:3px 5px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;text-align:right}
+.ptl-tbl input[type=number].wide{width:90px}
+.ptl-ac-list{position:absolute;background:#fff;border:1px solid #d1d5db;border-top:none;border-radius:0 0 6px 6px;z-index:999;max-height:200px;overflow-y:auto;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.ptl-ac-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6}
+.ptl-ac-item:hover{background:#f9fafb}
+.ptl-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb}
+</style>
+
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+    <div>
+      <h2>📋 Portal de Pedidos</h2>
+      <p style="color:var(--text-muted);font-size:0.82rem">Gestão comercial · Rastreabilidade completa · Integração Faturamento &amp; Estoque</p>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <span class="ptl-badge ptl-b-orc">Em Orçamento</span>
+      <span class="ptl-badge ptl-b-conf">Confirmado</span>
+      <span class="ptl-badge ptl-b-agfin">Ag. Financeiro</span>
+      <span class="ptl-badge ptl-b-apr">Aprovado</span>
+      <span class="ptl-badge ptl-b-fatx">Em Faturamento</span>
+      <span class="ptl-badge ptl-b-exp">Expedido</span>
+      <span class="ptl-badge ptl-b-can">Cancelado</span>
+    </div>
   </div>
 
-  <!-- Tab Bar -->
-  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
-    <button class="btn btn-primary" id="portal-tab-catalogo"   onclick="portalTab('catalogo')"   style="flex:1;min-width:100px">📦 Catálogo</button>
-    <button class="btn btn-outline" id="portal-tab-carrinho"   onclick="portalTab('carrinho')"   style="flex:1;min-width:100px">🛒 Carrinho <span id="portal-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:50%;padding:0 6px;font-size:0.75rem;margin-left:4px">0</span></button>
-    <button class="btn btn-outline" id="portal-tab-meus-pedidos"       onclick="portalTab('meus-pedidos')"       style="flex:1;min-width:120px">📋 Meus Pedidos</button>
-    <button class="btn btn-outline portal-adm-only" id="portal-tab-pedidos-adm"        onclick="portalTab('pedidos-adm')"        style="flex:1;min-width:120px">🗂️ Pedidos ADM</button>
-    <button class="btn btn-outline portal-adm-only" id="portal-tab-clientes-adm"   onclick="portalTab('clientes-adm')"   style="flex:1;min-width:110px">👥 Clientes ADM</button>
+  <!-- ── TAB BAR ── -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:2px solid #e5e7eb;padding-bottom:0">
+    <button class="btn btn-primary" id="ptl-tab-pedidos"  onclick="portalTab('pedidos')"  style="border-radius:6px 6px 0 0;margin-bottom:-2px">📋 Pedidos</button>
+    <button class="btn btn-outline" id="ptl-tab-novo"     onclick="portalTab('novo')"     style="border-radius:6px 6px 0 0;margin-bottom:-2px">➕ Novo Pedido</button>
+    <button class="btn btn-outline" id="ptl-tab-catalogo" onclick="portalTab('catalogo')" style="border-radius:6px 6px 0 0;margin-bottom:-2px">📦 Catálogo</button>
+    <button class="btn btn-outline portal-adm-only" id="ptl-tab-gestao" onclick="portalTab('gestao')" style="border-radius:6px 6px 0 0;margin-bottom:-2px">⚙️ Gestão ADM</button>
   </div>
 
-  <!-- VIEW: Catálogo -->
-  <div id="portal-view-catalogo">
-    <div style="display:flex;gap:8px;margin-bottom:12px">
+  <!-- ══════════════════════════════════════════════════════════
+       VIEW — LISTA DE PEDIDOS
+  ══════════════════════════════════════════════════════════ -->
+  <div id="portal-view-pedidos">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <input type="text" id="ptl-filtro-busca" class="input" placeholder="🔍 Cliente, Nº pedido, Tag..." style="flex:1;min-width:160px" oninput="portalListaFiltrar()">
+      <select id="ptl-filtro-status" class="input" style="min-width:160px" onchange="portalListaFiltrar()">
+        <option value="">Todos os status</option>
+        <option value="orcamento">Em Orçamento</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="ag_financeiro">Ag. Financeiro</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="em_faturamento">Em Faturamento</option>
+        <option value="expedido">Expedido</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+      <select id="ptl-filtro-tipo" class="input" style="min-width:130px" onchange="portalListaFiltrar()">
+        <option value="">Todos os tipos</option>
+        <option value="venda">Venda</option>
+        <option value="bonificado">Bonificado</option>
+        <option value="troca">Troca</option>
+        <option value="mostra">Mostra</option>
+      </select>
+      <button class="btn btn-outline" onclick="portalCarregarTodosPedidos()" style="font-size:0.85rem">🔄</button>
+      <button class="btn btn-primary" onclick="portalTab('novo')" style="font-size:0.85rem">➕ Novo</button>
+    </div>
+    <div id="portal-lista-container">
+      <p style="color:var(--text-muted)">Carregando pedidos...</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       VIEW — NOVO / EDITAR PEDIDO
+  ══════════════════════════════════════════════════════════ -->
+  <div id="portal-view-novo" style="display:none">
+    <input type="hidden" id="ptl-pedido-docid">
+    <input type="hidden" id="ptl-pedido-status" value="orcamento">
+
+    <!-- STATUS BAR -->
+    <div id="ptl-status-bar" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#6b7280">Status atual:</span>
+      <span id="ptl-status-label" class="ptl-badge ptl-b-orc">Em Orçamento</span>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap" id="ptl-status-actions"></div>
+    </div>
+
+    <!-- SECTION 1 — CLIENTE -->
+    <div class="ptl-sec">
+      <div class="ptl-sec-hdr">
+        <div class="ptl-sec-num">1</div>
+        <span style="font-weight:700;font-size:13px">CLIENTE</span>
+      </div>
+      <div class="ptl-sec-body">
+        <div style="position:relative;margin-bottom:10px">
+          <input type="text" id="ptl-cli-busca" class="input" placeholder="🔍 Buscar por razão social ou CNPJ..." autocomplete="off"
+            oninput="portalBuscarClienteAC(this.value)" style="width:100%;box-sizing:border-box">
+          <div id="ptl-cli-ac" class="ptl-ac-list" style="display:none"></div>
+        </div>
+        <div id="ptl-cli-card" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div style="font-weight:700;font-size:14px" id="ptl-cli-nome-disp">—</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:2px" id="ptl-cli-cnpj-disp">—</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:1px" id="ptl-cli-local-disp">—</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:1px" id="ptl-cli-contato-disp">—</div>
+            </div>
+            <button class="btn btn-outline" style="font-size:11px;white-space:nowrap" onclick="portalLimparCliente()">✕ Trocar</button>
+          </div>
+        </div>
+        <input type="hidden" id="ptl-cli-docid-hidden">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-outline" style="font-size:12px" onclick="portalAbrirModalCliente()">➕ Novo Cliente</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 — REPRESENTADA -->
+    <div class="ptl-sec">
+      <div class="ptl-sec-hdr">
+        <div class="ptl-sec-num">2</div>
+        <span style="font-weight:700;font-size:13px">REPRESENTADA</span>
+      </div>
+      <div class="ptl-sec-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:14px">Mesoestetic Pharma Group BR</div>
+          <div style="font-size:12px;color:#6b7280">CNPJ: 39.809.303/0001-95</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3 — PRODUTOS -->
+    <div class="ptl-sec">
+      <div class="ptl-sec-hdr" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="ptl-sec-num">3</div>
+          <span style="font-weight:700;font-size:13px">PRODUTOS</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:12px;color:#6b7280">Tabela de Preço:</label>
+          <select id="ptl-tabela-sel" class="input" style="font-size:12px;padding:4px 8px;min-width:160px" onchange="portalAplicarTabela()">
+            <option value="">— Tabela Padrão —</option>
+          </select>
+        </div>
+      </div>
+      <div class="ptl-sec-body">
+        <!-- Product search -->
+        <div style="position:relative;margin-bottom:12px">
+          <input type="text" id="ptl-prod-busca" class="input" placeholder="🔍 Buscar produto para adicionar..." autocomplete="off"
+            oninput="portalBuscarProdutoAC(this.value)" style="width:100%;box-sizing:border-box">
+          <div id="ptl-prod-ac" class="ptl-ac-list" style="display:none"></div>
+        </div>
+        <!-- Items table -->
+        <div style="overflow-x:auto">
+          <table class="ptl-tbl" id="ptl-itens-table">
+            <thead>
+              <tr>
+                <th style="min-width:180px">Produto</th>
+                <th>Cód.</th>
+                <th style="text-align:center">Qtd</th>
+                <th style="text-align:center">Vol.</th>
+                <th style="text-align:right">Preço Unit.</th>
+                <th style="text-align:right">IPI %</th>
+                <th style="text-align:right">ICMS-ST %</th>
+                <th style="text-align:right">Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ptl-itens-tbody">
+              <tr id="ptl-itens-empty">
+                <td colspan="9" style="text-align:center;color:#9ca3af;padding:20px">
+                  Nenhum produto adicionado. Use a busca acima.
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:#f9fafb;font-weight:700">
+                <td colspan="7" style="text-align:right;padding:8px;font-size:12px;color:#374151">Total Produtos:</td>
+                <td style="text-align:right;padding:8px;font-size:13px" id="ptl-total-itens">R$ 0,00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 — DETALHES -->
+    <div class="ptl-sec">
+      <div class="ptl-sec-hdr">
+        <div class="ptl-sec-num">4</div>
+        <span style="font-weight:700;font-size:13px">DETALHES DO PEDIDO</span>
+      </div>
+      <div class="ptl-sec-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="label">Nº Pedido</label>
+            <input type="text" id="ptl-num-pedido" class="input" placeholder="Gerado automaticamente" readonly style="background:#f9fafb">
+          </div>
+          <div>
+            <label class="label">Data de Emissão</label>
+            <input type="date" id="ptl-data-emissao" class="input">
+          </div>
+          <div>
+            <label class="label">Tipo de Pedido</label>
+            <select id="ptl-tipo" class="input">
+              <option value="venda">Pedido de Venda</option>
+              <option value="bonificado">Pedido Bonificado</option>
+              <option value="troca">Troca</option>
+              <option value="mostra">Mostra</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Vendedor</label>
+            <input type="text" id="ptl-vendedor" class="input" placeholder="Auto (usuário logado)" readonly style="background:#f9fafb">
+          </div>
+          <div>
+            <label class="label">Contato</label>
+            <input type="text" id="ptl-contato" class="input" placeholder="Nome do contato no cliente">
+          </div>
+          <div>
+            <label class="label">Cond. Pagamento</label>
+            <select id="ptl-pagamento" class="input">
+              <option value="">Selecione...</option>
+              <option>À vista</option>
+              <option>7 dias</option>
+              <option>14 dias</option>
+              <option>21 dias</option>
+              <option>28 dias</option>
+              <option>30 dias</option>
+              <option>28/35 dias</option>
+              <option>30/60 dias</option>
+              <option>30/60/90 dias</option>
+              <option>45/75 dias</option>
+              <option>PIX</option>
+              <option>Cartão de crédito</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Valor Frete (R$)</label>
+            <input type="number" id="ptl-frete" class="input" placeholder="0,00" min="0" step="0.01" oninput="portalAtualizarTotal()">
+          </div>
+          <div>
+            <label class="label">Transportadora</label>
+            <input type="text" id="ptl-transportadora" class="input" placeholder="Nome da transportadora">
+          </div>
+          <div>
+            <label class="label">Rastreamento</label>
+            <input type="text" id="ptl-rastreamento" class="input" placeholder="Código de rastreamento">
+          </div>
+          <div>
+            <label class="label">Endereço de Entrega</label>
+            <input type="text" id="ptl-endereco" class="input" placeholder="Endereço completo de entrega">
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="label">Tags</label>
+            <input type="text" id="ptl-tags" class="input" placeholder="#EventoFullface2027 #MesoDay #Floripa — separe por espaço">
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="label">Informações Adicionais / Observações</label>
+            <textarea id="ptl-obs" class="input" rows="3" placeholder="Observações, condições especiais, instruções de entrega..." style="resize:vertical"></textarea>
+          </div>
+        </div>
+        <!-- TOTAL GERAL -->
+        <div style="margin-top:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Itens</div>
+            <div style="font-weight:700;font-size:14px" id="ptl-tot-itens2">R$ 0,00</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Frete</div>
+            <div style="font-weight:700;font-size:14px" id="ptl-tot-frete">R$ 0,00</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Total Geral</div>
+            <div style="font-weight:700;font-size:18px;color:#065f46" id="ptl-total-geral">R$ 0,00</div>
+          </div>
+        </div>
+      </div>
+      <!-- ACTION BUTTONS -->
+      <div class="ptl-actions">
+        <button class="btn" style="background:#f59e0b;color:#fff;border:none" onclick="portalSalvarOrcamento()">💾 Salvar Orçamento</button>
+        <button class="btn btn-success" onclick="portalConfirmarPedido()">✅ Confirmar Pedido</button>
+        <button class="btn btn-outline" onclick="portalVisualizarPedido()">🖨️ Visualizar / PDF</button>
+        <button class="btn btn-outline" onclick="portalCancelarEdicao()" style="margin-left:auto">✕ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       VIEW — CATÁLOGO
+  ══════════════════════════════════════════════════════════ -->
+  <div id="portal-view-catalogo" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <input id="portal-busca" type="text" class="input" placeholder="🔍 Buscar produto..." oninput="portalBuscar()" style="flex:1">
+      <button class="btn btn-outline" onclick="portalCarregarCatalogo()" style="font-size:0.85rem">🔄</button>
     </div>
     <div id="portal-grid-produtos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
       <p style="color:var(--text-muted)">Carregando catálogo...</p>
     </div>
   </div>
 
-  <!-- VIEW: Carrinho -->
-  <div id="portal-view-carrinho" style="display:none">
-    <h3 style="margin-bottom:12px">🛒 Carrinho</h3>
-    <div id="portal-carrinho-lista" style="margin-bottom:16px">
-      <p style="color:var(--text-muted)">Carrinho vazio.</p>
-    </div>
-
-    <div style="background:var(--bg-card);border-radius:10px;padding:16px;margin-bottom:16px">
-      <h4 style="margin-bottom:12px">Dados do Cliente</h4>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label class="label">CNPJ / CPF</label>
-          <input id="portal-cli-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" oninput="portalCnpjAutoFill(this.value)">
-        </div>
-        <div>
-          <label class="label">Nome / Razão Social</label>
-          <input id="portal-cli-nome" type="text" class="input" placeholder="Nome do cliente">
-        </div>
-        <div>
-          <label class="label">Cidade</label>
-          <input id="portal-cli-cidade" type="text" class="input" placeholder="Cidade">
-        </div>
-        <div>
-          <label class="label">Estado</label>
-          <input id="portal-cli-estado" type="text" class="input" placeholder="UF" maxlength="2" style="text-transform:uppercase">
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="label">Forma de Pagamento</label>
-          <select id="portal-cli-pagamento" class="input">
-            <option value="">Selecione...</option>
-            <option>Boleto 30 dias</option>
-            <option>Boleto 28/35 dias</option>
-            <option>Boleto 30/60 dias</option>
-            <option>Boleto 30/60/90 dias</option>
-            <option>À vista</option>
-            <option>Cartão de crédito</option>
-            <option>PIX</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="label">Observações</label>
-          <textarea id="portal-cli-obs" class="input" rows="2" placeholder="Observações do pedido..." style="resize:vertical"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <button id="portal-btn-enviar" class="btn btn-success" style="width:100%;font-size:1rem;padding:14px" onclick="portalEnviarPedido()">
-      ✅ Enviar Pedido
-    </button>
-  </div>
-
-  <!-- VIEW: Meus Pedidos -->
-  <div id="portal-view-meus-pedidos" style="display:none">
-    <h3 style="margin-bottom:12px">📋 Meus Pedidos</h3>
-    <div id="portal-meus-pedidos-lista">
-      <p style="color:var(--text-muted)">Carregando...</p>
-    </div>
-  </div>
-
-  <!-- VIEW: Pedidos ADM -->
-  <div id="portal-view-pedidos-adm" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <h3>🗂️ Todos os Pedidos</h3>
-      <button class="btn btn-outline" onclick="portalCarregarTodosPedidos()" style="font-size:0.85rem">🔄 Atualizar</button>
-    </div>
-    <div id="portal-todos-pedidos-lista">
-      <p style="color:var(--text-muted)">Carregando...</p>
-    </div>
-  </div>
-
-  <!-- VIEW: Clientes ADM -->
-  <div id="portal-view-clientes-adm" style="display:none">
-    <!-- Sub-tabs -->
+  <!-- ══════════════════════════════════════════════════════════
+       VIEW — GESTÃO ADM
+  ══════════════════════════════════════════════════════════ -->
+  <div id="portal-view-gestao" style="display:none">
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
       <button class="btn btn-primary" id="portal-cli-tab-clientes" onclick="portalCliTab('clientes')" style="font-size:0.85rem">👥 Clientes</button>
       <button class="btn btn-outline" id="portal-cli-tab-representantes" onclick="portalCliTab('representantes')" style="font-size:0.85rem">🧑‍💼 Representantes</button>
       <button class="btn btn-outline" id="portal-cli-tab-tabelas" onclick="portalCliTab('tabelas')" style="font-size:0.85rem">💲 Tabelas de Preço</button>
     </div>
-
-    <!-- Sub-view: Clientes -->
     <div id="portal-cli-view-clientes">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <input type="text" class="input" placeholder="🔍 Buscar cliente..." style="flex:1;max-width:300px" oninput="portalFiltrarClientes(this.value)">
@@ -3896,8 +4108,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div>
       <div id="portal-clientes-lista"><p style="color:var(--text-muted)">Carregando...</p></div>
     </div>
-
-    <!-- Sub-view: Representantes -->
     <div id="portal-cli-view-representantes" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <h4 style="margin:0">🧑‍💼 Representantes</h4>
@@ -3908,8 +4118,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div>
       <div id="portal-rep-lista"><p style="color:var(--text-muted)">Carregando...</p></div>
     </div>
-
-    <!-- Sub-view: Tabelas de Preço -->
     <div id="portal-cli-view-tabelas" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <h4 style="margin:0">💲 Tabelas de Preço</h4>
@@ -3922,52 +4130,38 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL — VISUALIZAR / IMPRIMIR PEDIDO
+  ══════════════════════════════════════════════════════════ -->
+  <div id="portal-modal-visualizar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px">
+    <div style="background:#fff;width:min(780px,97vw);border-radius:8px;padding:0;font-size:13px;color:#111">
+      <div style="padding:14px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px 8px 0 0">
+        <span style="font-weight:700">Visualizar Pedido</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / PDF</button>
+          <button class="btn btn-outline" onclick="document.getElementById('portal-modal-visualizar').style.display='none'">✕ Fechar</button>
+        </div>
+      </div>
+      <div id="ptl-print-body" style="padding:24px"></div>
+    </div>
+  </div>
+
   <!-- MODAL: Cadastro de Cliente -->
   <div id="portal-modal-cliente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
     <div style="background:var(--bg-card);border-radius:16px;padding:24px;width:min(560px,95vw);max-height:90vh;overflow-y:auto">
       <h3 id="portal-modal-cli-titulo" style="margin-bottom:16px">👥 Novo Cliente</h3>
       <input type="hidden" id="portal-cli-docid">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label class="label">CNPJ *</label>
-          <input id="portal-cli-modal-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" maxlength="18" oninput="portalCliCnpjAutoFill(this.value)">
-        </div>
-        <div>
-          <label class="label">Razão Social *</label>
-          <input id="portal-cli-modal-nome" type="text" class="input" placeholder="Nome da empresa">
-        </div>
-        <div>
-          <label class="label">Cidade</label>
-          <input id="portal-cli-modal-cidade" type="text" class="input" placeholder="Cidade">
-        </div>
-        <div>
-          <label class="label">UF</label>
-          <input id="portal-cli-modal-uf" type="text" class="input" placeholder="UF" maxlength="2">
-        </div>
-        <div>
-          <label class="label">Email</label>
-          <input id="portal-cli-modal-email" type="email" class="input" placeholder="email@empresa.com">
-        </div>
-        <div>
-          <label class="label">Telefone</label>
-          <input id="portal-cli-modal-tel" type="text" class="input" placeholder="(00) 00000-0000">
-        </div>
-        <div>
-          <label class="label">Representante</label>
-          <select id="portal-cli-modal-rep" class="input">
-            <option value="">— Nenhum —</option>
-          </select>
-        </div>
-        <div>
-          <label class="label">Tabela de Preço</label>
-          <select id="portal-cli-modal-tabela" class="input">
-            <option value="">— Padrão —</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="label">Observações</label>
-          <textarea id="portal-cli-modal-obs" class="input" rows="2" placeholder="Observações gerais..."></textarea>
-        </div>
+        <div><label class="label">CNPJ *</label><input id="portal-cli-modal-cnpj" type="text" class="input" placeholder="00.000.000/0001-00" maxlength="18" oninput="portalCliCnpjAutoFill(this.value)"></div>
+        <div><label class="label">Razão Social *</label><input id="portal-cli-modal-nome" type="text" class="input" placeholder="Nome da empresa"></div>
+        <div><label class="label">Cidade</label><input id="portal-cli-modal-cidade" type="text" class="input" placeholder="Cidade"></div>
+        <div><label class="label">UF</label><input id="portal-cli-modal-uf" type="text" class="input" placeholder="UF" maxlength="2"></div>
+        <div><label class="label">Email</label><input id="portal-cli-modal-email" type="email" class="input" placeholder="email@empresa.com"></div>
+        <div><label class="label">Telefone</label><input id="portal-cli-modal-tel" type="text" class="input" placeholder="(00) 00000-0000"></div>
+        <div><label class="label">Endereço</label><input id="portal-cli-modal-endereco" type="text" class="input" placeholder="Rua, Nº, Bairro"></div>
+        <div><label class="label">Representante</label><select id="portal-cli-modal-rep" class="input"><option value="">— Nenhum —</option></select></div>
+        <div><label class="label">Tabela de Preço</label><select id="portal-cli-modal-tabela" class="input"><option value="">— Padrão —</option></select></div>
+        <div style="grid-column:1/-1"><label class="label">Observações</label><textarea id="portal-cli-modal-obs" class="input" rows="2" placeholder="Observações gerais..."></textarea></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
@@ -3982,26 +4176,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <h3 id="portal-modal-rep-titulo" style="margin-bottom:16px">🧑‍💼 Novo Representante</h3>
       <input type="hidden" id="portal-rep-docid">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label class="label">Nome *</label>
-          <input id="portal-rep-nome" type="text" class="input" placeholder="Nome completo">
-        </div>
-        <div>
-          <label class="label">Email *</label>
-          <input id="portal-rep-email" type="email" class="input" placeholder="rep@mesoestetic.com">
-        </div>
-        <div>
-          <label class="label">Telefone</label>
-          <input id="portal-rep-tel" type="text" class="input" placeholder="(00) 00000-0000">
-        </div>
-        <div>
-          <label class="label">Região / UF</label>
-          <input id="portal-rep-regiao" type="text" class="input" placeholder="Ex: SP, Sul, Nordeste">
-        </div>
-        <div style="grid-column:1/-1">
-          <label class="label">Observações</label>
-          <textarea id="portal-rep-obs" class="input" rows="2" placeholder="Observações..."></textarea>
-        </div>
+        <div><label class="label">Nome *</label><input id="portal-rep-nome" type="text" class="input" placeholder="Nome completo"></div>
+        <div><label class="label">Email *</label><input id="portal-rep-email" type="email" class="input" placeholder="rep@mesoestetic.com"></div>
+        <div><label class="label">Telefone</label><input id="portal-rep-tel" type="text" class="input" placeholder="(00) 00000-0000"></div>
+        <div><label class="label">Região / UF</label><input id="portal-rep-regiao" type="text" class="input" placeholder="Ex: SP, Sul, Nordeste"></div>
+        <div style="grid-column:1/-1"><label class="label">Observações</label><textarea id="portal-rep-obs" class="input" rows="2" placeholder="Observações..."></textarea></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
@@ -4016,28 +4195,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <h3 style="margin-bottom:16px">💲 Tabela de Preço</h3>
       <input type="hidden" id="portal-tab-docid">
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div>
-          <label class="label">Nome da Tabela *</label>
-          <input id="portal-tab-nome" type="text" class="input" placeholder="Ex: Tabela Varejo, Tabela Distribuidora">
-        </div>
-        <div>
-          <label class="label">Desconto Base (%)</label>
-          <input id="portal-tab-desconto" type="number" class="input" placeholder="0" min="0" max="100" step="0.5">
-        </div>
-        <div>
-          <label class="label">Segmento</label>
-          <select id="portal-tab-segmento" class="input">
-            <option>Varejo</option>
-            <option>Distribuidora</option>
-            <option>Clínica</option>
-            <option>Spa</option>
-            <option>Outros</option>
-          </select>
-        </div>
-        <div>
-          <label class="label">Observações</label>
-          <textarea id="portal-tab-obs" class="input" rows="2" placeholder="Condições especiais..."></textarea>
-        </div>
+        <div><label class="label">Nome da Tabela *</label><input id="portal-tab-nome" type="text" class="input" placeholder="Ex: Tabela Varejo, Tabela Distribuidora"></div>
+        <div><label class="label">Desconto Base (%)</label><input id="portal-tab-desconto" type="number" class="input" placeholder="0" min="0" max="100" step="0.5"></div>
+        <div><label class="label">Segmento</label><select id="portal-tab-segmento" class="input"><option>Varejo</option><option>Distribuidora</option><option>Clínica</option><option>Spa</option><option>Outros</option></select></div>
+        <div><label class="label">Observações</label><textarea id="portal-tab-obs" class="input" rows="2" placeholder="Condições especiais..."></textarea></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="portalFecharModaisAdm()">Cancelar</button>
@@ -4045,6 +4206,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       </div>
     </div>
   </div>
+
 </div>
 
 <!-- PAGE FISCAL -->
