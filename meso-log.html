@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-08-26-SEC1 -->
+<!-- meso-log v2026-08-26-SEC2 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8461,7 +8461,7 @@ function handleRecScan(val){
   const card=document.getElementById('rec-found-card');
   if(found){
     recFoundItem=found;
-    document.getElementById('rec-found-title').innerHTML='<span style="color:#111111">'+found.codigo+'</span> · '+found.descricao;
+    document.getElementById('rec-found-title').innerHTML='<span style="color:#111111">'+_esc(found.codigo)+'</span> · '+_esc(found.descricao);
     document.getElementById('rec-found-lote').value=found.lote||'';
     document.getElementById('rec-found-validade').value=found.dataValidade||'';
     document.getElementById('rec-found-qty').value='';
@@ -8741,7 +8741,7 @@ function handleInvScan(val){
     document.getElementById('inv-found-descricao').value= found.descricao;
     document.getElementById('inv-found-card').style.display = '';
     document.getElementById('inv-not-found').style.display  = 'none';
-    if(status) status.innerHTML='✅ Encontrado: <strong>'+found.descricao+'</strong>';
+    if(status) status.innerHTML='✅ Encontrado: <strong>'+_esc(found.descricao)+'</strong>';
     setTimeout(()=>{const q=document.getElementById('inv-found-qty');if(q)q.focus();},100);
   } else {
     invFoundItem=null;
@@ -8917,7 +8917,7 @@ async function invVerificarRascunho(){
     banner.id='inv-rascunho-banner';
     banner.style.cssText='background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
     const dt=latest.savedAt?latest.savedAt.substring(0,16).replace('T',' '):'';
-    banner.innerHTML='<span>⏸ <strong>Sessão pausada:</strong> "'+latest.sessao.nome+'" — '+(latest.totalItens||latest.itens?.length||0)+' item(ns) · '+dt+'</span>'
+    banner.innerHTML='<span>⏸ <strong>Sessão pausada:</strong> "'+_esc(latest.sessao.nome)+'" — '+(latest.totalItens||latest.itens?.length||0)+' item(ns) · '+dt+'</span>'
       +'<button class="btn btn-warning" onclick="invRetomarRascunho(\''+latest.id+'\')">▶ Retomar</button>'
       +'<button class="btn btn-danger" onclick="invDescartarRascunho(\''+latest.id+'\')">🗑 Descartar</button>';
     const container=document.getElementById('ops-inventario');
@@ -9631,7 +9631,7 @@ async function pdvBuscarCNPJ(val){
     if(ufEl&&d.uf){ufEl.value=d.uf;}
     const bloco=document.getElementById('pdv-endereco-block');
     if(bloco)bloco.style.display='block';
-    if(st)st.innerHTML='<span style="color:#0D9488">✅ '+((d.nome_fantasia||d.razao_social||'').slice(0,30))+'</span>';
+    if(st)st.innerHTML='<span style="color:#0D9488">✅ '+_esc((d.nome_fantasia||d.razao_social||'').slice(0,30))+'</span>';
   }catch(e){
     if(st)st.innerHTML='<span style="color:#E11D48">❌ CNPJ não encontrado</span>';
   }finally{
@@ -10872,7 +10872,7 @@ async function pdvShowFormVendedor(){
       sel.innerHTML='<option value="">— Todos os eventos (supervisor) —</option>';
       snap.docs.forEach(d=>{
         const ev=d.data();
-        sel.innerHTML+=`<option value="${d.id}">${ev.nome} (${(ev.data||'').split('-').reverse().join('/')})</option>`;
+        sel.innerHTML+=`<option value="${d.id}">${_esc(ev.nome)} (${(ev.data||'').split('-').reverse().join('/')})</option>`;
       });
     }
   }catch(e){}
@@ -12000,6 +12000,7 @@ function platShowError(msg){
   el.style.display=msg?'':'none';
 }
 
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 async function hashSenha(s){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -16255,10 +16256,10 @@ async function portalAbrirModalCliente(docId){
   try{
     const rs=await db.collection('representantes_portal').orderBy('nome').get();
     const repSel=document.getElementById('portal-cli-modal-rep');
-    if(repSel)repSel.innerHTML='<option value="">— Nenhum —</option>'+rs.docs.map(d=>'<option value="'+d.id+'">'+d.data().nome+'</option>').join('');
+    if(repSel)repSel.innerHTML='<option value="">— Nenhum —</option>'+rs.docs.map(d=>'<option value="'+d.id+'">'+_esc(d.data().nome)+'</option>').join('');
     const ts=await db.collection('tabelas_preco').orderBy('nome').get();
     const tabSel=document.getElementById('portal-cli-modal-tabela');
-    if(tabSel)tabSel.innerHTML='<option value="">— Padrão —</option>'+ts.docs.map(d=>'<option value="'+d.id+'">'+d.data().nome+'</option>').join('');
+    if(tabSel)tabSel.innerHTML='<option value="">— Padrão —</option>'+ts.docs.map(d=>'<option value="'+d.id+'">'+_esc(d.data().nome)+'</option>').join('');
   }catch(_){}
   document.getElementById('portal-cli-docid').value=docId||'';
   const flds=['cnpj','nome','cidade','uf','email','tel','endereco','obs'];
@@ -17103,7 +17104,7 @@ async function filSelecionarProduto(stockDocId){
   document.getElementById('fil-transf-busca').dataset.validade=prod.validade||'';
   const info=document.getElementById('fil-transf-info');
   info.style.display='block';
-  info.innerHTML='<strong>'+prod.codigo+'</strong> — '+prod.nome
+  info.innerHTML='<strong>'+_esc(prod.codigo)+'</strong> — '+_esc(prod.nome)
     +'<br>Lote: <strong>'+(prod.lote||'—')+'</strong> · Validade: <strong>'+(prod.validade||'—')+'</strong>'
     +' · Estoque sede: <strong>'+(prod.qtd||0)+' un</strong>';
 }
