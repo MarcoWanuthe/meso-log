@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MESO-LOG Alvorada System 2026-08-26 | Design System Mesoestetic | Quarentena + Relatórios Faturamento + Módulo Clientes -->
+<!-- meso-log v2026-08-26-SEC1 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11616,7 +11616,7 @@ async function solicDoLogin(){
     const snap=await db.collection('usuarios_solic').where('usuario','==',usuario).where('ativo','==',true).get();
     if(snap.empty){errEl.textContent='Usuário não encontrado ou inativo.';return;}
     const doc=snap.docs[0];const data=doc.data();
-    if(data.senha!==senha){errEl.textContent='Senha incorreta.';return;}
+    if(data.senha!==await hashSenha(senha)){errEl.textContent='Senha incorreta.';return;}
     solicUser={id:doc.id,...data};
     solicShowPanel();
   }catch(e){errEl.textContent='Erro: '+e.message;}
@@ -11940,7 +11940,7 @@ async function admSalvarUsuario(){
   try{
     const data={nome,usuario,perfil,ativo};
     if(email)data.email=email;
-    if(senha)data.senha=senha;
+    if(senha)data.senha=await hashSenha(senha);
     if(id){await db.collection('usuarios_solic').doc(id).update(data);toast('✅ Usuário atualizado!');}
     else{await db.collection('usuarios_solic').add(data);toast('✅ Usuário criado!');}
     admLimparFormUsuario();
@@ -12000,6 +12000,11 @@ function platShowError(msg){
   el.style.display=msg?'':'none';
 }
 
+async function hashSenha(s){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 async function platLogin(){
   const username=(document.getElementById('plat-login-username')?.value||'').trim().toLowerCase();
   const senha=document.getElementById('plat-login-senha')?.value||'';
@@ -12014,7 +12019,7 @@ async function platLogin(){
     try{
       const cfgDoc=await db.collection('configuracoes').doc('geral').get();
       const mPwd=cfgDoc.exists?cfgDoc.data().senhaAdm:null;
-      if(username==='adm'&&mPwd&&senha===mPwd)masterOk=true;
+      if(username==='adm'&&mPwd&&await hashSenha(senha)===mPwd)masterOk=true;
     }catch(_){}
 
     if(masterOk){
@@ -12060,7 +12065,7 @@ async function platLogin(){
 
     const doc=snap.docs[0];
     const data=doc.data();
-    if(data.senha!==senha){platShowError('Usuário ou senha incorretos.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
+    if(data.senha!==await hashSenha(senha)){platShowError('Usuário ou senha incorretos.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
     if(data.ativo===false){platShowError('Conta inativa. Contate o administrador.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
 
     platUser={id:doc.id,nome:data.nome,username:data.username,isAdm:data.isAdm||false,permissoes:data.permissoes||{}};
@@ -12190,7 +12195,7 @@ async function platAdmSalvar(){
   try{
     const data={nome,username,ativo,isAdm,permissoes,atualizadoEm:new Date().toISOString(),operadoPor:platUser?.username||'adm'};
     if(email)data.email=email;
-    if(senha)data.senha=senha;
+    if(senha)data.senha=await hashSenha(senha);
     if(id){
       await db.collection('usuarios_plataforma').doc(id).update(data);
       toast('Usuário atualizado!');
