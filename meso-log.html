@@ -8406,7 +8406,7 @@ function initOpsModule(){
   ['inv-data','rec-data','perd-data'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
   loadOpsStats();
   loadRecHistorico();
-  loadInvHistorico();
+  renderHistoricoInventarios();
   loadPerdHistorico();
 }
 
@@ -8651,6 +8651,28 @@ async function salvarPerda(){
     setTimeout(()=>{ const el=document.getElementById('perd-scan-input'); if(el) el.focus(); },100);
   } catch(e){ alert('Erro ao salvar: '+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='📋 Registrar Ocorrência'; } }
+}
+
+async function loadRecHistorico(){
+  const el=document.getElementById('rec-historico');
+  if(!el) return;
+  el.innerHTML='<div class="loader"><div class="spinner"></div>Carregando...</div>';
+  try{
+    const snap=await db.collection('recebimentos').orderBy('criadoEm','desc').limit(15).get();
+    if(snap.empty){el.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:20px">Nenhum recebimento registrado ainda.</p>';return;}
+    el.innerHTML=snap.docs.map(d=>{
+      const r=d.data();
+      const dt=(r.data||r.criadoEm?.slice(0,10)||'').split('-').reverse().join('/');
+      return '<div style="padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:12px">'
+        +'<div style="font-weight:700;color:#111111">'+_esc(r.fornecedor||'—')+'</div>'
+        +'<div style="color:#555">'+dt+' · NF: '+_esc(r.nf||'—')+'</div>'
+        +'<div style="color:#107C10;font-weight:600">'+( r.totalItens||0)+' item(ns)</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<p style="color:#D13438;font-size:12px">Erro ao carregar histórico.</p>';
+    logErro('OPS','loadRecHistorico',e);
+  }
 }
 
 async function loadPerdHistorico(){
