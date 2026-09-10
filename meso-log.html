@@ -396,30 +396,69 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
 <!-- PLATFORM LOGIN OVERLAY -->
 <div id="plat-login-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9999;align-items:center;justify-content:center;flex-direction:column">
-  <div style="background:#111;border:1px solid #222;padding:40px;width:360px;max-width:90vw">
-    <div style="text-align:center;margin-bottom:28px">
+  <div style="background:#111;border:1px solid #222;padding:40px;width:380px;max-width:92vw">
+    <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:10px;color:#555;letter-spacing:3px;text-transform:uppercase">MESOESTETIC PHARMA GROUP BR</div>
       <h1 style="color:#fff;font-size:22px;font-weight:700;margin:8px 0 0;letter-spacing:-0.5px">MESO-LOG</h1>
     </div>
-    <div style="margin-bottom:14px">
-      <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Usuário</label>
-      <input type="text" id="plat-login-username" placeholder="ex: joao.silva" autocomplete="username"
-        style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
-        onkeydown="if(event.key==='Enter')document.getElementById('plat-login-senha').focus()">
+    <!-- PERFIL SELECTOR -->
+    <div id="plat-perfil-sel" style="margin-bottom:24px">
+      <div style="font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center">Selecione seu perfil de acesso</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="platMostrarLoginInterno()" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#aaa;padding:14px 10px;cursor:pointer;font-size:12px;font-family:inherit;border-radius:0;transition:.15s" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#333';this.style.color='#aaa'">
+          🏭<br><strong style="display:block;margin-top:6px;font-size:11px;letter-spacing:1px;text-transform:uppercase">Equipe Interna</strong>
+          <span style="font-size:10px;color:#555;margin-top:3px;display:block">Funcionários e gestores</span>
+        </button>
+        <button onclick="platMostrarLoginCliente()" style="flex:1;background:#1a1a1a;border:1px solid #333;color:#aaa;padding:14px 10px;cursor:pointer;font-size:12px;font-family:inherit;border-radius:0;transition:.15s" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#333';this.style.color='#aaa'">
+          🛍️<br><strong style="display:block;margin-top:6px;font-size:11px;letter-spacing:1px;text-transform:uppercase">Portal do Cliente</strong>
+          <span style="font-size:10px;color:#555;margin-top:3px;display:block">Clientes e representantes</span>
+        </button>
+      </div>
     </div>
-    <div style="margin-bottom:20px">
-      <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Senha</label>
-      <input type="password" id="plat-login-senha" placeholder="..." autocomplete="current-password"
-        style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
-        onkeydown="if(event.key==='Enter')platLogin()">
+    <!-- LOGIN INTERNO -->
+    <div id="plat-login-interno" style="display:none">
+      <button onclick="platVoltarPerfil()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;margin-bottom:16px;padding:0;font-family:inherit">← Voltar</button>
+      <div style="margin-bottom:14px">
+        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Usuário</label>
+        <input type="text" id="plat-login-username" placeholder="ex: joao.silva" autocomplete="username"
+          style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+          onkeydown="if(event.key==='Enter')document.getElementById('plat-login-senha').focus()">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Senha</label>
+        <input type="password" id="plat-login-senha" placeholder="..." autocomplete="current-password"
+          style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+          onkeydown="if(event.key==='Enter')platLogin()">
+      </div>
+      <p id="plat-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
+      <button id="plat-login-btn" onclick="platLogin()"
+        style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
+        ENTRAR
+      </button>
     </div>
-    <p id="plat-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
-    <button id="plat-login-btn" onclick="platLogin()"
-      style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
-      ENTRAR
-    </button>
+    <!-- LOGIN CLIENTE -->
+    <div id="plat-login-cliente-form" style="display:none">
+      <button onclick="platVoltarPerfil()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;margin-bottom:16px;padding:0;font-family:inherit">← Voltar</button>
+      <div style="margin-bottom:14px">
+        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">E-mail</label>
+        <input type="email" id="cli-login-email" placeholder="seu@email.com" autocomplete="email"
+          style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+          onkeydown="if(event.key==='Enter')document.getElementById('cli-login-senha').focus()">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Senha</label>
+        <input type="password" id="cli-login-senha" placeholder="..." autocomplete="current-password"
+          style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
+          onkeydown="if(event.key==='Enter')clientePortalLogin()">
+      </div>
+      <p id="cli-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
+      <button id="cli-login-btn" onclick="clientePortalLogin()"
+        style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
+        ACESSAR PORTAL
+      </button>
+    </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #222;text-align:center;font-size:11px;color:#444">
-      Plataforma restrita &middot; acesso autorizado apenas
+      Plataforma MESO-LOG &middot; Mesoestetic Pharma Group BR
     </div>
   </div>
 </div>
@@ -445,6 +484,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <a onclick="showPage('clientes')" id="nav-clientes"><span class="icon">👥</span><span>Clientes</span></a>
     <a onclick="showPage('filiais')" id="nav-filiais"><span class="icon">🏢</span><span>Filiais</span></a>
     <a onclick="showPage('fiscal')" id="nav-fiscal"><span class="icon">💸</span><span>Fiscal</span></a>
+    <a onclick="showPage('intel')" id="nav-intel"><span class="icon">🧠</span><span>Inteligência</span></a>
     <a onclick="showPage('ajuda')" id="nav-ajuda" style="border-left:3px solid #F2C811;background:rgba(242,200,17,.08)"><span class="icon">📖</span><span>Ajuda</span></a>
   </nav>
   <div id="pdv-offline-badge" style="display:none;background:#D13438;color:#fff;font-size:11px;padding:4px 10px;text-align:center;cursor:pointer" onclick="pdvFlushOfflineQueue()">📴 <span id="pdv-offline-count">0</span> pedido(s) offline — Toque para sincronizar</div>
@@ -511,6 +551,15 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <div style="font-size:11px;color:#aaa;margin-top:5px">Reprovadas / Canceladas</div>
           <div style="position:absolute;right:-10px;bottom:-14px;font-size:56px;opacity:.06">❌</div>
         </div>
+      </div>
+
+      <!-- WIDGET INTELIGÊNCIA -->
+      <div id="home-intel-widget" style="display:none;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:16px 20px;margin-bottom:18px;cursor:pointer" onclick="showPage('intel')">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-size:13px;font-weight:700;color:#92400e">🧠 Alertas de Inteligência Ativos</div>
+          <div style="font-size:11px;color:#92400e;opacity:.7">Ver todos →</div>
+        </div>
+        <div id="home-intel-alertas" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
 
       <!-- BODY GRID -->
@@ -4483,6 +4532,56 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 </div>
 
 <!-- PAGE FILIAIS -->
+<div class="page" id="page-intel">
+  <div style="max-width:1100px;margin:0 auto;padding:20px 16px">
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">🧠 Inteligência</h2>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">Análise automática de estoque, anomalias e histórico de alertas.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn btn-primary" id="intel-tab-alertas" onclick="intelTab('alertas',this)" style="flex:1;min-width:140px">⚠️ Alertas de Reposição</button>
+      <button class="btn btn-outline" id="intel-tab-anomalias" onclick="intelTab('anomalias',this)" style="flex:1;min-width:140px">🔍 Detecção de Anomalias</button>
+      <button class="btn btn-outline" id="intel-tab-historico" onclick="intelTab('historico',this)" style="flex:1;min-width:140px">📋 Histórico de Alertas</button>
+    </div>
+    <!-- ALERTAS -->
+    <div id="intel-view-alertas">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-muted)">Baseado nos últimos 90 dias de movimentos de estoque</div>
+        <button class="btn btn-primary" onclick="intelAnaliseReposicao()" style="font-size:12px">🔄 Analisar Agora</button>
+      </div>
+      <div id="intel-alertas-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Clique em "Analisar Agora" para gerar alertas de reposição inteligentes.</p>
+      </div>
+    </div>
+    <!-- ANOMALIAS -->
+    <div id="intel-view-anomalias" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-muted)">Detecta padrões fora do normal em vendas, estoque e pedidos</div>
+        <button class="btn btn-primary" onclick="intelDetectarAnomalias()" style="font-size:12px">🔍 Detectar Agora</button>
+      </div>
+      <div id="intel-anomalias-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Clique em "Detectar Agora" para verificar anomalias.</p>
+      </div>
+    </div>
+    <!-- HISTÓRICO -->
+    <div id="intel-view-historico" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-muted)">Todos os alertas gerados pelo sistema</div>
+        <button class="btn btn-outline" onclick="intelCarregarHistorico()" style="font-size:12px">🔄 Atualizar</button>
+      </div>
+      <div id="intel-historico-lista">
+        <p style="color:var(--text-muted);font-size:13px">Carregando...</p>
+      </div>
+    </div>
+    <!-- LOG AUTOMAÇÕES (ADM only) -->
+    <div id="intel-view-log" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-muted)">Log de e-mails e automações disparadas pelo sistema</div>
+        <button class="btn btn-outline" onclick="intelCarregarLog()" style="font-size:12px">🔄 Atualizar</button>
+      </div>
+      <div id="intel-log-lista"><p style="color:var(--text-muted);font-size:13px">Carregando...</p></div>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-filiais">
   <div class="page-header">
     <h2>🏢 Filiais & Estoque Virtual</h2>
@@ -5323,13 +5422,13 @@ function showPage(p){
     return;
   }
   // Platform ACL permission guard
-  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv'};
+  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv',intel:'intel'};
   if(platUser&&_PM[p]!==undefined){const _pk=_PM[p];const _ok=_pk==='__adm__'?platUser.isAdm:platUser.permissoes[_pk];if(!_ok){toast('⛔ Sem permissão para acessar este módulo.');showPage('home');return;}}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   const navEl=document.getElementById('nav-'+p);if(navEl)navEl.classList.add('active');
-  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal',clientes:'👥 Clientes'};
+  const titles={home:'Início',solicitacoes:'1 · Solicitação de Materiais',envios:'Módulo 5 · Envios',adm:'Administração',estoque:'Módulo 6 · Consulta de Estoque',operacoes:'Módulo 2·3·4 · Operações',pdv:'PDV · Eventos',faturamento:'🧾 Faturamento & Expedição',recepcao:'🏪 PDV Recepção',portal:'🛍️ Portal de Pedidos',filiais:'🏢 Filiais & Estoque Virtual',fiscal:'💸 Módulo Fiscal',clientes:'👥 Clientes',intel:'🧠 Inteligência'};
   document.getElementById('topbar-title').textContent=titles[p]||p;
   // Platform ACL module bypass
   if(platUser){if(p==='solicitacoes'&&!solicUser&&platUser.permissoes.solicitacoes){solicUser={id:platUser.id,nome:platUser.nome,username:platUser.username,perfil:'logistica'};}
@@ -5371,6 +5470,7 @@ function showPage(p){
   if(p==='filiais') filInit();
   if(p==='clientes') clientesInit();
   if(p==='fiscal') fiscalInit();
+  if(p==='intel') intelInit();
 }
 
 // ==============================
@@ -12136,7 +12236,8 @@ function platApplyPermissions(){
     'nav-portal':!!p.portal,
     'nav-filiais':!!p.filiais,
     'nav-fiscal':!!p.fiscal,
-    'nav-clientes':!!p.clientes
+    'nav-clientes':!!p.clientes,
+    'nav-intel':true
   };
   Object.entries(navMap).forEach(([id,allowed])=>{
     const el=document.getElementById(id);if(el)el.style.display=allowed?'':'none';
@@ -16113,6 +16214,7 @@ async function portalAtualizarStatus(docId,novoStatus){
   try{
     await db.collection('pedidos_portal').doc(docId).update({status:novoStatus,atualizadoEm:new Date().toISOString()});
     toast('Status → '+st.label);
+    try{const sn2=await db.collection('pedidos_portal').doc(docId).get();if(sn2.exists)enviarEmailStatus({id:docId,...sn2.data()},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
     if(novoStatus==='aprovado'){
       try{
         const sn=await db.collection('pedidos_portal').doc(docId).get();const d=sn.data();
@@ -17607,6 +17709,415 @@ async function clientesProcessarImport(ev){
   ev.target.value='';
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// ── BLOCO 1: MÓDULO INTELIGÊNCIA ──────────────────────────────────────────
+let _intelUltimaAnalise=null;
+
+function intelInit(){
+  intelTab('alertas');
+  intelAnaliseReposicao();
+  intelCarregarHomeWidget();
+  if(platUser&&platUser.isAdm){
+    const logBtn=document.getElementById('intel-tab-log');
+    if(!logBtn){
+      const bar=document.querySelector('#page-intel .btn[id="intel-tab-historico"]');
+      if(bar&&bar.parentNode){
+        const b=document.createElement('button');
+        b.className='btn btn-outline';b.id='intel-tab-log';
+        b.style.cssText='flex:1;min-width:140px';
+        b.textContent='🔧 Log Automações';
+        b.onclick=function(){intelTab('log',this);};
+        bar.parentNode.appendChild(b);
+      }
+    }
+  }
+}
+
+function intelTab(aba,btn){
+  ['alertas','anomalias','historico','log'].forEach(t=>{
+    const b=document.getElementById('intel-tab-'+t);
+    const v=document.getElementById('intel-view-'+t);
+    if(b){b.className=t===aba?'btn btn-primary':'btn btn-outline';b.style.cssText='flex:1;min-width:140px';}
+    if(v)v.style.display=t===aba?'block':'none';
+  });
+  if(aba==='historico')intelCarregarHistorico();
+  if(aba==='log')intelCarregarLog();
+}
+
+async function intelAnaliseReposicao(){
+  const cont=document.getElementById('intel-alertas-lista');
+  if(cont)cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">⏳ Analisando movimentos dos últimos 90 dias...</p>';
+  try{
+    const d90=new Date();d90.setDate(d90.getDate()-90);
+    const [snapMov,snapStock]=await Promise.all([
+      db.collection('movimentos_estoque').where('criadoEm','>=',d90.toISOString()).get(),
+      db.collection('stock').get()
+    ]);
+    const consumo={};
+    snapMov.docs.forEach(d=>{
+      const m=d.data();
+      if(m.tipo==='saida'||m.tipo==='venda'||m.tipo==='retirada'){
+        const id=m.stockId||m.produtoId||m.itemId;
+        if(id)consumo[id]=(consumo[id]||0)+Math.abs(m.quantidade||m.qtd||0);
+      }
+    });
+    const alertas=[];
+    snapStock.docs.forEach(d=>{
+      const p=d.data();const qtd=p.quantidade||p.qtd||0;
+      const cons90=consumo[d.id]||0;
+      const mediaMensal=cons90/3;
+      const coberturaDias=mediaMensal>0?Math.round((qtd/mediaMensal)*30):999;
+      if(coberturaDias<45||qtd<5){
+        const sugestao=Math.max(Math.ceil(mediaMensal*2)-qtd,0);
+        alertas.push({id:d.id,nome:p.nome||d.id,qtdAtual:qtd,mediaMensal:Math.round(mediaMensal),coberturaDias,sugestao,critico:coberturaDias<15||qtd===0});
+      }
+    });
+    alertas.sort((a,b)=>a.coberturaDias-b.coberturaDias);
+    if(cont){
+      if(!alertas.length){
+        cont.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#065f46;font-size:13px">✅ Estoque saudável — nenhum produto crítico nos últimos 90 dias.</div>';
+      }else{
+        cont.innerHTML=alertas.map(a=>'<div style="background:var(--bg-card);border:1.5px solid '+(a.critico?'#fca5a5':'#fcd34d')+';border-radius:10px;padding:16px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+          +'<div style="font-size:12px;font-weight:700;color:#111">'+_esc(a.nome)+'</div>'
+          +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(a.critico?'#fee2e2':'#fef9c3')+';color:'+(a.critico?'#991b1b':'#713f12')+'">'+( a.qtdAtual===0?'ZERADO':a.critico?'CRÍTICO':'ATENÇÃO')+'</span>'
+          +'</div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">'
+          +'<div><span style="color:#6b7280">Estoque atual:</span> <strong>'+a.qtdAtual+'</strong></div>'
+          +'<div><span style="color:#6b7280">Cobertura:</span> <strong>'+( a.coberturaDias>=999?'∞':a.coberturaDias+' dias')+'</strong></div>'
+          +'<div><span style="color:#6b7280">Consumo/mês:</span> <strong>'+a.mediaMensal+'</strong></div>'
+          +'<div><span style="color:#065f46;font-weight:700">Repor: '+a.sugestao+' un.</span></div>'
+          +'</div>'
+          +'</div>').join('');
+      }
+    }
+    _intelUltimaAnalise=alertas;
+    if(alertas.length){
+      for(const a of alertas.slice(0,5)){
+        await intelGravarAlerta('reposicao',a.nome,'Estoque: '+a.qtdAtual+' | Cobertura: '+a.coberturaDias+' dias | Repor: '+a.sugestao+' un.',a.critico?'critico':'atencao');
+      }
+    }
+    intelCarregarHomeWidget();
+  }catch(e){
+    if(cont)cont.innerHTML='<p style="color:#D13438;font-size:13px;grid-column:1/-1">Erro ao analisar: '+_esc(e.message)+'</p>';
+    logErro('INTEL','intelAnaliseReposicao',e);
+  }
+}
+
+async function intelDetectarAnomalias(){
+  const cont=document.getElementById('intel-anomalias-lista');
+  if(cont)cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">⏳ Detectando anomalias...</p>';
+  try{
+    const d30=new Date();d30.setDate(d30.getDate()-30);
+    const d60=new Date();d60.setDate(d60.getDate()-60);
+    const [snap30,snap60,snapPedidos]=await Promise.all([
+      db.collection('movimentos_estoque').where('criadoEm','>=',d30.toISOString()).get(),
+      db.collection('movimentos_estoque').where('criadoEm','>=',d60.toISOString()).where('criadoEm','<',d30.toISOString()).get(),
+      db.collection('pedidos_portal').where('criadoEm','>=',d30.toISOString()).get()
+    ]);
+    const anomalias=[];
+    const vol30={};const vol60={};
+    snap30.docs.forEach(d=>{const m=d.data();const id=m.stockId||m.produtoId||'';if(id)vol30[id]=(vol30[id]||0)+Math.abs(m.quantidade||0);});
+    snap60.docs.forEach(d=>{const m=d.data();const id=m.stockId||m.produtoId||'';if(id)vol60[id]=(vol60[id]||0)+Math.abs(m.quantidade||0);});
+    Object.keys(vol30).forEach(id=>{
+      const v30=vol30[id];const v60=vol60[id]||0;
+      if(v60>0&&v30>v60*2){anomalias.push({tipo:'volume',desc:'Volume de movimentos dobrou em '+id+' (30d: '+v30+' vs período anterior: '+v60+')',nivel:'atencao'});}
+    });
+    const pedidosPendentes=snapPedidos.docs.filter(d=>d.data().status==='novo'||d.data().status==='aprovado');
+    if(pedidosPendentes.length>10){anomalias.push({tipo:'pedidos',desc:pedidosPendentes.length+' pedidos no portal ainda não foram expedidos',nivel:'atencao'});}
+    if(cont){
+      if(!anomalias.length){
+        cont.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#065f46;font-size:13px">✅ Nenhuma anomalia detectada nos últimos 30 dias.</div>';
+      }else{
+        cont.innerHTML=anomalias.map(a=>'<div style="background:var(--bg-card);border:1.5px solid #fcd34d;border-radius:10px;padding:16px">'
+          +'<div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:8px">'+_esc(a.tipo)+'</div>'
+          +'<div style="font-size:13px;color:#111">'+_esc(a.desc)+'</div>'
+          +'</div>').join('');
+        for(const a of anomalias){await intelGravarAlerta('anomalia',a.tipo,a.desc,a.nivel);}
+      }
+    }
+    intelCarregarHomeWidget();
+  }catch(e){
+    if(cont)cont.innerHTML='<p style="color:#D13438;font-size:13px;grid-column:1/-1">Erro: '+_esc(e.message)+'</p>';
+    logErro('INTEL','intelDetectarAnomalias',e);
+  }
+}
+
+async function intelGravarAlerta(tipo,item,descricao,nivel){
+  try{
+    await db.collection('alertas_intel').add({tipo,item,descricao,nivel,criadoEm:new Date().toISOString(),lido:false});
+  }catch(e){console.warn('[INTEL] Erro ao gravar alerta:',e);}
+}
+
+async function intelCarregarHistorico(){
+  const cont=document.getElementById('intel-historico-lista');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted);font-size:13px">Carregando...</p>';
+  try{
+    const snap=await db.collection('alertas_intel').orderBy('criadoEm','desc').limit(50).get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted);font-size:13px">Nenhum alerta registrado ainda.</p>';return;}
+    cont.innerHTML='<div style="overflow-x:auto"><table class="prod-table"><thead><tr><th>Tipo</th><th>Item</th><th>Descrição</th><th>Nível</th><th>Data</th></tr></thead><tbody>'
+      +snap.docs.map(d=>{const a=d.data();const dt=(a.criadoEm||'').slice(0,16).replace('T',' ');
+        return '<tr>'
+          +'<td><span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:#f1f5f9">'+_esc(a.tipo||'')+'</span></td>'
+          +'<td style="font-size:12px">'+_esc(a.item||'')+'</td>'
+          +'<td style="font-size:12px;color:#555">'+_esc(a.descricao||'')+'</td>'
+          +'<td><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(a.nivel==='critico'?'#fee2e2':'#fef9c3')+';color:'+(a.nivel==='critico'?'#991b1b':'#713f12')+'">'+_esc(a.nivel||'')+'</span></td>'
+          +'<td style="font-size:11px;color:#9ca3af">'+dt+'</td>'
+          +'</tr>';
+      }).join('')
+      +'</tbody></table></div>';
+  }catch(e){cont.innerHTML='<p style="color:#D13438;font-size:13px">Erro: '+_esc(e.message)+'</p>';logErro('INTEL','intelCarregarHistorico',e);}
+}
+
+async function intelCarregarLog(){
+  const cont=document.getElementById('intel-log-lista');
+  if(!cont)return;
+  cont.innerHTML='<p style="color:var(--text-muted);font-size:13px">Carregando...</p>';
+  try{
+    const snap=await db.collection('log_automacoes').orderBy('timestamp','desc').limit(100).get();
+    if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted);font-size:13px">Nenhuma automação registrada ainda.</p>';return;}
+    cont.innerHTML='<div style="overflow-x:auto"><table class="prod-table"><thead><tr><th>Tipo</th><th>Pedido</th><th>Status</th><th>Destinatário</th><th>Resultado</th><th>Data</th></tr></thead><tbody>'
+      +snap.docs.map(d=>{const l=d.data();const dt=(l.timestamp||'').slice(0,16).replace('T',' ');
+        return '<tr>'
+          +'<td style="font-size:11px">'+_esc(l.tipo||'')+'</td>'
+          +'<td style="font-size:11px">'+_esc(l.pedidoId||'')+'</td>'
+          +'<td style="font-size:11px">'+_esc(l.status||'')+'</td>'
+          +'<td style="font-size:11px">'+_esc(l.destinatario||'')+'</td>'
+          +'<td><span style="font-size:10px;padding:2px 6px;border-radius:8px;background:'+(l.sucesso?'#dcfce7':'#fee2e2')+';color:'+(l.sucesso?'#166534':'#991b1b')+'">'+(l.sucesso?'OK':'ERRO')+'</span></td>'
+          +'<td style="font-size:11px;color:#9ca3af">'+dt+'</td>'
+          +'</tr>';
+      }).join('')
+      +'</tbody></table></div>';
+  }catch(e){cont.innerHTML='<p style="color:#D13438;font-size:13px">Erro: '+_esc(e.message)+'</p>';logErro('INTEL','intelCarregarLog',e);}
+}
+
+async function intelCarregarHomeWidget(){
+  const widget=document.getElementById('home-intel-widget');
+  const cont=document.getElementById('home-intel-alertas');
+  if(!widget||!cont)return;
+  try{
+    const snap=await db.collection('alertas_intel').where('lido','==',false).orderBy('criadoEm','desc').limit(5).get();
+    if(snap.empty){widget.style.display='none';return;}
+    widget.style.display='block';
+    cont.innerHTML=snap.docs.map(d=>{const a=d.data();
+      return '<span style="font-size:11px;padding:4px 10px;border-radius:10px;background:'+(a.nivel==='critico'?'#fecaca':'#fef08a')+';color:'+(a.nivel==='critico'?'#7f1d1d':'#713f12')+';font-weight:600">'+_esc(a.item||a.tipo||'Alerta')+'</span>';
+    }).join('');
+  }catch(e){widget.style.display='none';}
+}
+
+// ── BLOCO 2: LOGIN EXTERNO DO CLIENTE ──────────────────────────────────────
+let _portalClienteLogado=null;
+let _ptlCliPedidosUnsub=null;
+
+function platMostrarLoginInterno(){
+  document.getElementById('plat-perfil-sel').style.display='none';
+  document.getElementById('plat-login-interno').style.display='block';
+  setTimeout(()=>{const u=document.getElementById('plat-login-username');if(u)u.focus();},100);
+}
+
+function platMostrarLoginCliente(){
+  document.getElementById('plat-perfil-sel').style.display='none';
+  document.getElementById('plat-login-cliente-form').style.display='block';
+  setTimeout(()=>{const u=document.getElementById('cli-login-email');if(u)u.focus();},100);
+}
+
+function platVoltarPerfil(){
+  document.getElementById('plat-perfil-sel').style.display='block';
+  document.getElementById('plat-login-interno').style.display='none';
+  document.getElementById('plat-login-cliente-form').style.display='none';
+  const er1=document.getElementById('plat-login-erro');const er2=document.getElementById('cli-login-erro');
+  if(er1)er1.style.display='none';if(er2)er2.style.display='none';
+}
+
+async function clientePortalLogin(){
+  const email=(document.getElementById('cli-login-email')?.value||'').trim().toLowerCase();
+  const senha=document.getElementById('cli-login-senha')?.value||'';
+  const err=document.getElementById('cli-login-erro');
+  const btn=document.getElementById('cli-login-btn');
+  if(!email||!senha){if(err){err.textContent='Preencha e-mail e senha.';err.style.display='';}return;}
+  if(btn)btn.disabled=true;
+  try{
+    const senhaHash=await hashSenha(senha);
+    const snap=await db.collection('clientes_portal').where('email','==',email).limit(1).get();
+    if(snap.empty){throw new Error('E-mail não encontrado.');}
+    const doc=snap.docs[0];const cli=doc.data();
+    if(cli.senhaHash!==senhaHash&&cli.senha!==senhaHash){throw new Error('Senha incorreta.');}
+    _portalClienteLogado={id:doc.id,...cli};
+    document.getElementById('plat-login-overlay').style.display='none';
+    document.getElementById('cli-login-senha').value='';
+    document.querySelectorAll('#nav a').forEach(x=>x.style.display='none');
+    const nav=document.getElementById('nav');if(nav)nav.style.display='none';
+    const sidebar=document.querySelector('.sidebar');
+    if(sidebar){
+      sidebar.innerHTML='<div style="padding:20px 16px;border-bottom:1px solid #1a2a3a"><div style="font-size:10px;color:#6080A0;text-transform:uppercase;letter-spacing:1px">Portal do Cliente</div><div style="color:#fff;font-size:13px;font-weight:600;margin-top:4px">'+_esc(cli.nome||email)+'</div><div style="font-size:10px;color:#4080B0;margin-top:2px">'+_esc(cli.cnpj||'')+'</div></div>'
+        +'<nav style="padding:12px 0">'
+        +'<a onclick="portalCliTab(\'pedidos\')" id="ptlcli-nav-pedidos" style="display:flex;align-items:center;gap:10px;padding:12px 18px;color:#8BAAC8;cursor:pointer;font-size:13px;text-decoration:none"><span>📋</span><span>Meus Pedidos</span></a>'
+        +'<a onclick="portalCliTab(\'novo\')" id="ptlcli-nav-novo" style="display:flex;align-items:center;gap:10px;padding:12px 18px;color:#8BAAC8;cursor:pointer;font-size:13px;text-decoration:none"><span>➕</span><span>Novo Pedido</span></a>'
+        +'</nav>'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;padding:14px 16px;border-top:1px solid #1a2a3a">'
+        +'<button onclick="clientePortalLogout()" style="width:100%;background:#1a2a3a;border:1px solid #2a3a4a;color:#8BAAC8;padding:8px;font-size:12px;cursor:pointer;font-family:inherit">Sair do Portal</button>'
+        +'</div>';
+    }
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    document.getElementById('page-portal').classList.add('active');
+    document.getElementById('topbar-title').textContent='🛍️ Portal do Cliente — '+_esc(cli.nome||email);
+    portalCliInit();
+  }catch(e){
+    if(err){err.textContent=e.message;err.style.display='';}
+    if(btn)btn.disabled=false;
+  }
+}
+
+function clientePortalLogout(){
+  if(_ptlCliPedidosUnsub){_ptlCliPedidosUnsub();_ptlCliPedidosUnsub=null;}
+  _portalClienteLogado=null;
+  location.reload();
+}
+
+function portalCliInit(){
+  portalCliTab('pedidos');
+  portalCliCarregarPedidos();
+  portalCarregarCatalogo();
+}
+
+function portalCliTab(aba){
+  ['pedidos','novo'].forEach(t=>{
+    const n=document.getElementById('ptlcli-nav-'+t);
+    if(n)n.style.background=t===aba?'rgba(255,255,255,.07)':'';
+  });
+  const portalPage=document.getElementById('page-portal');
+  if(!portalPage)return;
+  if(aba==='pedidos'){
+    portalPage.innerHTML='<div style="max-width:900px;margin:0 auto;padding:20px 16px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">'
+      +'<h2 style="font-size:18px;font-weight:700;margin:0">📋 Meus Pedidos</h2>'
+      +'<button class="btn btn-outline" onclick="portalCliCarregarPedidos()" style="font-size:12px">🔄 Atualizar</button>'
+      +'</div>'
+      +'<div id="ptlcli-pedidos-lista"><p style="color:var(--text-muted)">Carregando...</p></div>'
+      +'</div>';
+    portalCliCarregarPedidos();
+  }else{
+    portalPage.innerHTML='<div style="max-width:900px;margin:0 auto;padding:20px 16px">'
+      +'<h2 style="font-size:18px;font-weight:700;margin-bottom:16px">➕ Novo Pedido</h2>'
+      +'<div style="background:var(--bg-card);border:1.5px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:12px">🔍 Buscar Produto</div>'
+      +'<input type="text" id="ptlcli-busca" class="input" placeholder="Digite nome ou código do produto..." style="width:100%;box-sizing:border-box;margin-bottom:8px" oninput="portalBuscarProdutoAC(this.value)">'
+      +'<div id="ptl-prod-ac" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:6px;max-height:200px;overflow-y:auto"></div>'
+      +'</div>'
+      +'<div style="background:var(--bg-card);border:1.5px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:12px">🛒 Itens do Pedido</div>'
+      +'<div id="ptlcli-itens-lista"><p style="color:var(--text-muted);font-size:13px">Nenhum item adicionado.</p></div>'
+      +'</div>'
+      +'<div style="background:var(--bg-card);border:1.5px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:16px">'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:12px">📝 Observações</div>'
+      +'<textarea id="ptlcli-obs" class="input" rows="3" placeholder="Observações do pedido..." style="width:100%;box-sizing:border-box"></textarea>'
+      +'</div>'
+      +'<button class="btn btn-primary" onclick="portalCliFinalizarPedido()" style="width:100%;padding:14px;font-size:14px">✅ Finalizar Pedido</button>'
+      +'</div>';
+    _portalItens=[];
+    portalCarregarCatalogo();
+  }
+}
+
+function portalCliCarregarPedidos(){
+  const cont=document.getElementById('ptlcli-pedidos-lista');
+  if(!cont||!_portalClienteLogado)return;
+  cont.innerHTML='<p style="color:var(--text-muted);font-size:13px">Carregando...</p>';
+  if(_ptlCliPedidosUnsub)_ptlCliPedidosUnsub();
+  _ptlCliPedidosUnsub=db.collection('pedidos_portal')
+    .where('clienteId','==',_portalClienteLogado.id)
+    .orderBy('criadoEm','desc').limit(30)
+    .onSnapshot(snap=>{
+      if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:40px">Nenhum pedido encontrado.</p>';return;}
+      cont.innerHTML=snap.docs.map(d=>{
+        const p=d.data();const st=PORTAL_STATUS[p.status]||{label:p.status,color:'#9ca3af'};
+        const dt=(p.criadoEm||'').slice(0,10).split('-').reverse().join('/');
+        const cancelavel=p.status!=='faturado'&&p.status!=='expedido'&&p.status!=='cancelado';
+        return '<div style="background:var(--bg-card);border:1.5px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:12px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px">'
+          +'<div><div style="font-size:13px;font-weight:700">Pedido #'+_esc(p.numero||d.id.slice(-6))+'</div>'
+          +'<div style="font-size:11px;color:#9ca3af;margin-top:2px">'+dt+'</div></div>'
+          +'<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;background:'+_esc(st.color||'#f1f5f9')+';color:#fff">'+_esc(st.label)+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-bottom:10px">'+( p.itens||[]).length+' item(ns) · Total: <strong style="color:#111">'+fmt(p.totalGeral||0)+'</strong></div>'
+          +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +'<button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="portalCliVerPdf(\''+d.id+'\')">📄 PDF</button>'
+          +(cancelavel?'<button style="background:#fee2e2;border:none;color:#991b1b;font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer" onclick="portalCliCancelar(\''+d.id+'\',\''+_esc((p.numero||d.id.slice(-6)).replace(/'/g,''))+'\')">✕ Cancelar</button>':'')
+          +'</div>'
+          +'</div>';
+      }).join('');
+    },e=>{cont.innerHTML='<p style="color:#D13438;font-size:13px">Erro: '+_esc(e.message)+'</p>';logErro('PORTAL_CLI','portalCliCarregarPedidos',e);});
+}
+
+async function portalCliFinalizarPedido(){
+  if(!_portalItens||!_portalItens.length){toast('Adicione pelo menos um produto.');return;}
+  if(!_portalClienteLogado){toast('Sessão expirada.');return;}
+  const obs=(document.getElementById('ptlcli-obs')?.value||'').trim();
+  const total=_portalItens.reduce((s,i)=>s+(i.subtotal||0),0);
+  const numero='PTC-'+Date.now().toString(36).toUpperCase();
+  const pedido={
+    numero,clienteId:_portalClienteLogado.id,
+    cliente:{nome:_portalClienteLogado.nome||'',cnpj:_portalClienteLogado.cnpj||'',email:_portalClienteLogado.email||''},
+    itens:_portalItens.map(i=>({id:i.id,nome:i.nome,codigo:i.codigo,qtd:i.qtd,precoUnit:i.precoUnit,subtotal:i.subtotal})),
+    totalGeral:total,obs,status:'novo',
+    criadoEm:new Date().toISOString(),origem:'portal_cliente'
+  };
+  try{
+    const ref=await db.collection('pedidos_portal').add(pedido);
+    toast('✅ Pedido '+numero+' enviado!');
+    _portalItens=[];
+    await enviarEmailStatus({...pedido,id:ref.id},'novo');
+    portalCliTab('pedidos');
+  }catch(e){logErro('PORTAL_CLI','portalCliFinalizarPedido',e);}
+}
+
+async function portalCliCancelar(docId,numero){
+  if(!confirm('Cancelar pedido #'+numero+'?'))return;
+  try{
+    await db.collection('pedidos_portal').doc(docId).update({status:'cancelado',atualizadoEm:new Date().toISOString()});
+    toast('Pedido cancelado.');
+    await enviarEmailStatus({id:docId,numero,cliente:_portalClienteLogado},'cancelado');
+  }catch(e){logErro('PORTAL_CLI','portalCliCancelar',e);}
+}
+
+async function portalCliVerPdf(docId){
+  try{
+    const sn=await db.collection('pedidos_portal').doc(docId).get();
+    if(!sn.exists){toast('Pedido não encontrado.');return;}
+    portalGerarPDFById(docId);
+  }catch(e){logErro('PORTAL_CLI','portalCliVerPdf',e);}
+}
+
+// ── BLOCO 3: E-MAILS DE STATUS + LOG DE AUTOMAÇÕES ────────────────────────
+async function enviarEmailStatus(pedido,novoStatus){
+  const statusLabels={novo:'Novo Pedido Recebido',aprovado:'Pedido Aprovado',expedido:'Pedido Expedido',faturado:'Pedido Faturado',cancelado:'Pedido Cancelado'};
+  const emailDest=pedido.cliente?.email||'';
+  const numero=pedido.numero||pedido.id||'';
+  const label=statusLabels[novoStatus]||novoStatus;
+  let sucesso=false;
+  try{
+    if(emailDest&&typeof emailjs!=='undefined'){
+      await emailjs.send('service_mesolog','template_status_pedido',{
+        to_email:emailDest,to_name:pedido.cliente?.nome||'Cliente',
+        pedido_numero:numero,pedido_status:label,
+        pedido_total:fmt(pedido.totalGeral||0),
+        pedido_itens:(pedido.itens||[]).map(i=>i.nome+' x'+i.qtd).join(', '),
+        obs:pedido.obs||''
+      });
+      sucesso=true;
+    }
+  }catch(e){console.warn('[INTEL] Erro ao enviar e-mail de status:',e);}
+  await logAutomacao('email_status',numero,label,emailDest,sucesso);
+}
+
+async function logAutomacao(tipo,pedidoId,status,destinatario,sucesso){
+  try{
+    await db.collection('log_automacoes').add({tipo,pedidoId,status,destinatario,sucesso,timestamp:new Date().toISOString()});
+  }catch(e){console.warn('[INTEL] Erro ao gravar log:',e);}
+}
+
+// ── Firestore Security Rules update needed: alertas_intel, log_automacoes ──
 // ══════════════════════════════════════════════════════════════════════════
 </script>
 </body>
