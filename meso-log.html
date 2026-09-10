@@ -15961,24 +15961,24 @@ function portalBuscarProdutoAC(val){
   const ac=document.getElementById('ptl-prod-ac');if(!ac)return;
   clearTimeout(_ptlProdTO);
   if(!val||val.length<2){ac.style.display='none';return;}
-  _ptlProdTO=setTimeout(async()=>{
-    try{
-      const up=val.toUpperCase();
-      const snap=await db.collection('stock').orderBy('nome').startAt(up).endAt(up+'\uf8ff').limit(15).get();
-      const items=snap.docs.map(d=>{
-        const dd=d.data();const qty=dd.quantidade||dd.qtd||0;
-        const prod={id:d.id,nome:dd.nome,codigo:dd.codigo||dd.sku||'',preco:dd.preco||dd.precoVenda||0,volume:dd.volume||dd.vol||1};
-        const enc=encodeURIComponent(JSON.stringify(prod));
-        return '<div class="ptl-ac-item" onclick="portalAdicionarItemPedido(\''+d.id+'\',\''+enc+'\')">'
-          +'<strong>'+dd.nome+'</strong>'
-          +(dd.codigo?'<span style="color:#9ca3af;font-size:11px;margin-left:8px">'+dd.codigo+'</span>':'')
-          +'<span style="color:#9ca3af;font-size:11px;margin-left:8px">Estoque: '+qty+'</span>'
-          +'<span style="color:#065f46;font-size:11px;margin-left:8px">'+fmt(prod.preco)+'</span>'
-          +'</div>';
-      });
-      ac.innerHTML=items.length?items.join(''):'<div class="ptl-ac-item" style="color:#9ca3af">Nenhum produto</div>';
-      ac.style.display='block';
-    }catch(e){ac.style.display='none';}
+  _ptlProdTO=setTimeout(()=>{
+    const q=val.toLowerCase();
+    const filtered=_portalProdutos.filter(p=>
+      (p.nome||'').toLowerCase().includes(q)||(p.codigo||p.sku||'').toLowerCase().includes(q)
+    ).slice(0,15);
+    const items=filtered.map(p=>{
+      const qty=p.quantidade||p.qtd||0;
+      const prod={id:p.id,nome:p.nome,codigo:p.codigo||p.sku||'',preco:p.preco||p.precoVenda||0,volume:p.volume||p.vol||1};
+      const enc=encodeURIComponent(JSON.stringify(prod));
+      return '<div class="ptl-ac-item" onclick="portalAdicionarItemPedido(\''+p.id+'\',\''+enc+'\')">'
+        +'<strong>'+_esc(p.nome||'')+'</strong>'
+        +(prod.codigo?'<span style="color:#9ca3af;font-size:11px;margin-left:8px">'+_esc(prod.codigo)+'</span>':'')
+        +'<span style="color:#9ca3af;font-size:11px;margin-left:8px">Estoque: '+qty+'</span>'
+        +'<span style="color:#065f46;font-size:11px;margin-left:8px">'+fmt(prod.preco)+'</span>'
+        +'</div>';
+    });
+    ac.innerHTML=items.length?items.join(''):'<div class="ptl-ac-item" style="color:#9ca3af">Nenhum produto</div>';
+    ac.style.display='block';
   },300);
 }
 
@@ -16222,7 +16222,7 @@ async function portalCarregarCatalogo(){
   try{
     const snap=await db.collection('stock').orderBy('nome').get();
     _portalProdutos=[];
-    snap.forEach(d=>{const dd=d.data();if((dd.quantidade||dd.qtd||0)>0)_portalProdutos.push({id:d.id,...dd});});
+    snap.forEach(d=>{const dd=d.data();_portalProdutos.push({id:d.id,...dd});});
     portalRenderCatalogo(_portalProdutos);
   }catch(e){grid.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
 }
