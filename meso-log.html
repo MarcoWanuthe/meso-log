@@ -1349,6 +1349,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <button onclick="admTab('config',this)">Configurações</button>
           <button onclick="admTab('usuarios',this)">👥 Usuários Solic.</button>
           <button onclick="admTab('acesso',this)">🔐 Controle de Acesso</button>
+          <button onclick="admTab('portal-clientes',this)">🛍️ Acesso Portal Clientes</button>
         </div>
         <!-- SOLICITAÇÕES ADM -->
         <div id="adm-solicitacoes">
@@ -1565,6 +1566,48 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
               </table>
             </div>
           </div>
+
+        <!-- ABA: ACESSO PORTAL CLIENTES -->
+        <div id="adm-portal-clientes" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <h3 style="font-size:13px;font-weight:700;margin-bottom:14px" id="adm-ptlcli-form-title">➕ Criar Acesso de Cliente no Portal</h3>
+            <input type="hidden" id="adm-ptlcli-id">
+            <div class="form-row">
+              <div class="form-group"><label>Nome do Cliente</label><input type="text" id="adm-ptlcli-nome" placeholder="Razão Social ou Nome"></div>
+              <div class="form-group"><label>E-mail (login)</label><input type="email" id="adm-ptlcli-email" placeholder="cliente@empresa.com"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Senha de Acesso</label><input type="text" id="adm-ptlcli-senha" placeholder="Senha para o cliente"><p id="adm-ptlcli-senha-hint" style="display:none;font-size:11px;color:#888;margin-top:2px">Deixe em branco para manter a senha atual</p></div>
+              <div class="form-group"><label>CNPJ (opcional)</label><input type="text" id="adm-ptlcli-cnpj" placeholder="00.000.000/0001-00"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Representante (opcional)</label><input type="text" id="adm-ptlcli-rep" placeholder="Nome do representante"></div>
+              <div class="form-group"><label>Status</label>
+                <select id="adm-ptlcli-ativo" style="padding:7px 10px;border:1px solid #D0D7E2;border-radius:6px;font-size:13px;width:100%">
+                  <option value="true">Ativo</option>
+                  <option value="false">Inativo</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button class="btn btn-primary" onclick="admPtlCliSalvar()" style="flex:1">💾 Salvar Acesso</button>
+              <button class="btn btn-outline" onclick="admPtlCliLimpar()" style="flex:1">✕ Cancelar</button>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="font-size:13px;font-weight:700;margin:0">Clientes com Acesso ao Portal</h3>
+              <button class="btn btn-outline" onclick="admPtlCliCarregar()" style="font-size:12px">🔄 Atualizar</button>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="prod-table">
+                <thead><tr><th>Nome</th><th>E-mail</th><th>CNPJ</th><th>Representante</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="adm-ptlcli-tbody"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        </div>
         </div>
     </div>
 
@@ -6007,13 +6050,14 @@ function admLogin(){
 }
 
 function admTab(tab,btn){
-  ['solicitacoes','produtos','config','usuarios','acesso'].forEach(t=>{const el=document.getElementById('adm-'+t);if(el)el.style.display=t===tab?'':'none';});
+  ['solicitacoes','produtos','config','usuarios','acesso','portal-clientes'].forEach(t=>{const el=document.getElementById('adm-'+t);if(el)el.style.display=t===tab?'':'none';});
   document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(tab==='solicitacoes')renderAdmTable();
   if(tab==='produtos')renderAdmProds();
   if(tab==='usuarios')renderAdmUsuarios();
   if(tab==='acesso')platAdmCarregar();
+  if(tab==='portal-clientes')admPtlCliCarregar();
 }
 
 let admAllRows=[];
@@ -18115,6 +18159,84 @@ async function logAutomacao(tipo,pedidoId,status,destinatario,sucesso){
   try{
     await db.collection('log_automacoes').add({tipo,pedidoId,status,destinatario,sucesso,timestamp:new Date().toISOString()});
   }catch(e){console.warn('[INTEL] Erro ao gravar log:',e);}
+}
+
+// ── ADM: Gestão de Acesso de Clientes no Portal ───────────────────────────
+async function admPtlCliCarregar(){
+  const tbody=document.getElementById('adm-ptlcli-tbody');if(!tbody)return;
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
+  try{
+    const snap=await db.collection('clientes_portal').orderBy('nome').get();
+    if(snap.empty){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:16px">Nenhum cliente cadastrado.</td></tr>';return;}
+    tbody.innerHTML=snap.docs.map(d=>{const c=d.data();
+      return '<tr>'
+        +'<td style="font-weight:600;font-size:12px">'+_esc(c.nome||'—')+'</td>'
+        +'<td style="font-size:12px">'+_esc(c.email||'—')+'</td>'
+        +'<td style="font-size:12px">'+_esc(c.cnpj||'—')+'</td>'
+        +'<td style="font-size:12px">'+_esc(c.repNome||'—')+'</td>'
+        +'<td><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+(c.ativo!==false?'#dcfce7':'#fee2e2')+';color:'+(c.ativo!==false?'#166534':'#991b1b')+'">'+(c.ativo!==false?'Ativo':'Inativo')+'</span></td>'
+        +'<td style="white-space:nowrap">'
+        +'<button class="btn btn-outline btn-sm" onclick="admPtlCliEditar(\''+d.id+'\')" style="font-size:11px;padding:3px 8px">✏️</button> '
+        +'<button style="background:#fee2e2;border:none;color:#991b1b;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer" onclick="admPtlCliExcluir(\''+d.id+'\',\''+_esc((c.nome||'').replace(/'/g,''))+'\')">🗑️</button>'
+        +'</td></tr>';
+    }).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="6" style="color:#D13438;padding:12px">Erro: '+_esc(e.message)+'</td></tr>';logErro('ADM','admPtlCliCarregar',e);}
+}
+
+async function admPtlCliSalvar(){
+  const id=document.getElementById('adm-ptlcli-id')?.value||'';
+  const nome=(document.getElementById('adm-ptlcli-nome')?.value||'').trim();
+  const email=(document.getElementById('adm-ptlcli-email')?.value||'').trim().toLowerCase();
+  const senha=document.getElementById('adm-ptlcli-senha')?.value||'';
+  const cnpj=(document.getElementById('adm-ptlcli-cnpj')?.value||'').trim();
+  const rep=(document.getElementById('adm-ptlcli-rep')?.value||'').trim();
+  const ativo=document.getElementById('adm-ptlcli-ativo')?.value==='true';
+  if(!nome||!email){toast('Nome e e-mail são obrigatórios.');return;}
+  const dados={nome,email,cnpj,repNome:rep,ativo,atualizadoEm:new Date().toISOString()};
+  if(senha){dados.senhaHash=await hashSenha(senha);}
+  try{
+    if(id){
+      await db.collection('clientes_portal').doc(id).update(dados);
+      toast('✅ Acesso atualizado!');
+    }else{
+      if(!senha){toast('Defina uma senha para o novo cliente.');return;}
+      dados.criadoEm=new Date().toISOString();
+      await db.collection('clientes_portal').add(dados);
+      toast('✅ Acesso criado! Cliente pode entrar pelo Portal.');
+    }
+    admPtlCliLimpar();
+    admPtlCliCarregar();
+  }catch(e){logErro('ADM','admPtlCliSalvar',e);}
+}
+
+async function admPtlCliEditar(docId){
+  try{
+    const sn=await db.collection('clientes_portal').doc(docId).get();
+    if(!sn.exists)return;const c=sn.data();
+    document.getElementById('adm-ptlcli-id').value=docId;
+    document.getElementById('adm-ptlcli-nome').value=c.nome||'';
+    document.getElementById('adm-ptlcli-email').value=c.email||'';
+    document.getElementById('adm-ptlcli-senha').value='';
+    document.getElementById('adm-ptlcli-cnpj').value=c.cnpj||'';
+    document.getElementById('adm-ptlcli-rep').value=c.repNome||'';
+    document.getElementById('adm-ptlcli-ativo').value=c.ativo!==false?'true':'false';
+    document.getElementById('adm-ptlcli-form-title').textContent='✏️ Editar Acesso — '+c.nome;
+    document.getElementById('adm-ptlcli-senha-hint').style.display='';
+    document.getElementById('adm-ptlcli-nome').scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(e){logErro('ADM','admPtlCliEditar',e);}
+}
+
+function admPtlCliLimpar(){
+  ['adm-ptlcli-id','adm-ptlcli-nome','adm-ptlcli-email','adm-ptlcli-senha','adm-ptlcli-cnpj','adm-ptlcli-rep'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('adm-ptlcli-ativo').value='true';
+  document.getElementById('adm-ptlcli-form-title').textContent='➕ Criar Acesso de Cliente no Portal';
+  document.getElementById('adm-ptlcli-senha-hint').style.display='none';
+}
+
+async function admPtlCliExcluir(docId,nome){
+  if(!confirm('Remover acesso de '+nome+'? O cliente não conseguirá mais entrar no portal.'))return;
+  try{await db.collection('clientes_portal').doc(docId).delete();toast('Acesso removido.');admPtlCliCarregar();}
+  catch(e){logErro('ADM','admPtlCliExcluir',e);}
 }
 
 // ── Firestore Security Rules update needed: alertas_intel, log_automacoes ──
