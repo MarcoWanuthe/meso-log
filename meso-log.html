@@ -17059,14 +17059,15 @@ function filTab(aba){
 
 async function filPopularSelectFiliais(){
   try{
-    const snap=await db.collection('filiais').where('status','==','ativa').orderBy('uf').get();
+    const snap=await db.collection('filiais').orderBy('uf').get();
+    const ativas=snap.docs.filter(d=>d.data().status==='ativa');
     ['fil-sel-filial-estoque','fil-transf-filial','fil-hist-filial'].forEach(id=>{
       const sel=document.getElementById(id);
       if(!sel)return;
       const first=sel.options[0];
       sel.innerHTML='';
       sel.appendChild(first);
-      snap.docs.forEach(d=>{
+      ativas.forEach(d=>{
         const f=d.data();
         const opt=document.createElement('option');
         opt.value=d.id;
