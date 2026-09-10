@@ -5422,7 +5422,7 @@ function showPage(p){
     return;
   }
   // Platform ACL permission guard
-  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv',intel:'intel'};
+  const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv'};
   if(platUser&&_PM[p]!==undefined){const _pk=_PM[p];const _ok=_pk==='__adm__'?platUser.isAdm:platUser.permissoes[_pk];if(!_ok){toast('⛔ Sem permissão para acessar este módulo.');showPage('home');return;}}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
