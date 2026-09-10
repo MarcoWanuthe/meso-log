@@ -4683,8 +4683,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           <input id="fil-transf-qtd" type="number" class="input" min="1" placeholder="0">
         </div>
         <div>
-          <label class="label">Nº NF-e Remessa</label>
-          <input id="fil-transf-nfe" type="text" class="input" placeholder="Opcional">
+          <label class="label">Nº Remessa (auto)</label>
+          <input id="fil-transf-nfe" type="text" class="input" readonly style="background:var(--bg-hover);color:var(--text-muted);cursor:default" placeholder="Gerado automaticamente">
         </div>
         <div style="grid-column:1/-1">
           <label class="label">Observação</label>
@@ -17045,6 +17045,12 @@ function filInit(){
   filPopularSelectFiliais();
 }
 
+function filGerarNumRemessa(){
+  const now=new Date();
+  const d=now.getFullYear().toString()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+  const seq=String(Math.floor(Math.random()*9000)+1000);
+  return 'REM-'+d+'-'+seq;
+}
 function filTab(aba){
   ['filiais','estoque','transferir','historico'].forEach(t=>{
     const btn=document.getElementById('fil-tab-'+t);
@@ -17055,6 +17061,10 @@ function filTab(aba){
     }
     if(view) view.style.display=t===aba?'block':'none';
   });
+  if(aba==='transferir'){
+    const nfeEl=document.getElementById('fil-transf-nfe');
+    if(nfeEl&&!nfeEl.value) nfeEl.value=filGerarNumRemessa();
+  }
 }
 
 async function filPopularSelectFiliais(){
@@ -17245,19 +17255,17 @@ async function filBuscarProduto(val){
   const sug=document.getElementById('fil-transf-sugestoes');
   if(!val||val.length<2){sug.style.display='none';return;}
   const termo=val.toLowerCase();
-  const matches=_filProdutos.filter(p=>p.codigo.toLowerCase().includes(termo)||p.nome.toLowerCase().includes(termo)).slice(0,8);
-  if(!matches.length&&_filProdutos.length===0){
-    // Carregar produtos do stock
+  if(_filProdutos.length===0){
     try{
       const snap=await db.collection('stock').orderBy('nome').get();
       _filProdutos=snap.docs.map(d=>({id:d.id,...d.data()}));
-      return filBuscarProduto(val);
     }catch(e){return;}
   }
+  const matches=_filProdutos.filter(p=>(p.codigo||'').toLowerCase().includes(termo)||(p.nome||'').toLowerCase().includes(termo)).slice(0,8);
   if(!matches.length){sug.style.display='none';return;}
   sug.style.display='block';
   sug.innerHTML=matches.map(p=>'<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.88rem" onmousedown="filSelecionarProduto(\''+p.id+'\')">'
-    +'<strong>'+p.codigo+'</strong> — '+p.nome
+    +'<strong>'+(p.codigo||'—')+'</strong> — '+(p.nome||'')
     +(p.qtd!==undefined?' <span style="color:var(--text-muted);font-size:0.8rem">(Sede: '+p.qtd+' un)</span>':'')
     +'</div>').join('');
 }
@@ -17320,7 +17328,7 @@ async function filConfirmarTransferencia(){
     document.getElementById('fil-transf-busca').value='';
     delete busca.dataset.stockId;
     document.getElementById('fil-transf-qtd').value='';
-    document.getElementById('fil-transf-nfe').value='';
+    document.getElementById('fil-transf-nfe').value=filGerarNumRemessa();
     document.getElementById('fil-transf-obs').value='';
     document.getElementById('fil-transf-info').style.display='none';
     document.getElementById('fil-transf-sugestoes').style.display='none';
