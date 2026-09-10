@@ -17193,9 +17193,9 @@ async function filCarregarEstoqueVirtual(){
   if(!filialId){cont.innerHTML='<p style="color:var(--text-muted)">Selecione uma filial.</p>';kpi.innerHTML='';return;}
   cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
   try{
-    const snap=await db.collection('estoque_filial').where('filialId','==',filialId).orderBy('produto').get();
+    const snap=await db.collection('estoque_filial').where('filialId','==',filialId).get();
     if(snap.empty){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum produto alocado para esta filial.</p>';kpi.innerHTML='';return;}
-    const itens=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const itens=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.produto||'').localeCompare(b.produto||''));
     const totalItens=itens.length;
     const totalQtd=itens.reduce((a,b)=>a+(b.qtd||0),0);
     const vencendo=itens.filter(i=>{if(!i.validade)return false;const dias=(new Date(i.validade)-new Date())/86400000;return dias>=0&&dias<=90;}).length;
@@ -17335,10 +17335,9 @@ async function filCarregarHistorico(){
   if(!cont)return;
   cont.innerHTML='<p style="color:var(--text-muted)">Carregando...</p>';
   try{
-    let q=db.collection('transferencias_filial').orderBy('criadoEm','desc').limit(200);
-    if(filialId) q=q.where('filialId','==',filialId);
-    const snap=await q.get();
+    const snap=await db.collection('transferencias_filial').orderBy('criadoEm','desc').limit(200).get();
     let docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(filialId) docs=docs.filter(x=>x.filialId===filialId);
     if(de){const d=new Date(de);docs=docs.filter(x=>x.criadoEm&&x.criadoEm.toDate()>=d);}
     if(ate){const d=new Date(ate);d.setHours(23,59,59);docs=docs.filter(x=>x.criadoEm&&x.criadoEm.toDate()<=d);}
     if(!docs.length){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum registro encontrado.</p>';return;}
