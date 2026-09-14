@@ -17256,16 +17256,25 @@ async function filBuscarProduto(val){
   if(!val||val.length<2){sug.style.display='none';return;}
   const termo=val.toLowerCase();
   if(_filProdutos.length===0){
+    sug.style.display='block';
+    sug.innerHTML='<div style="padding:8px 12px;color:var(--text-muted);font-size:0.85rem">Carregando catálogo...</div>';
     try{
-      const snap=await db.collection('stock').orderBy('nome').get();
+      const snap=await db.collection('stock').get();
       _filProdutos=snap.docs.map(d=>({id:d.id,...d.data()}));
-    }catch(e){return;}
+    }catch(e){
+      sug.innerHTML='<div style="padding:8px 12px;color:#e53e3e;font-size:0.85rem">Erro ao carregar produtos: '+e.message+'</div>';
+      return;
+    }
   }
-  const matches=_filProdutos.filter(p=>(p.codigo||'').toLowerCase().includes(termo)||(p.nome||'').toLowerCase().includes(termo)).slice(0,8);
-  if(!matches.length){sug.style.display='none';return;}
+  const matches=_filProdutos.filter(p=>(p.codigo||p.sku||'').toLowerCase().includes(termo)||(p.nome||'').toLowerCase().includes(termo)).slice(0,10);
+  if(!matches.length){
+    sug.style.display='block';
+    sug.innerHTML='<div style="padding:8px 12px;color:var(--text-muted);font-size:0.85rem">Nenhum produto encontrado.</div>';
+    return;
+  }
   sug.style.display='block';
   sug.innerHTML=matches.map(p=>'<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.88rem" onmousedown="filSelecionarProduto(\''+p.id+'\')">'
-    +'<strong>'+(p.codigo||'—')+'</strong> — '+(p.nome||'')
+    +'<strong>'+(p.codigo||p.sku||'—')+'</strong> — '+(p.nome||'')
     +(p.qtd!==undefined?' <span style="color:var(--text-muted);font-size:0.8rem">(Sede: '+p.qtd+' un)</span>':'')
     +'</div>').join('');
 }
