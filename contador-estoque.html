@@ -61,6 +61,15 @@
   .sug div{padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer}
   .sug div:last-child{border-bottom:none}
   .sug div:hover{background:var(--card2)}
+  .mode-tabs{display:flex;gap:8px;margin-bottom:14px}
+  .mode-btn{flex:1;background:var(--card2);border:1.5px solid var(--border);color:var(--muted);text-align:center}
+  .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .produto-grupo{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .produto-grupo:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .produto-grupo .titulo{font-weight:700;font-size:14px}
+  .produto-grupo .cod{color:var(--muted);font-weight:400;font-size:12px}
+  .produto-grupo .subtotal{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .hint-box{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--card2);border:1px solid var(--border);font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -74,6 +83,13 @@
 </header>
 
 <div class="wrap">
+
+  <div class="mode-tabs">
+    <button class="btn mode-btn active" id="tab-contagem" onclick="setModo('contagem')">📊 Contagem</button>
+    <button class="btn mode-btn" id="tab-zero" onclick="setModo('zero')">🆕 Criar Estoque do Zero</button>
+  </div>
+
+  <div id="modo-contagem">
 
   <div class="kpis">
     <div class="kpi"><div class="v" id="kpi-total">0</div><div class="l">Itens Contados</div></div>
@@ -129,6 +145,69 @@
     </div>
   </div>
 
+  </div>
+
+  <div id="modo-zero" style="display:none">
+
+    <div class="hint-box">
+      🆕 Modo de criação: use isto para montar o <strong>primeiro inventário</strong> do zero — bipe o código de barras, preencha os dados e vá adicionando lote por lote. Um mesmo produto pode ter vários lotes diferentes.
+    </div>
+
+    <div class="card">
+      <h2>Bipar / Adicionar Item</h2>
+      <label>Código de barras</label>
+      <input type="text" id="zero-barcode-input" placeholder="Bipe o código de barras e pressione Enter..." autocomplete="off">
+
+      <div class="found-card" id="zero-produto-info">
+        <div class="nome" id="zero-produto-nome-display">—</div>
+        <div class="meta" id="zero-lotes-existentes"></div>
+
+        <label style="margin-top:12px">Descrição do produto</label>
+        <input type="text" id="zero-descricao-input" placeholder="Nome do produto">
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Lote</label>
+            <input type="text" id="zero-lote-input" placeholder="Ex: L2026001">
+          </div>
+          <div>
+            <label>Validade</label>
+            <input type="date" id="zero-validade-input">
+          </div>
+        </div>
+
+        <label style="margin-top:10px">Quantidade</label>
+        <input type="number" id="zero-qtd-input" min="0" placeholder="0" inputmode="numeric">
+
+        <div class="actions">
+          <button class="btn btn-primary btn-block" onclick="adicionarItemZero()">✅ Adicionar Lote</button>
+          <button class="btn btn-outline" onclick="cancelarZero()">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Itens do Estoque Inicial Nesta Sessão</h2>
+      <div id="zero-lista-wrap">
+        <div class="empty" id="zero-lista-empty">Nenhum item adicionado ainda. Bipe um código acima.</div>
+        <div id="zero-lista-produtos"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Finalizar Estoque Inicial</h2>
+      <label>Responsável</label>
+      <input type="text" id="zero-responsavel-input" placeholder="Seu nome">
+      <label style="margin-top:10px">Local / Filial (opcional)</label>
+      <input type="text" id="zero-local-input" placeholder="Ex: Sede, Filial SP...">
+      <div class="actions">
+        <button class="btn btn-primary btn-block" onclick="finalizarEstoqueZero()">💾 Salvar Estoque Inicial</button>
+        <button class="btn btn-outline" onclick="exportarCSVZero()">⬇️ CSV</button>
+      </div>
+    </div>
+
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -149,6 +228,15 @@ const db = firebase.firestore();
 let allStock = [];
 let itensContados = [];
 let produtoAtual = null;
+let itensZero = [];
+let zeroBarcodeAtual = null;
+
+function setModo(modo){
+  document.getElementById('modo-contagem').style.display = modo==='contagem'?'block':'none';
+  document.getElementById('modo-zero').style.display = modo==='zero'?'block':'none';
+  document.getElementById('tab-contagem').className = 'btn mode-btn'+(modo==='contagem'?' active':'');
+  document.getElementById('tab-zero').className = 'btn mode-btn'+(modo==='zero'?' active':'');
+}
 
 function _esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -343,6 +431,165 @@ function exportarCSV(){
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ══════════════════ MODO: CRIAR ESTOQUE DO ZERO ══════════════════
+
+function lookupZeroBarcode(val){
+  val = (val||'').trim();
+  if(!val) return;
+  zeroBarcodeAtual = val;
+
+  const existentesSessao = itensZero.filter(i=>i.codigo===val);
+  const noStock = allStock.find(s=>String(s.barcode||'')===val || String(s.codigo||'')===val);
+
+  document.getElementById('zero-produto-info').style.display='block';
+  document.getElementById('zero-produto-nome-display').textContent = val;
+
+  const descInput = document.getElementById('zero-descricao-input');
+  if(existentesSessao.length){
+    document.getElementById('zero-lotes-existentes').innerHTML =
+      '📦 Já adicionado nesta sessão: ' + existentesSessao.map(i=>`Lote <strong>${_esc(i.lote||'—')}</strong> (${i.quantidade} un)`).join(', ') +
+      ' — adicionando mais um lote deste mesmo produto.';
+    descInput.value = existentesSessao[0].descricao;
+  }else if(noStock){
+    document.getElementById('zero-lotes-existentes').innerHTML = '💡 Já existe no estoque atual do sistema: <strong>'+_esc(noStock.descricao)+'</strong> (saldo atual: '+(noStock.quantidade||0)+' un)';
+    descInput.value = noStock.descricao||'';
+  }else{
+    document.getElementById('zero-lotes-existentes').innerHTML = '🆕 Produto novo — preencha a descrição abaixo.';
+    descInput.value = '';
+  }
+
+  document.getElementById('zero-lote-input').value = '';
+  document.getElementById('zero-validade-input').value = '';
+  document.getElementById('zero-qtd-input').value = '';
+  setTimeout(()=>descInput.focus(), 80);
+}
+
+function cancelarZero(){
+  zeroBarcodeAtual = null;
+  document.getElementById('zero-produto-info').style.display='none';
+  document.getElementById('zero-barcode-input').value='';
+  document.getElementById('zero-barcode-input').focus();
+}
+
+function adicionarItemZero(){
+  if(!zeroBarcodeAtual){ toast('Bipe ou digite um código de barras primeiro.'); return; }
+  const descricao = document.getElementById('zero-descricao-input').value.trim();
+  const lote = document.getElementById('zero-lote-input').value.trim();
+  const validade = document.getElementById('zero-validade-input').value;
+  const qtd = Number(document.getElementById('zero-qtd-input').value);
+
+  if(!descricao){ toast('Informe a descrição do produto.'); return; }
+  if(isNaN(qtd) || qtd<=0){ toast('Informe uma quantidade válida.'); return; }
+
+  const idx = itensZero.findIndex(i=>i.codigo===zeroBarcodeAtual && (i.lote||'')===(lote||''));
+  if(idx>=0){
+    itensZero[idx].quantidade += qtd;
+    itensZero[idx].descricao = descricao;
+    if(validade) itensZero[idx].dataValidade = validade;
+  }else{
+    itensZero.push({codigo: zeroBarcodeAtual, descricao, lote, dataValidade: validade, quantidade: qtd});
+  }
+
+  renderListaZero();
+  toast('✅ Lote adicionado: '+descricao+(lote?' (Lote '+lote+')':''));
+  cancelarZero();
+}
+
+function removerItemZero(codigo, lote){
+  itensZero = itensZero.filter(i=>!(i.codigo===codigo && (i.lote||'')===(lote||'')));
+  renderListaZero();
+}
+
+function renderListaZero(){
+  const empty = document.getElementById('zero-lista-empty');
+  const wrap = document.getElementById('zero-lista-produtos');
+
+  if(!itensZero.length){
+    empty.style.display='block'; wrap.innerHTML='';
+    return;
+  }
+  empty.style.display='none';
+
+  const porCodigo = {};
+  itensZero.forEach(i=>{
+    if(!porCodigo[i.codigo]) porCodigo[i.codigo]=[];
+    porCodigo[i.codigo].push(i);
+  });
+
+  wrap.innerHTML = Object.keys(porCodigo).map(cod=>{
+    const itens = porCodigo[cod];
+    const total = itens.reduce((s,i)=>s+i.quantidade,0);
+    const rows = itens.map(i=>`
+      <tr>
+        <td>${_esc(i.lote||'—')}</td>
+        <td>${_esc(i.dataValidade||'—')}</td>
+        <td class="num">${i.quantidade}</td>
+        <td class="row-del" onclick="removerItemZero('${_esc(i.codigo)}','${_esc(i.lote)}')">×</td>
+      </tr>`).join('');
+    return `<div class="produto-grupo">
+      <div class="titulo">${_esc(itens[0].descricao)} <span class="cod">(${_esc(cod)})</span></div>
+      <div class="subtotal">Total: ${total} un em ${itens.length} lote(s)</div>
+      <table><thead><tr><th>Lote</th><th>Validade</th><th class="num">Qtd</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join('');
+}
+
+async function finalizarEstoqueZero(){
+  if(!itensZero.length){ toast('Nenhum item adicionado ainda.'); return; }
+  const responsavel = document.getElementById('zero-responsavel-input').value.trim();
+  if(!responsavel){ toast('Informe o responsável.'); return; }
+  const local = document.getElementById('zero-local-input').value.trim();
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Salvando...';
+
+  try{
+    const batch = db.batch();
+    const sessionId = 'sess_'+Date.now();
+    itensZero.forEach(item=>{
+      const docId = (item.codigo+'_'+(item.lote||'unico')).replace(/[^a-zA-Z0-9_-]/g,'_');
+      const ref = db.collection('estoque_inicial').doc(docId);
+      batch.set(ref, {
+        codigo: item.codigo, barcode: item.codigo,
+        descricao: item.descricao, lote: item.lote||'',
+        dataValidade: item.dataValidade||'', quantidade: item.quantidade,
+        responsavel, local, sessionId,
+        criadoEm: new Date().toISOString()
+      });
+    });
+    await batch.commit();
+    toast('✅ Estoque inicial salvo! '+itensZero.length+' lote(s).');
+    itensZero = [];
+    renderListaZero();
+  }catch(e){
+    toast('❌ Erro ao salvar: '+e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '💾 Salvar Estoque Inicial';
+  }
+}
+
+function exportarCSVZero(){
+  if(!itensZero.length){ toast('Nenhum item para exportar.'); return; }
+  let csv = 'Codigo;Descricao;Lote;Validade;Quantidade\n';
+  itensZero.forEach(i=>{
+    csv += `${i.codigo};${i.descricao};${i.lote};${i.dataValidade};${i.quantidade}\n`;
+  });
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'estoque-inicial-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('zero-barcode-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') lookupZeroBarcode(e.target.value);
+});
+document.getElementById('zero-qtd-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') adicionarItemZero();
+});
 
 document.getElementById('busca-input').addEventListener('keydown', e=>{
   if(e.key==='Enter'){
