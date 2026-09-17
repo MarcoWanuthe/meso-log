@@ -1656,12 +1656,12 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <h4 style="font-size:12px;font-weight:700;color:#111111;margin-bottom:8px;text-transform:uppercase">📷 Escanear Itens Recebidos</h4>
                 <div class="scan-input-wrap">
                   <span class="scan-icon">📷</span>
-                  <input type="text" id="rec-scan-input" placeholder="Aponte o leitor ou digite o cód. de barras e pressione Enter..." 
-                    onkeydown="if(event.key==='Enter'&&this.value.trim()){handleRecScan(this.value.trim());this.value='';}" 
+                  <input type="text" id="ops-scan-input" placeholder="Aponte o leitor ou digite o cód. de barras e pressione Enter..."
+                    onkeydown="if(event.key==='Enter'&&this.value.trim()){handleRecScan(this.value.trim());this.value='';}"
                     onfocus="this.select()" autocomplete="off">
                   <div class="scan-status">🟢 Campo ativo — escaneie o produto</div>
                 </div>
-                <div id="rec-found-card" style="display:none" class="found-card">
+                <div id="ops-found-card" style="display:none" class="found-card">
                   <div class="found-title" id="rec-found-title">Produto</div>
                   <div class="form-row-3">
                     <div class="form-group" style="margin:0"><label>Lote</label><input type="text" id="rec-found-lote" placeholder="Lote"></div>
@@ -4188,9 +4188,9 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
   ══════════════════════════════════════════════════════════ -->
   <div id="portal-view-gestao" style="display:none">
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn btn-primary" id="portal-cli-tab-clientes" onclick="portalCliTab('clientes')" style="font-size:0.85rem">👥 Clientes</button>
-      <button class="btn btn-outline" id="portal-cli-tab-representantes" onclick="portalCliTab('representantes')" style="font-size:0.85rem">🧑‍💼 Representantes</button>
-      <button class="btn btn-outline" id="portal-cli-tab-tabelas" onclick="portalCliTab('tabelas')" style="font-size:0.85rem">💲 Tabelas de Preço</button>
+      <button class="btn btn-primary" id="portal-cli-tab-clientes" onclick="portalGestaoTab('clientes')" style="font-size:0.85rem">👥 Clientes</button>
+      <button class="btn btn-outline" id="portal-cli-tab-representantes" onclick="portalGestaoTab('representantes')" style="font-size:0.85rem">🧑‍💼 Representantes</button>
+      <button class="btn btn-outline" id="portal-cli-tab-tabelas" onclick="portalGestaoTab('tabelas')" style="font-size:0.85rem">💲 Tabelas de Preço</button>
     </div>
     <div id="portal-cli-view-clientes">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -5030,6 +5030,7 @@ let allStock = [];
 let unsubStock = null;
 let allHistoricoLotes = [];
 let unsubHistorico = null;
+let unsubHistoricoFallback = null;
 
 // === FATURAMENTO GLOBALS ===
 let allFaturistas = [];
@@ -5330,6 +5331,7 @@ function startListeners(){
 
   // Histórico de Lotes — live
   if(unsubHistorico) unsubHistorico();
+  if(unsubHistoricoFallback) unsubHistoricoFallback();
   unsubHistorico = db.collection('historicoLotes')
     .orderBy('archivedAt','desc')
     .onSnapshot(snap=>{
@@ -5337,7 +5339,7 @@ function startListeners(){
       if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
     }, err=>{
       // fallback sem ordenação se índice não existir
-      db.collection('historicoLotes').onSnapshot(snap2=>{
+      unsubHistoricoFallback = db.collection('historicoLotes').onSnapshot(snap2=>{
         allHistoricoLotes = snap2.docs.map(d=>({id:d.id,...d.data()}));
         allHistoricoLotes.sort((a,b)=>(b.archivedAt||'').localeCompare(a.archivedAt||''));
         if(document.getElementById('eview-historico')?.style.display!=='none') renderHistoricoLotes();
@@ -6090,7 +6092,7 @@ function filterAdmTable(){
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="openDetails('${r.id}',true)" style="margin-right:3px">👁️</button>
         <button class="btn btn-warning btn-sm" onclick="openUpdateStatus('${r.id}')">✏️ Status</button>
-        <button class="btn btn-sm" style="background:#E8F5E9;color:#107C10;border:1px solid #A5D6A7;margin-left:3px" onclick="gerarPDFById('${r.id}')">🖨️</button>
+        <button class="btn btn-sm" style="background:#E8F5E9;color:#107C10;border:1px solid #A5D6A7;margin-left:3px" onclick="gerarPDFById('${_esc(r.id)}')">🖨️</button>
       </td>
     </tr>`).join()||'<tr><td colspan="8" style="text-align:center;padding:20px;color:#aaa">Nenhuma solicitação.</td></tr>';
   renderPagination('adm-pagination',pages,admPage,p=>{admPage=p;filterAdmTable();});
@@ -6507,7 +6509,7 @@ function openDetails(id,isAdm){
     ${r.obsInterna?`<p style="font-size:11px;color:#888;margin-top:8px;padding:6px 10px;background:#FFF3E0;border-radius:4px">📋 Obs. interna: ${r.obsInterna}</p>`:''}
   `;
   const act=document.getElementById('modal-actions');
-  act.innerHTML=`<button class="btn btn-outline btn-sm" onclick="gerarPDFById('${r.id}')">🖨️ Gerar PDF</button>`;
+  act.innerHTML=`<button class="btn btn-outline btn-sm" onclick="gerarPDFById('${_esc(r.id)}')">🖨️ Gerar PDF</button>`;
   if(isAdm)act.innerHTML+=`<button class="btn btn-warning btn-sm" onclick="closeModal('modal-det');openUpdateStatus('${r.id}')">✏️ Atualizar Status</button>`;
   document.getElementById('modal-det').classList.add('open');
 }
@@ -8578,7 +8580,7 @@ function opsTab(tab,btn){
   document.querySelectorAll('#page-operacoes .tab-bar button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(tab==='inventario'){invVerificarRascunho();renderHistoricoInventarios();if(invSessao)setTimeout(()=>{const el=document.getElementById('inv-scan-input');if(el)el.focus();},100);}
-  if(tab==='recebimento') setTimeout(()=>{const el=document.getElementById('rec-scan-input');if(el)el.focus();},100);
+  if(tab==='recebimento') setTimeout(()=>{const el=document.getElementById('ops-scan-input');if(el)el.focus();},100);
   if(tab==='perdas') setTimeout(()=>{const el=document.getElementById('perd-scan-input');if(el)el.focus();},100);
   if(tab==='relatorios') initRelatorioOps();
   if(tab==='saida'){loadSaidaHistorico();setTimeout(()=>{const el=document.getElementById('saida-scan-input');if(el)el.focus();},100);}
@@ -8602,7 +8604,7 @@ function buscarPorBarcode(val){
 // ===== RECEBIMENTO =====
 function handleRecScan(val){
   const found=buscarPorBarcode(val);
-  const card=document.getElementById('rec-found-card');
+  const card=document.getElementById('ops-found-card');
   if(found){
     recFoundItem=found;
     document.getElementById('rec-found-title').innerHTML='<span style="color:#111111">'+_esc(found.codigo)+'</span> · '+_esc(found.descricao);
@@ -8625,10 +8627,10 @@ function adicionarItemRecebimento(){
   const qty=Number(document.getElementById('rec-found-qty').value)||0;
   if(!qty){alert('Informe a quantidade recebida.');return;}
   recItemsArr.push({codigo:recFoundItem.codigo,descricao:recFoundItem.descricao,lote,dataValidade:validade,quantidade:qty,barcode:recFoundItem.barcode||''});
-  document.getElementById('rec-found-card').style.display='none';
+  document.getElementById('ops-found-card').style.display='none';
   recFoundItem=null;
   renderRecItens();
-  const inp=document.getElementById('rec-scan-input');if(inp){inp.value='';inp.focus();}
+  const inp=document.getElementById('ops-scan-input');if(inp){inp.value='';inp.focus();}
   toast('✅ Adicionado!');
 }
 
@@ -8682,7 +8684,7 @@ async function salvarRecebimento(){
     }
     recItemsArr=[];renderRecItens();
     ['rec-fornecedor','rec-nf','rec-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    document.getElementById('rec-found-card').style.display='none';
+    document.getElementById('ops-found-card').style.display='none';
     recFoundItem=null;
     toast('✅ Recebimento registrado! '+recItemsArr.length+' itens salvos.');
     loadOpsStats();
@@ -15921,7 +15923,7 @@ function portalTab(aba){
   if(aba==='pedidos')portalCarregarTodosPedidos();
   if(aba==='novo')portalNovoForm();
   if(aba==='catalogo')portalCarregarCatalogo();
-  if(aba==='gestao'){portalCliTab('clientes');}
+  if(aba==='gestao'){portalGestaoTab('clientes');}
 }
 
 // ── Lista ─────────────────────────────────────────────
@@ -16557,7 +16559,7 @@ async function portalExcluirTabela(docId,nome){
 }
 
 // ── Sub-tabs Gestão ───────────────────────────────────────────
-function portalCliTab(aba){
+function portalGestaoTab(aba){
   ['clientes','representantes','tabelas'].forEach(t=>{
     const btn=document.getElementById('portal-cli-tab-'+t);
     const view=document.getElementById('portal-cli-view-'+t);
