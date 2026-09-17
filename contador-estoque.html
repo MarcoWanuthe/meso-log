@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Contador de Estoque — MESO-LOG</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#0F1115; --card:#171A21; --card2:#1E222B; --border:#2A2F3A;
+    --text:#EAECEF; --muted:#8B93A1; --primary:#0D9488; --primary-d:#0B7A70;
+    --danger:#D13438; --success:#107C10; --warn:#F0A000;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);padding-bottom:40px}
+  header{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{font-size:11px;color:var(--muted)}
+  .wrap{max-width:640px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  input,select{width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-size:15px;outline:none}
+  input:focus{border-color:var(--primary)}
+  .row{display:flex;gap:10px}
+  .row>div{flex:1}
+  .btn{border:none;border-radius:8px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-d)}
+  .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-block{width:100%}
+  .found-card{margin-top:12px;padding:12px;border-radius:8px;background:var(--card2);border:1px solid var(--border);display:none}
+  .found-card .nome{font-weight:700;font-size:15px}
+  .found-card .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .found-card .saldo{font-size:13px;margin-top:8px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+  .badge-ok{background:rgba(16,124,16,.15);color:#4ADE80}
+  .badge-warn{background:rgba(240,160,0,.15);color:#FBBF24}
+  .badge-bad{background:rgba(209,52,56,.15);color:#F87171}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .diff-ok{color:#4ADE80;font-weight:700}
+  .diff-bad{color:#F87171;font-weight:700}
+  .diff-zero{color:var(--muted)}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+  .kpi .v{font-size:20px;font-weight:800}
+  .kpi .l{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+  .empty{text-align:center;color:var(--muted);padding:24px;font-size:13px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E222B;border:1px solid var(--border);padding:10px 18px;border-radius:8px;font-size:13px;z-index:100;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .row-del{cursor:pointer;color:var(--muted);font-size:16px}
+  .actions{display:flex;gap:10px;margin-top:14px}
+  .actions .btn{flex:1}
+  .sug{margin-top:6px;border:1px solid var(--border);border-radius:8px;overflow:hidden;display:none}
+  .sug div{padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer}
+  .sug div:last-child{border-bottom:none}
+  .sug div:hover{background:var(--card2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📋 Contador de Estoque</h1>
+    <div class="sub" id="conn-status"><span class="status-dot" style="background:var(--warn)"></span>Conectando...</div>
+  </div>
+  <div class="sub" id="session-info"></div>
+</header>
+
+<div class="wrap">
+
+  <div class="kpis">
+    <div class="kpi"><div class="v" id="kpi-total">0</div><div class="l">Itens Contados</div></div>
+    <div class="kpi"><div class="v" id="kpi-ok" style="color:#4ADE80">0</div><div class="l">Bateram</div></div>
+    <div class="kpi"><div class="v" id="kpi-diff" style="color:#F87171">0</div><div class="l">Divergentes</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Buscar Produto</h2>
+    <label>Código de barras / código interno / nome</label>
+    <input type="text" id="busca-input" placeholder="Escaneie ou digite e pressione Enter..." autocomplete="off" autofocus>
+    <div class="sug" id="sug-box"></div>
+
+    <div class="found-card" id="found-card">
+      <div class="nome" id="found-nome">—</div>
+      <div class="meta" id="found-meta">—</div>
+      <div class="saldo">Saldo no sistema: <strong id="found-saldo">—</strong></div>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label>Quantidade contada</label>
+          <input type="number" id="qtd-input" min="0" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary btn-block" onclick="adicionarContagem()">✅ Adicionar à Contagem</button>
+        <button class="btn btn-outline" onclick="cancelarBusca()">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Itens Contados Nesta Sessão</h2>
+    <div id="lista-wrap">
+      <div class="empty" id="lista-empty">Nenhum item contado ainda. Escaneie um produto acima.</div>
+      <table id="lista-table" style="display:none">
+        <thead>
+          <tr><th>Produto</th><th class="num">Esperado</th><th class="num">Contado</th><th class="num">Dif.</th><th></th></tr>
+        </thead>
+        <tbody id="lista-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Finalizar</h2>
+    <label>Responsável pela contagem</label>
+    <input type="text" id="responsavel-input" placeholder="Seu nome">
+    <label style="margin-top:10px">Local / Filial (opcional)</label>
+    <input type="text" id="local-input" placeholder="Ex: Sede, Filial SP...">
+    <div class="actions">
+      <button class="btn btn-primary btn-block" onclick="finalizarContagem()">💾 Salvar Contagem</button>
+      <button class="btn btn-outline" onclick="exportarCSV()">⬇️ CSV</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC6bIbD2JhbRLUrP1EOV6TLaVHfGDSfCmU",
+  authDomain: "meso-log.firebaseapp.com",
+  projectId: "meso-log",
+  storageBucket: "meso-log.firebasestorage.app",
+  messagingSenderId: "314532395858",
+  appId: "1:314532395858:web:c338319fac53ac7f07d88b"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+let allStock = [];
+let itensContados = [];
+let produtoAtual = null;
+
+function _esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function setConnStatus(ok, msg){
+  const el = document.getElementById('conn-status');
+  el.innerHTML = `<span class="status-dot" style="background:${ok?'#4ADE80':'#F87171'}"></span>${_esc(msg)}`;
+}
+
+async function carregarStock(){
+  try{
+    const snap = await db.collection('stock').get();
+    allStock = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    setConnStatus(true, `Conectado — ${allStock.length} produtos carregados`);
+  }catch(e){
+    setConnStatus(false, 'Erro ao conectar: '+e.message);
+    toast('❌ Erro ao carregar estoque: '+e.message);
+  }
+}
+
+function buscarProduto(val, exigeMatch){
+  val = (val||'').trim();
+  if(!val) return;
+  const low = val.toLowerCase();
+
+  let item = allStock.find(s=>s.barcode && String(s.barcode)===val);
+  if(!item) item = allStock.find(s=>s.codigo && String(s.codigo).toLowerCase()===low);
+
+  if(item){
+    mostrarProduto(item);
+    document.getElementById('sug-box').style.display='none';
+    return;
+  }
+
+  if(exigeMatch){
+    toast('⚠️ Produto não encontrado: '+val);
+    document.getElementById('found-card').style.display='none';
+    produtoAtual=null;
+    return;
+  }
+
+  if(val.length>=2){
+    const matches = allStock.filter(s=>
+      (s.descricao||'').toLowerCase().includes(low) ||
+      (s.codigo||'').toLowerCase().includes(low)
+    ).slice(0,8);
+    renderSugestoes(matches);
+  }
+}
+
+function renderSugestoes(matches){
+  const box = document.getElementById('sug-box');
+  if(!matches.length){ box.style.display='none'; return; }
+  box.innerHTML = matches.map(m=>
+    `<div onclick="selecionarSugestao('${_esc(m.id)}')"><strong>${_esc(m.codigo||'')}</strong> — ${_esc(m.descricao||'')} <span style="color:var(--muted);font-size:11px">(saldo: ${m.quantidade||0})</span></div>`
+  ).join('');
+  box.style.display='block';
+}
+
+function selecionarSugestao(id){
+  const item = allStock.find(s=>s.id===id);
+  if(item){
+    mostrarProduto(item);
+    document.getElementById('sug-box').style.display='none';
+    document.getElementById('busca-input').value = item.descricao||'';
+  }
+}
+
+function mostrarProduto(item){
+  produtoAtual = item;
+  document.getElementById('found-nome').textContent = item.descricao || '(sem descrição)';
+  document.getElementById('found-meta').textContent =
+    `Cód: ${item.codigo||'—'} · Lote: ${item.lote||'—'}${item.dataValidade?' · Val: '+item.dataValidade:''}${item.local?' · '+item.local:''}`;
+  document.getElementById('found-saldo').textContent = (item.quantidade||0)+' un';
+  document.getElementById('found-card').style.display='block';
+  document.getElementById('qtd-input').value='';
+  setTimeout(()=>document.getElementById('qtd-input').focus(), 80);
+}
+
+function cancelarBusca(){
+  produtoAtual = null;
+  document.getElementById('found-card').style.display='none';
+  document.getElementById('busca-input').value='';
+  document.getElementById('busca-input').focus();
+}
+
+function adicionarContagem(){
+  if(!produtoAtual){ toast('Selecione um produto primeiro.'); return; }
+  const qtd = Number(document.getElementById('qtd-input').value);
+  if(qtd===''||isNaN(qtd)||qtd<0){ toast('Informe uma quantidade válida.'); return; }
+
+  const esperado = Number(produtoAtual.quantidade)||0;
+  const diff = qtd - esperado;
+
+  const idx = itensContados.findIndex(i=>i.id===produtoAtual.id);
+  const registro = {
+    id: produtoAtual.id,
+    codigo: produtoAtual.codigo||'',
+    descricao: produtoAtual.descricao||'',
+    esperado, contado: qtd, diferenca: diff
+  };
+  if(idx>=0) itensContados[idx]=registro; else itensContados.push(registro);
+
+  renderLista();
+  toast('✅ '+(produtoAtual.descricao||'Item')+' registrado.');
+  cancelarBusca();
+}
+
+function removerItem(id){
+  itensContados = itensContados.filter(i=>i.id!==id);
+  renderLista();
+}
+
+function renderLista(){
+  const empty = document.getElementById('lista-empty');
+  const table = document.getElementById('lista-table');
+  const tbody = document.getElementById('lista-tbody');
+
+  if(!itensContados.length){
+    empty.style.display='block'; table.style.display='none';
+  }else{
+    empty.style.display='none'; table.style.display='table';
+    tbody.innerHTML = itensContados.map(i=>{
+      const diffClass = i.diferenca===0?'diff-zero':(i.diferenca>0?'diff-ok':'diff-bad');
+      const diffTxt = i.diferenca>0?'+'+i.diferenca:i.diferenca;
+      return `<tr>
+        <td>${_esc(i.descricao)}<br><span style="color:var(--muted);font-size:11px">${_esc(i.codigo)}</span></td>
+        <td class="num">${i.esperado}</td>
+        <td class="num">${i.contado}</td>
+        <td class="num ${diffClass}">${diffTxt}</td>
+        <td class="row-del" onclick="removerItem('${_esc(i.id)}')">×</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const total = itensContados.length;
+  const ok = itensContados.filter(i=>i.diferenca===0).length;
+  const diff = total - ok;
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-ok').textContent = ok;
+  document.getElementById('kpi-diff').textContent = diff;
+}
+
+async function finalizarContagem(){
+  if(!itensContados.length){ toast('Nenhum item contado ainda.'); return; }
+  const responsavel = document.getElementById('responsavel-input').value.trim();
+  if(!responsavel){ toast('Informe o responsável pela contagem.'); return; }
+  const local = document.getElementById('local-input').value.trim();
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Salvando...';
+
+  try{
+    await db.collection('contagens_estoque').add({
+      responsavel, local,
+      itens: itensContados,
+      totalItens: itensContados.length,
+      totalDivergencias: itensContados.filter(i=>i.diferenca!==0).length,
+      criadoEm: new Date().toISOString()
+    });
+    toast('✅ Contagem salva com sucesso!');
+    itensContados = [];
+    renderLista();
+    document.getElementById('responsavel-input').value='';
+    document.getElementById('local-input').value='';
+  }catch(e){
+    toast('❌ Erro ao salvar: '+e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '💾 Salvar Contagem';
+  }
+}
+
+function exportarCSV(){
+  if(!itensContados.length){ toast('Nenhum item para exportar.'); return; }
+  let csv = 'Codigo;Descricao;Esperado;Contado;Diferenca\n';
+  itensContados.forEach(i=>{
+    csv += `${i.codigo};${i.descricao};${i.esperado};${i.contado};${i.diferenca}\n`;
+  });
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'contagem-estoque-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('busca-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    buscarProduto(e.target.value, true);
+  }
+});
+document.getElementById('busca-input').addEventListener('input', e=>{
+  buscarProduto(e.target.value, false);
+});
+document.getElementById('qtd-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') adicionarContagem();
+});
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#sug-box') && e.target.id!=='busca-input'){
+    document.getElementById('sug-box').style.display='none';
+  }
+});
+
+carregarStock();
+</script>
+
+</body>
+</html>
