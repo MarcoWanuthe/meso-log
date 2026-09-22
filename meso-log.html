@@ -5221,10 +5221,10 @@ function initFirebase(cfg){
   try{
     if(!firebase.apps.length) firebase.initializeApp(cfg);
     db = firebase.firestore();
-    // Seed products if first time
-    seedProducts();
-    // Start live listeners
-    startListeners();
+    // BUG-07 fix: anonymous auth before listeners so Firestore security rules pass
+    firebase.auth().signInAnonymously()
+      .then(()=>{seedProducts();startListeners();})
+      .catch(()=>{seedProducts();startListeners();});
     document.getElementById('setup-screen').style.display='none';
     if(identityEmail) showIdentityBar();
     toast('✅ Conectado ao Firebase!');
