@@ -1,0 +1,15 @@
+# Deploy runners — contêm tokens e não devem ir ao repositório público
+deploy_runner.html
+deploy_runner_*.html
+
+# Scripts de deploy locais
+deploy_pagamento.ps1
+deploy_*.ps1
+
+# Logs locais
+*.log
+deploy_log.txt
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
