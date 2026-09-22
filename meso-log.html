@@ -1609,7 +1609,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
         </div>
         </div>
-    </div>
 
     <!-- MÓDULO OPERAÇÕES (2+3+4) — ADM ONLY -->
     <div class="page" id="page-operacoes">
@@ -3098,8 +3097,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
         </div>
       </div>
 
-    </div>
-
     <!-- PAGE FATURAMENTO & EXPEDIÇÃO -->
     <div class="page" id="page-faturamento">
 
@@ -3871,8 +3868,6 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <button class="btn btn-success" style="flex:2" onclick="catSalvarEdicao()">💾 Salvar Alterações</button>
       <button class="btn btn-danger" style="flex:1" onclick="catExcluirLote(document.getElementById('ce-docid').value)">🗑️ Excluir Lote</button>
     </div>
-  </div>
-</div>
 
 <!-- PAGE PORTAL DE PEDIDOS -->
 <div class="page" id="page-portal">
@@ -5858,8 +5853,14 @@ async function submitSolicitacao(){
   btn.disabled=true;btn.textContent='⏳ Enviando...';
   try{
     const data=getFormData();
-    const count=(await db.collection('requests').get()).size;
-    const id='SOL-'+String(count+1).padStart(4,'0');
+    // FIX: ID gerado via transação atômica para evitar race condition com múltiplos usuários simultâneos
+    const counterRef=db.collection('config').doc('counters');
+    const id=await db.runTransaction(async t=>{
+      const snap=await t.get(counterRef);
+      const n=(snap.exists&&snap.data().solCount!=null)?snap.data().solCount+1:1;
+      t.set(counterRef,{solCount:n},{merge:true});
+      return 'SOL-'+String(n).padStart(4,'0');
+    });
     const req={id,dataSolicitacao:new Date().toISOString().slice(0,10),timestampISO:new Date().toISOString(),...data,produtos:JSON.parse(JSON.stringify(cart)),status:'Aguardando Aprovação',codigoRastreamento:'',transportadora:'',obsInterna:''};
     await db.collection('requests').doc(id).set(req);
     // Email: nova solicitação
@@ -6672,8 +6673,14 @@ async function submitEnvio(){
   if(!nome||!email||!depto||!destNome||!cep||!rua||!numero||!tipo||!conteudo||!justificativa){
     showToast('Preencha todos os campos obrigatórios (*).','warning');return;
   }
-  const count=(await db.collection('shipments').get()).size;
-  const id='ENV-'+String(count+1).padStart(4,'0');
+  // FIX: ID gerado via transação atômica para evitar race condition com múltiplos usuários simultâneos
+  const counterRef=db.collection('config').doc('counters');
+  const id=await db.runTransaction(async t=>{
+    const snap=await t.get(counterRef);
+    const n=(snap.exists&&snap.data().envCount!=null)?snap.data().envCount+1:1;
+    t.set(counterRef,{envCount:n},{merge:true});
+    return 'ENV-'+String(n).padStart(4,'0');
+  });
   const envio={
     id,
     dataSolicitacao: new Date().toISOString().split('T')[0],
@@ -11995,7 +12002,7 @@ function solicAbrirRejeitar(id){
     <p style="font-size:13px;color:#444;margin-bottom:14px"><strong>${r.id}</strong> — ${r.evento?.nome||''}</p>
     <div class="form-group">
       <label style="font-size:12px;font-weight:700">Motivo da rejeição *</label>
-      <textarea id="solic-modal-obs" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:70px" placeholder="Informe o motivo..."></textarea>
+      <textarea id="solic-modal-rej" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;min-height:70px" placeholder="Informe o motivo..."></textarea>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn btn-danger" onclick="solicConfirmarRejeitar('${id}')">❌ Confirmar Rejeição</button>
@@ -12004,7 +12011,7 @@ function solicAbrirRejeitar(id){
 }
 
 async function solicConfirmarRejeitar(id){
-  const obs=document.getElementById('solic-modal-obs')?.value||'';
+  const obs=document.getElementById('solic-modal-rej')?.value||'';
   if(!obs.trim()){alert('Informe o motivo da rejeição.');return;}
   try{
     const _snapR = await db.collection('requests').doc(id).get();
@@ -12269,6 +12276,8 @@ function platLogout(){
 
 function platApplyPermissions(){
   if(!platUser)return;
+  // BUG-07 fix: activate Firebase anonymous auth so Firestore security rules pass
+  try{if(typeof firebase!=='undefined'&&firebase.auth&&!firebase.auth().currentUser){firebase.auth().signInAnonymously().catch(()=>{});}}catch(_){}
   const p=platUser.permissoes||{};
   const navMap={
     'nav-solicitacoes':!!p.solicitacoes,
@@ -16258,6 +16267,9 @@ async function portalAtualizarStatus(docId,novoStatus){
   const st=PORTAL_STATUS[novoStatus]||{label:novoStatus};
   if(!confirm('Alterar status para "'+st.label+'"?'))return;
   try{
+    // FIX: Ler status anterior ANTES de atualizar (evita duplo débito de estoque)
+    const snAntes=await db.collection('pedidos_portal').doc(docId).get();
+    const statusAnterior=snAntes.exists?snAntes.data().status:null;
     await db.collection('pedidos_portal').doc(docId).update({status:novoStatus,atualizadoEm:new Date().toISOString()});
     toast('Status → '+st.label);
     try{const sn2=await db.collection('pedidos_portal').doc(docId).get();if(sn2.exists)enviarEmailStatus({id:docId,...sn2.data()},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
@@ -16274,15 +16286,20 @@ async function portalAtualizarStatus(docId,novoStatus){
       }catch(e){toast('Aviso: erro ao criar faturamento — '+e.message);}
     }
     if(novoStatus==='expedido'){
-      try{
-        const sn=await db.collection('pedidos_portal').doc(docId).get();const d=sn.data();
-        const batch=db.batch();
-        for(const it of(d.itens||[])){
-          if(!it.id)continue;
-          batch.update(db.collection('stock').doc(it.id),{quantidade:firebase.firestore.FieldValue.increment(-Math.abs(it.qtd))});
-        }
-        await batch.commit();toast('📦 Estoque debitado!');
-      }catch(e){toast('Aviso: erro ao debitar estoque — '+e.message);}
+      // FIX: Só debita se status anterior NÃO era 'expedido' — evita duplo débito por clique duplo
+      if(statusAnterior==='expedido'){
+        toast('⚠️ Estoque já foi debitado para este pedido.');
+      }else{
+        try{
+          const sn=await db.collection('pedidos_portal').doc(docId).get();const d=sn.data();
+          const batch=db.batch();
+          for(const it of(d.itens||[])){
+            if(!it.id)continue;
+            batch.update(db.collection('stock').doc(it.id),{quantidade:firebase.firestore.FieldValue.increment(-Math.abs(it.qtd))});
+          }
+          await batch.commit();toast('📦 Estoque debitado!');
+        }catch(e){toast('Aviso: erro ao debitar estoque — '+e.message);}
+      }
     }
     portalCarregarTodosPedidos();
     if(document.getElementById('ptl-pedido-docid')?.value===docId){
