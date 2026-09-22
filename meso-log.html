@@ -50,6 +50,7 @@ if('serviceWorker' in navigator){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MESO-LOG | Mesoestetic Pharma Group Brasil</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a1a'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='16' font-weight='bold' fill='white'%3EM%3C/text%3E%3C/svg%3E">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -16622,7 +16623,7 @@ function fiscalTab(aba){
 
 async function fiscalPopularFiliaisSelect(){
   try{
-    const snap=await db.collection('filiais').where('status','==','ativa').orderBy('uf').get();
+    const snap=await db.collection('filiais').where('status','==','ativa').get();
     ['fiscal-nfe-filial','fiscal-rem-filial','fiscal-rel-filial'].forEach(id=>{
       const sel=document.getElementById(id);
       if(!sel)return;
@@ -16643,6 +16644,7 @@ async function fiscalPopularFiliaisSelect(){
 async function fiscalCarregarKpis(){
   const kpi=document.getElementById('fiscal-kpis');
   if(!kpi)return;
+  const fmt=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   try{
     const [emSnap,recSnap,remSnap,lanSnap]=await Promise.all([
       db.collection('nfe_emitidas').get(),
