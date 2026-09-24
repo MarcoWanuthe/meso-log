@@ -5003,6 +5003,11 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 
 <script>
 // ==============================
+// UTILIDADES GLOBAIS
+// ==============================
+function fmt(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// ==============================
 // FIREBASE SETUP
 // ==============================
 let db = null;
