@@ -3869,6 +3869,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <button class="btn btn-success" style="flex:2" onclick="catSalvarEdicao()">💾 Salvar Alterações</button>
       <button class="btn btn-danger" style="flex:1" onclick="catExcluirLote(document.getElementById('ce-docid').value)">🗑️ Excluir Lote</button>
     </div>
+  </div>
+</div>
 
 <!-- PAGE PORTAL DE PEDIDOS -->
 <div class="page" id="page-portal">
@@ -5470,6 +5472,8 @@ function showPage(p){
   // Platform ACL permission guard
   const _PM={solicitacoes:'solicitacoes',envios:'solicitacoes',estoque:'estoque',operacoes:'operacoes',faturamento:'faturamento',recepcao:'recepcao',portal:'portal',filiais:'filiais',fiscal:'fiscal',clientes:'clientes',adm:'__adm__',pdv:'pdv'};
   if(platUser&&_PM[p]!==undefined){const _pk=_PM[p];const _ok=_pk==='__adm__'?platUser.isAdm:platUser.permissoes[_pk];if(!_ok){toast('⛔ Sem permissão para acessar este módulo.');showPage('home');return;}}
+  // Auto-fechar modais abertos ao trocar de módulo
+  document.querySelectorAll('.modal-overlay').forEach(m=>{if(m.id)closeModal(m.id);});
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
@@ -9338,6 +9342,9 @@ function initPdvEventos(){
           </div>
         </div>`;
       }).join('');
+    },err=>{
+      console.warn('[PDV Eventos] Erro ao carregar eventos:',err.code||err);
+      lista.innerHTML='<p style="color:#aaa;text-align:center;padding:30px">Nenhum evento disponível.</p>';
     });
 }
 
