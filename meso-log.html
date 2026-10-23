@@ -16661,7 +16661,7 @@ async function fiscalPopularFiliaisSelect(){
       if(!sel)return;
       const first=sel.options[0];
       sel.innerHTML='';
-      sel.appendChild(first);
+      if(first) sel.appendChild(first);
       snap.docs.forEach(d=>{
         const f=d.data();
         const opt=document.createElement('option');
@@ -17128,7 +17128,7 @@ async function filPopularSelectFiliais(){
       if(!sel)return;
       const first=sel.options[0];
       sel.innerHTML='';
-      sel.appendChild(first);
+      if(first) sel.appendChild(first);
       ativas.forEach(d=>{
         const f=d.data();
         const opt=document.createElement('option');
