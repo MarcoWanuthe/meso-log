@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-10-22-FIX4 -->
+<!-- meso-log v2026-08-26-SEC4 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,8 +22,8 @@
   const EJS_TMPL_APROV   = 'tmpl_aprovada';     // template: aprovada
   const EJS_TMPL_REPROV  = 'tmpl_reprovada';    // template: reprovada
   const EJS_TMPL_ENVIADA = 'tmpl_enviada';      // template: enviada/expedida
-  const EJS_ATIVO = (EJS_SERVICE !== 'SEU_SERVICE_ID') && (typeof emailjs !== 'undefined'); // auto-desativa se não configurado ou SDK ausente
-  if(EJS_ATIVO){ try{ emailjs.init({publicKey: EJS_PUB_KEY}); } catch(e){ console.warn('[MESO-LOG] EmailJS init falhou:',e); } }
+  const EJS_ATIVO = (EJS_SERVICE !== 'SEU_SERVICE_ID'); // auto-desativa se não configurado
+  if(EJS_ATIVO) emailjs.init({publicKey: EJS_PUB_KEY});
 
   async function sendSolicEmail(tipo, params){
     if(!EJS_ATIVO) return; // silencioso se não configurado
@@ -41,9 +41,9 @@
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(function(regs){
     regs.forEach(function(r){r.unregister();});
-  }).catch(function(e){ console.warn('[MESO-LOG] SW getRegistrations falhou:',e); });
+  });
   if('caches' in window){
-    caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k);});}).catch(function(e){ console.warn('[MESO-LOG] caches.keys falhou:',e); });
+    caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k);});});
   }
 }
 </script>
@@ -6266,25 +6266,6 @@ function catAbrirEdicao(docId){
   document.getElementById('modal-cat-edit').classList.add('open');
 }
 
-
-// ── Custom confirm dialog (replaces window.confirm) ──────────────
-function mesoCofirm(msg){
-  return new Promise(resolve=>{
-    const ov=document.createElement('div');
-    ov.className='modal-overlay open';
-    ov.style.zIndex='9999';
-    const safe=msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    ov.innerHTML='<div class="modal" style="max-width:420px;padding:28px 24px;text-align:center">'+
-      '<p style="margin:0 0 22px;line-height:1.6;white-space:pre-line">'+safe+'</p>'+
-      '<div style="display:flex;gap:10px;justify-content:center">'+
-      '<button class="btn btn-secondary" id="_mc_n" style="min-width:100px">Cancelar</button>'+
-      '<button class="btn btn-danger"    id="_mc_y" style="min-width:100px">Confirmar</button>'+
-      '</div></div>';
-    document.body.appendChild(ov);
-    ov.querySelector('#_mc_n').onclick=()=>{ov.remove();resolve(false);};
-    ov.querySelector('#_mc_y').onclick=()=>{ov.remove();resolve(true);};
-  });
-}
 async function catSalvarEdicao(){
   const docId   = document.getElementById('ce-docid').value;
   const codigo  = document.getElementById('ce-cod').value.trim();
@@ -6323,7 +6304,7 @@ async function catSalvarEdicao(){
 }
 
 async function catExcluirLote(docId){
-  if(!await mesoCofirm('Excluir este lote do catálogo? Esta ação não pode ser desfeita.')) return;
+  if(!confirm('Excluir este lote do catálogo? Esta ação não pode ser desfeita.')) return;
   try{
     await db.collection('stock').doc(docId).delete();
     toast('Lote excluído.');
@@ -6379,7 +6360,7 @@ async function catSalvarNovo(){
 
 // ─── MIGRAÇÃO: STOCK_SEED + PRODUCTS_DEFAULT → Firestore stock ───────────────
 async function migrarCatalogoCentralizado(){
-  if(!await mesoCofirm(
+  if(!confirm(
     'Sincronizar Catálogo?\n\n' +
     'Isso irá:\n' +
     '• Gravar barcode, precoCusto e categoria em todos os docs do Firestore que estiverem faltando\n' +
@@ -6451,13 +6432,11 @@ async function migrarCatalogoCentralizado(){
 // Compatibilidade com chamadas antigas
 async function addProductDB(){ catToggleFormNovo(); }
 async function deleteProductDB(cod){
-  if(!await mesoCofirm('Remover TODOS os lotes deste produto?')) return;
-  try{
+  if(!confirm('Remover TODOS os lotes deste produto?')) return;
   const batch = db.batch();
   allStock.filter(s=>s.codigo===cod).forEach(s=>batch.delete(db.collection('stock').doc(s.id)));
   await batch.commit();
   toast('Produto removido.');
-  }catch(e){toast('❌ Erro: '+e.message);console.error('deleteProductDB',e);}
 }
 
 async function salvarConfig(){
@@ -6474,15 +6453,13 @@ async function salvarConfig(){
     document.getElementById('cfg-pwd2').value='';
   }
   if(Object.keys(upd).length){
-    try{
-      await db.collection('config').doc('system').set(upd,{merge:true});
-      toast('✅ Configurações salvas!');
-    }catch(e){toast('❌ Erro ao salvar: '+e.message);}
+    await db.collection('config').doc('system').set(upd,{merge:true});
+    toast('✅ Configurações salvas!');
   }
 }
 
 function resetFirebaseConfig(){
-  if(!await mesoCofirm('Isso apagará a configuração Firebase salva e você precisará reconectar. Continuar?'))return;
+  if(!confirm('Isso apagará a configuração Firebase salva e você precisará reconectar. Continuar?'))return;
   localStorage.removeItem('ml_firebase_config');
   location.reload();
 }
@@ -6858,11 +6835,9 @@ async function addCarrier(){
 }
 
 async function deleteCarrier(id){
-  if(!await mesoCofirm('Excluir esta transportadora?'))return;
-  try{
-    await db.collection('carriers').doc(id).delete();
-    showToast('Removida.','info');
-  }catch(e){toast('❌ Erro: '+e.message);}
+  if(!confirm('Excluir esta transportadora?'))return;
+  await db.collection('carriers').doc(id).delete();
+  showToast('Removida.','info');
 }
 
 function openUpdateEnvioStatus(id){
@@ -7304,7 +7279,7 @@ async function salvarEstoqueItem(){
 }
 
 async function excluirEstoqueItem(id){
-  if(!await mesoCofirm('Excluir este item do estoque?')) return;
+  if(!confirm('Excluir este item do estoque?')) return;
   try{
     await db.collection('stock').doc(id).delete();
     closeModal('modal-estoque-edit');
@@ -7431,7 +7406,7 @@ async function processarImportacaoEstoque(rows, resEl){
 }
 
 async function limparEReseed(){
-  if(!await mesoCofirm('⚠️ Isso vai APAGAR todos os itens de estoque existentes e recriar do zero com o banco oficial (quantidades = 0). Esta ação não pode ser desfeita. Continuar?')) return;
+  if(!confirm('⚠️ Isso vai APAGAR todos os itens de estoque existentes e recriar do zero com o banco oficial (quantidades = 0). Esta ação não pode ser desfeita. Continuar?')) return;
   const btn = event.target;
   btn.disabled=true; btn.textContent='⏳ Limpando...';
   try{
@@ -7461,7 +7436,7 @@ async function limparEReseed(){
 }
 
 async function seedEstoque(){
-  if(!await mesoCofirm('Isto vai popular o Firestore com '+STOCK_SEED.length+' itens do banco oficial (quantidade = 0). Itens já existentes são mantidos. Continuar?')) return;
+  if(!confirm('Isto vai popular o Firestore com '+STOCK_SEED.length+' itens do banco oficial (quantidade = 0). Itens já existentes são mantidos. Continuar?')) return;
   const btn = event.target;
   btn.disabled=true;btn.textContent='⏳ Populando...';
   try{
@@ -7729,8 +7704,6 @@ async function buscarKardex(){
     btnPDF.style.display='';
   }catch(e){
     el.innerHTML='<div class="card" style="color:#D13438;padding:20px">Erro ao rastrear: '+e.message+'</div>';
-  }finally{
-    try{const sp=document.getElementById('loading-overlay')||document.getElementById('spinner');if(sp)sp.style.display='none';}catch(e){}
   }
 }
 
@@ -7810,7 +7783,7 @@ async function arquivarLotesZerados(){
   if(!admLoggedIn){toast('Ação disponível apenas para ADM.');return;}
   const zeros = allStock.filter(s=>Number(s.quantidade||0)===0);
   if(!zeros.length){toast('Nenhum item com quantidade zero encontrado.');return;}
-  const ok = await mesoCofirm(`📦 Arquivar ${zeros.length} lote(s) com quantidade zero?\n\nEles serão removidos do estoque ativo mas ficarão salvos no Histórico de Lotes com rastreabilidade completa.`);
+  const ok = confirm(`📦 Arquivar ${zeros.length} lote(s) com quantidade zero?\n\nEles serão removidos do estoque ativo mas ficarão salvos no Histórico de Lotes com rastreabilidade completa.`);
   if(!ok) return;
   const now = new Date().toISOString();
   const batch = db.batch();
@@ -8211,7 +8184,7 @@ async function salvarSaida(){
   if(!qty||qty<=0){alert('Informe uma quantidade válida.');return;}
   const estoqueAtual=Number(document.getElementById('saida-found-estoque').value)||0;
   if(qty>estoqueAtual){
-    if(!await mesoCofirm('Quantidade ('+qty+') maior que estoque disponível ('+estoqueAtual+'). Confirmar assim mesmo?')) return;
+    if(!confirm('Quantidade ('+qty+') maior que estoque disponível ('+estoqueAtual+'). Confirmar assim mesmo?')) return;
   }
   const btn=event.target;btn.disabled=true;btn.textContent='⏳ Salvando...';
   try{
@@ -8452,8 +8425,6 @@ async function gerarRelatorioOps(){
     btnPDF.style.display = '';
   }catch(e){
     el.innerHTML='<div class="card" style="color:#D13438;padding:20px">Erro ao gerar relatório: '+e.message+'</div>';
-  }finally{
-    try{const sp=document.getElementById('loading-overlay')||document.getElementById('spinner');if(sp)sp.style.display='none';}catch(e){}
   }
 }
 
@@ -8841,8 +8812,6 @@ async function loadRecHistorico(){
   }catch(e){
     el.innerHTML='<p style="color:#D13438;font-size:12px">Erro ao carregar histórico.</p>';
     logErro('OPS','loadRecHistorico',e);
-  }finally{
-    try{const sp=document.getElementById('loading-overlay')||document.getElementById('spinner');if(sp)sp.style.display='none';}catch(e){}
   }
 }
 
@@ -8905,8 +8874,8 @@ function iniciarInventario(){
   toast('✅ Inventário iniciado: '+nome);
 }
 
-async function cancelarInventario(){
-  if(!await mesoCofirm('Cancelar inventário? Todos os itens contados serão perdidos.')) return;
+function cancelarInventario(){
+  if(!confirm('Cancelar inventário? Todos os itens contados serão perdidos.')) return;
   invDeletarRascunho();invSessao=null; invItens=[]; invFoundItem=null;
   document.getElementById('inv-sessao').style.display = 'none';
   document.getElementById('inv-setup').style.display  = '';
@@ -9133,7 +9102,7 @@ async function invRetomarRascunho(id){
   }catch(e){toast('Erro ao retomar: '+e.message);}
 }
 async function invDescartarRascunho(id){
-  if(!await mesoCofirm('Descartar sessão pausada? Os itens contados serão perdidos.'))return;
+  if(!confirm('Descartar sessão pausada? Os itens contados serão perdidos.'))return;
   try{
     await db.collection('inventarios_rascunho').doc(id).delete();
     const banner=document.getElementById('inv-rascunho-banner');if(banner)banner.remove();
@@ -9146,7 +9115,7 @@ async function finalizarInventario(){
   confirmarNaoBipados(async function(confirmedZeros){
     const todosItens=[...invItens,...confirmedZeros];
     const msg='Finalizar inventário e atualizar estoque?\n\n✅ Bipados: '+invItens.length+'\n⚠️ Confirmados (não bipados): '+confirmedZeros.length+'\n📦 Total: '+todosItens.length+' item(ns)';
-    if(!await mesoCofirm(msg)) return;
+    if(!confirm(msg)) return;
     const btn=document.querySelector('#inv-sessao .btn-success');
     if(btn){btn.disabled=true;btn.textContent='⏳ Salvando...';}
     try{
@@ -9371,7 +9340,7 @@ async function selecionarEvento(id){
 
 async function apagarEvento(id, nome){
   if(!admLoggedIn){alert('Apenas ADM pode apagar eventos.');return;}
-  if(!await mesoCofirm('⚠️ ATENÇÃO — Apagar evento "'+nome+'"?\n\nSerão removidos permanentemente:\n  • O evento\n  • Todo o estoque do evento\n  • Todos os pedidos do evento\n\nEsta ação NÃO pode ser desfeita.\nConfirmar?'))return;
+  if(!confirm('⚠️ ATENÇÃO — Apagar evento "'+nome+'"?\n\nSerão removidos permanentemente:\n  • O evento\n  • Todo o estoque do evento\n  • Todos os pedidos do evento\n\nEsta ação NÃO pode ser desfeita.\nConfirmar?'))return;
   try{
     toast('⏳ Apagando evento...');
     // 1. Delete deposito_evento (in batches of 500)
@@ -10044,7 +10013,7 @@ function pedidoTab(pedidoId,tab){
 }
 
 async function marcarAEntregar(pedidoId){
-  if(!await mesoCofirm('Confirmar que os itens "A Entregar" foram enviados pela sede?')) return;
+  if(!confirm('Confirmar que os itens "A Entregar" foram enviados pela sede?')) return;
   await db.collection('pedidos_evento').doc(pedidoId).update({
     statusAEntregar:'entregue_sede',
     entregueSedeEm:new Date().toISOString(),
@@ -10104,7 +10073,7 @@ async function renderEstoqueEvento(){
 
 /* ---- APAGAR ITEM / LIMPAR ESTOQUE DO EVENTO ---- */
 async function apagarItemEstoqueEvento(docId, descricao){
-  if(!await mesoCofirm('Apagar "'+decodeURIComponent(descricao)+'" do estoque deste evento?'))return;
+  if(!confirm('Apagar "'+decodeURIComponent(descricao)+'" do estoque deste evento?'))return;
   try{
     await db.collection('deposito_evento').doc(docId).delete();
     renderEstoqueEvento();
@@ -10113,7 +10082,7 @@ async function apagarItemEstoqueEvento(docId, descricao){
 
 async function limparEstoqueEvento(){
   if(!pdvEventoAtivo)return;
-  if(!await mesoCofirm('⚠️ Apagar TODO o estoque do evento "'+pdvEventoAtivo.nome+'"?\n\nEsta ação não pode ser desfeita.'))return;
+  if(!confirm('⚠️ Apagar TODO o estoque do evento "'+pdvEventoAtivo.nome+'"?\n\nEsta ação não pode ser desfeita.'))return;
   try{
     const snap=await db.collection('deposito_evento').where('eventoId','==',pdvEventoAtivo.id).get();
     if(snap.empty){alert('Estoque já está vazio.');return;}
@@ -10568,7 +10537,7 @@ async function emAdicionarAoEvento(){
 
   const estoqueBase = Number(emFoundItem.quantidade)||0;
   if(qty > estoqueBase){
-    if(!await mesoCofirm('Quantidade ('+qty+') maior que o estoque disponível neste lote ('+estoqueBase+').\nConfirmar assim mesmo?')) return;
+    if(!confirm('Quantidade ('+qty+') maior que o estoque disponível neste lote ('+estoqueBase+').\nConfirmar assim mesmo?')) return;
   }
 
   const btn = document.querySelector('#pdv-entrada-manual button.btn-primary');
@@ -10923,7 +10892,7 @@ async function renderFechamentoResumo(){
 async function confirmarFechamentoEvento(){
   if(!pdvEventoAtivo){toast('Selecione um evento.');return;}
   const destino=document.querySelector('input[name="destino-retorno"]:checked')?.value||'sede';
-  if(!await mesoCofirm('Confirmar FECHAMENTO do evento "'+pdvEventoAtivo.nome+'"?\n\nEstoque remanescente → '+(destino==='cml'?'CML — Centro Médico Logístico':'Sede')+'.\n\nEsta ação não pode ser desfeita.')) return;
+  if(!confirm('Confirmar FECHAMENTO do evento "'+pdvEventoAtivo.nome+'"?\n\nEstoque remanescente → '+(destino==='cml'?'CML — Centro Médico Logístico':'Sede')+'.\n\nEsta ação não pode ser desfeita.')) return;
   try{
     await db.collection('eventos').doc(pdvEventoAtivo.id).update({
       status:'fechado',
@@ -11111,7 +11080,7 @@ async function excluirVendedor(id){
   try{
     const doc=await db.collection('vendedores').doc(id).get();
     const nome=doc.exists?doc.data().nome:'este vendedor';
-    if(!await mesoCofirm('⚠️ Excluir o vendedor "'+nome+'" permanentemente?\n\nTodos os dados vinculados serão preservados nos pedidos, mas o login deixará de funcionar.')) return;
+    if(!confirm('⚠️ Excluir o vendedor "'+nome+'" permanentemente?\n\nTodos os dados vinculados serão preservados nos pedidos, mas o login deixará de funcionar.')) return;
     await db.collection('vendedores').doc(id).delete();
     toast('✅ Vendedor "'+nome+'" excluído.');
     renderVendedores();
@@ -12167,7 +12136,7 @@ function admEditUsuario(id){
 }
 
 async function admExcluirUsuario(id,nome){
-  if(!await mesoCofirm('Excluir usuário "'+nome+'"?'))return;
+  if(!confirm('Excluir usuário "'+nome+'"?'))return;
   try{
     await db.collection('usuarios_solic').doc(id).delete();
     toast('🗑 Usuário removido.');
@@ -12277,8 +12246,8 @@ async function platLogin(){
   if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
 }
 
-async function platLogout(){
-  if(!await mesoCofirm('Sair da plataforma?'))return;
+function platLogout(){
+  if(!confirm('Sair da plataforma?'))return;
   platUser=null;
   admLoggedIn=false;
   solicUser=null;
@@ -12286,12 +12255,6 @@ async function platLogout(){
   recAtendente=null;
   opsLoggedIn=false;
   pdvVendedorAtivo=null;
-  // NAV-001: limpar estado do Portal de Pedidos para evitar dados residuais após logout
-  _portalPedidos=[];
-  _portalItens=[];
-  _portalClienteSel=null;
-  _portalTabelaSel=null;
-  _portalEditDocId=null;
   const userBar=document.getElementById('plat-topbar-user');if(userBar)userBar.style.display='none';
   const errEl=document.getElementById('plat-login-erro');if(errEl){errEl.textContent='';errEl.style.display='none';}
   platShowLogin();
@@ -12442,7 +12405,7 @@ function platAdmEditar(id){
 }
 
 async function platAdmExcluir(id,nome){
-  if(!await mesoCofirm('Excluir usuário "'+nome+'"?'))return;
+  if(!confirm('Excluir usuário "'+nome+'"?'))return;
   try{
     await db.collection('usuarios_plataforma').doc(id).delete();
     toast('Usuário removido.');
@@ -12678,11 +12641,11 @@ function renderFilaPedidos(){
 }
 
 // ─── VERIFICAR PAGAMENTO ──────────────────────────────────────────────────────
-async function verificarPagamento(id){
+function verificarPagamento(id){
   if(!fatUserCan('verificar_pagamento')){ toast('⛔ Seu perfil não tem permissão para verificar pagamentos.'); return; }
   const p = allPedidosFat.find(x => x.id === id);
   if(!p) return;
-  if(!await mesoCofirm(`Confirmar que o pagamento foi verificado para:\n\nPedido: ${p.numeroPedidoMesoLog}\nCliente: ${p.clienteNome}\n\nO pedido poderá seguir para Pré-Separação após esta confirmação.`)) return;
+  if(!confirm(`Confirmar que o pagamento foi verificado para:\n\nPedido: ${p.numeroPedidoMesoLog}\nCliente: ${p.clienteNome}\n\nO pedido poderá seguir para Pré-Separação após esta confirmação.`)) return;
 
   const ts  = new Date().toISOString();
   const por = (fatUser ? fatUser.nome + ' ' + (fatUser.sobrenome||'') : 'ADM').trim();
@@ -13128,8 +13091,8 @@ function fatAutoFillFromCodigo(i, val){
   }
 }
 
-async function fatLimparForm(){
-  if(!await mesoCofirm('Limpar todos os dados do formulário?')) return;
+function fatLimparForm(){
+  if(!confirm('Limpar todos os dados do formulário?')) return;
   fatItens = [];
   ['fat-num-mercus','fat-num-erp','fat-cli-nome','fat-cli-cnpj','fat-cli-end','fat-cli-cidade','fat-vendedor','fat-obs','fat-cond-pag'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value = '';
@@ -14019,8 +13982,8 @@ function _bipRegistrar(idx){
   setTimeout(() => document.getElementById('fat-scan-input')?.focus(), 80);
 }
 
-async function fatResetBipagem(){
-  if(!await mesoCofirm('Resetar toda a contagem de bipagem?')) return;
+function fatResetBipagem(){
+  if(!confirm('Resetar toda a contagem de bipagem?')) return;
   fatBipItems = fatBipItems.map(it => ({...it, bipados:0}));
   renderFechamento();
 }
@@ -14904,7 +14867,7 @@ async function toggleFaturista(id, currentAtivo){
 }
 
 async function excluirFaturista(id, nome){
-  if(!await mesoCofirm('Excluir faturista "' + nome + '"?')) return;
+  if(!confirm('Excluir faturista "' + nome + '"?')) return;
   try{
     await db.collection('faturistas').doc(id).delete();
     toast('🗑️ Faturista removido.');
@@ -14961,7 +14924,7 @@ async function toggleEmpresaBloqueada(id, novaBloq){
 }
 
 async function excluirEmpresa(id, nome){
-  if(!await mesoCofirm('Excluir empresa "' + nome + '"? Isso não remove pedidos existentes.')) return;
+  if(!confirm('Excluir empresa "' + nome + '"? Isso não remove pedidos existentes.')) return;
   try{ await db.collection('empresas').doc(id).delete(); toast('🗑️ Empresa removida.'); }
   catch(e){ toast('Erro: ' + e.message); }
 }
@@ -15151,14 +15114,14 @@ function recCalcPreco(){
 
 // ---------- PDV: CARRINHO ----------
 
-async function recAddCarrinho(){
+function recAddCarrinho(){
   if(!recepFoundItem){toast('Selecione um produto primeiro.');return;}
   const qty=Number(document.getElementById('rec-qty').value)||1;
   if(qty<=0){toast('Quantidade inválida.');return;}
   const tipo=document.getElementById('rec-tipo-saida').value;
   const preco=parseFloat(document.getElementById('rec-preco').value)||0;
   if((recepFoundItem.quantidade||0)<qty&&tipo!=='consumo'){
-    if(!await mesoCofirm(`Estoque disponível: ${recepFoundItem.quantidade||0} un. Deseja continuar com ${qty}?`))return;
+    if(!confirm(`Estoque disponível: ${recepFoundItem.quantidade||0} un. Deseja continuar com ${qty}?`))return;
   }
   const idx=recCarrinho.findIndex(c=>c.id===recepFoundItem.id&&c.tipo===tipo);
   if(idx>=0){
@@ -15210,7 +15173,7 @@ function recRenderCarrinho(){
 }
 
 function recRemoverItem(i){recCarrinho.splice(i,1);recRenderCarrinho();}
-async function recLimparCarrinho(){if(!recCarrinho.length)return;if(!await mesoCofirm('Limpar o carrinho?'))return;recCarrinho=[];recRenderCarrinho();}
+function recLimparCarrinho(){if(!recCarrinho.length)return;if(!confirm('Limpar o carrinho?'))return;recCarrinho=[];recRenderCarrinho();}
 
 async function recFinalizarVenda(){
   if(!rateLimit('rec-venda',5,30)){toast('⚠️ Muitas finalizações simultâneas. Aguarde.');return;}
@@ -15453,7 +15416,7 @@ async function recSalvarRetirada(){
 }
 
 async function recConfirmarEntrega(id){
-  if(!await mesoCofirm('Confirmar que o cliente já retirou os produtos?'))return;
+  if(!confirm('Confirmar que o cliente já retirou os produtos?'))return;
   try{
     await db.collection('rec_retiradas').doc(id).update({
       status:'entregue',
@@ -15466,7 +15429,7 @@ async function recConfirmarEntrega(id){
 }
 
 async function recCancelarRetirada(id){
-  if(!await mesoCofirm('Cancelar esta retirada?'))return;
+  if(!confirm('Cancelar esta retirada?'))return;
   try{
     await db.collection('rec_retiradas').doc(id).update({status:'cancelado',canceladoEm:new Date().toISOString(),canceladoPor:recAtendente.nome});
     toast('Retirada cancelada.');recRenderRetiradas();
@@ -15609,7 +15572,7 @@ function recRenderTransfItens(){
 
 async function recConfirmarTransferencia(){
   if(!recTransfListaItens.length){toast('Adicione ao menos um produto.');return;}
-  if(!await mesoCofirm('Confirmar transferência de '+recTransfListaItens.length+' produto(s) do depósito central para a Recepção?'))return;
+  if(!confirm('Confirmar transferência de '+recTransfListaItens.length+' produto(s) do depósito central para a Recepção?'))return;
   try{
     const batch=db.batch();
     for(const it of recTransfListaItens){
@@ -15734,13 +15697,11 @@ async function recRedefinirPin(id){
 }
 
 async function recExcluirAtendente(id){
-  try{
-    const doc=await db.collection('rec_atendentes').doc(id).get();
-    const nome=doc.exists?doc.data().nome:'este atendente';
-    if(!await mesoCofirm('Excluir "'+nome+'" permanentemente?'))return;
-    await db.collection('rec_atendentes').doc(id).delete();
-    toast('✅ Atendente excluído.');recRenderAtendentes();
-  }catch(e){toast('❌ Erro: '+e.message);}
+  const doc=await db.collection('rec_atendentes').doc(id).get();
+  const nome=doc.exists?doc.data().nome:'este atendente';
+  if(!confirm('Excluir "'+nome+'" permanentemente?'))return;
+  await db.collection('rec_atendentes').doc(id).delete();
+  toast('✅ Atendente excluído.');recRenderAtendentes();
 }
 
 // ---------- RELATÓRIOS ----------
@@ -15963,11 +15924,6 @@ function portalTab(aba){
 async function portalCarregarTodosPedidos(){
   const cont=document.getElementById('portal-lista-container');
   if(!cont)return;
-  // PP-004: guard contra race condition auth — db.collection falha se usuário ainda não autenticou
-  if(!firebase.auth().currentUser){
-    cont.innerHTML='<p style="color:#9ca3af;text-align:center;padding:20px">⏳ Autenticando… clique em Atualizar em alguns segundos.</p>';
-    return;
-  }
   cont.innerHTML='<p style="color:#9ca3af;padding:12px">Carregando...</p>';
   try{
     const snap=await db.collection('pedidos_portal').orderBy('criadoEm','desc').limit(300).get();
@@ -15977,7 +15933,6 @@ async function portalCarregarTodosPedidos(){
 }
 
 function portalListaFiltrar(){
-  if(!_portalPedidos || !_portalPedidos.length) return;
   const busca=(document.getElementById('ptl-filtro-busca')?.value||'').toLowerCase();
   const fStatus=document.getElementById('ptl-filtro-status')?.value||'';
   const fTipo=document.getElementById('ptl-filtro-tipo')?.value||'';
@@ -16273,7 +16228,7 @@ async function portalSalvarOrcamento(){
 
 async function portalConfirmarPedido(){
   const d=_ptlColetar('confirmado');if(!d)return;
-  if(!await mesoCofirm('Confirmar o pedido?'))return;await _ptlSalvar(d,'Pedido confirmado!');}
+  if(!confirm('Confirmar o pedido?'))return;await _ptlSalvar(d,'Pedido confirmado!');}
 
 async function _ptlSalvar(dados,msg){
   try{
@@ -16295,11 +16250,11 @@ function portalCancelarEdicao(){portalTab('pedidos');}
 // ── Status Machine + Integrações ──────────────────────────────
 async function portalAtualizarStatus(docId,novoStatus){
   const st=PORTAL_STATUS[novoStatus]||{label:novoStatus};
-  if(!await mesoCofirm('Alterar status para "'+st.label+'"?'))return;
+  if(!confirm('Alterar status para "'+st.label+'"?'))return;
   try{
     await db.collection('pedidos_portal').doc(docId).update({status:novoStatus,atualizadoEm:new Date().toISOString()});
     toast('Status → '+st.label);
-    try{const sn2=await db.collection('pedidos_portal').doc(docId).get();if(sn2.exists)(typeof enviarEmailStatus==='function') && enviarEmailStatus({id:docId,...sn2.data()},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
+    try{const sn2=await db.collection('pedidos_portal').doc(docId).get();if(sn2.exists)enviarEmailStatus({id:docId,...sn2.data()},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
     if(novoStatus==='aprovado'){
       try{
         // BUG-09 fix: verificar se já existe entrada em faturamento para este pedido
@@ -16506,7 +16461,7 @@ async function portalSalvarCliente(){
   }catch(e){toast('Erro: '+e.message);}
 }
 async function portalExcluirCliente(docId,nome){
-  if(!await mesoCofirm('Excluir "'+nome+'"?'))return;
+  if(!confirm('Excluir "'+nome+'"?'))return;
   try{await db.collection('clientes_portal').doc(docId).delete();toast('Excluído.');portalCarregarClientes();}catch(e){toast('Erro: '+e.message);}
 }
 async function portalCliCnpjAutoFill(val){
@@ -16554,7 +16509,7 @@ async function portalSalvarRep(){
   }catch(e){toast('Erro: '+e.message);}
 }
 async function portalExcluirRep(docId,nome){
-  if(!await mesoCofirm('Excluir "'+nome+'"?'))return;
+  if(!confirm('Excluir "'+nome+'"?'))return;
   try{await db.collection('representantes_portal').doc(docId).delete();toast('Excluído.');portalCarregarRepresentantes();}catch(e){toast('Erro: '+e.message);}
 }
 
@@ -16599,7 +16554,7 @@ async function portalSalvarTabela(){
   }catch(e){toast('Erro: '+e.message);}
 }
 async function portalExcluirTabela(docId,nome){
-  if(!await mesoCofirm('Excluir "'+nome+'"?'))return;
+  if(!confirm('Excluir "'+nome+'"?'))return;
   try{await db.collection('tabelas_preco').doc(docId).delete();toast('Excluída.');portalCarregarTabelas();}catch(e){toast('Erro: '+e.message);}
 }
 
@@ -16885,7 +16840,7 @@ async function fiscalSalvarNfe(){
 }
 
 async function fiscalExcluirNfe(docId,tipo){
-  if(!await mesoCofirm('Excluir esta NF-e?'))return;
+  if(!confirm('Excluir esta NF-e?'))return;
   const col=tipo==='emitida'?'nfe_emitidas':'nfe_recebidas';
   try{await db.collection(col).doc(docId).delete();toast('NF-e excluída.');if(tipo==='emitida')fiscalCarregarEmitidas();else fiscalCarregarRecebidas();fiscalCarregarKpis();}
   catch(e){toast('Erro: '+e.message);}
@@ -16928,7 +16883,7 @@ async function fiscalSalvarRemessa(){
 }
 
 async function fiscalExcluirRemessa(docId){
-  if(!await mesoCofirm('Excluir esta remessa?'))return;
+  if(!confirm('Excluir esta remessa?'))return;
   try{await db.collection('nfe_remessas').doc(docId).delete();toast('Remessa excluída.');fiscalCarregarRemessas();fiscalCarregarKpis();}
   catch(e){toast('Erro: '+e.message);}
 }
@@ -17008,7 +16963,7 @@ async function fiscalCarregarLancamentos(){
 }
 
 async function fiscalExcluirLancamento(docId){
-  if(!await mesoCofirm('Excluir lançamento?'))return;
+  if(!confirm('Excluir lançamento?'))return;
   try{await db.collection('lancamentos_financeiros').doc(docId).delete();toast('Lançamento excluído.');fiscalCarregarLancamentos();fiscalCarregarKpis();}
   catch(e){toast('Erro: '+e.message);}
 }
@@ -17227,7 +17182,7 @@ async function filSalvarFilial(){
 }
 
 async function filExcluirFilial(docId,nome){
-  if(!await mesoCofirm('Excluir filial "'+nome+'"? O histórico de estoque virtual será mantido.'))return;
+  if(!confirm('Excluir filial "'+nome+'"? O histórico de estoque virtual será mantido.'))return;
   try{
     await db.collection('filiais').doc(docId).delete();
     toast('Filial excluída.');
@@ -17747,7 +17702,7 @@ async function clientesSalvar(){
 async function clientesExcluirModal(){
   var docId=document.getElementById('cli-m-docid')?.value||'';if(!docId)return;
   var cli=_cliTodos.find(function(c){return c.docId===docId;});
-  if(!await mesoCofirm('Excluir cliente "'+((cli&&cli.nome)||docId)+'"? Esta ação não pode ser desfeita.'))return;
+  if(!confirm('Excluir cliente "'+((cli&&cli.nome)||docId)+'"? Esta ação não pode ser desfeita.'))return;
   try{await db.collection('clientes_portal').doc(docId).delete();toast('Cliente excluído');clientesFecharModal();clientesCarregar();}
   catch(e){toast('Erro: '+e.message);}
 }
@@ -18175,17 +18130,17 @@ async function portalCliFinalizarPedido(){
     const ref=await db.collection('pedidos_portal').add(pedido);
     toast('✅ Pedido '+numero+' enviado!');
     _portalItens=[];
-    (typeof enviarEmailStatus==='function') && await enviarEmailStatus({...pedido,id:ref.id},'novo');
+    await enviarEmailStatus({...pedido,id:ref.id},'novo');
     portalCliTab('pedidos');
   }catch(e){logErro('PORTAL_CLI','portalCliFinalizarPedido',e);}
 }
 
 async function portalCliCancelar(docId,numero){
-  if(!await mesoCofirm('Cancelar pedido #'+numero+'?'))return;
+  if(!confirm('Cancelar pedido #'+numero+'?'))return;
   try{
     await db.collection('pedidos_portal').doc(docId).update({status:'cancelado',atualizadoEm:new Date().toISOString()});
     toast('Pedido cancelado.');
-    (typeof enviarEmailStatus==='function') && await enviarEmailStatus({id:docId,numero,cliente:_portalClienteLogado},'cancelado');
+    await enviarEmailStatus({id:docId,numero,cliente:_portalClienteLogado},'cancelado');
   }catch(e){logErro('PORTAL_CLI','portalCliCancelar',e);}
 }
 
@@ -18298,7 +18253,7 @@ function admPtlCliLimpar(){
 }
 
 async function admPtlCliExcluir(docId,nome){
-  if(!await mesoCofirm('Remover acesso de '+nome+'? O cliente não conseguirá mais entrar no portal.'))return;
+  if(!confirm('Remover acesso de '+nome+'? O cliente não conseguirá mais entrar no portal.'))return;
   try{await db.collection('clientes_portal').doc(docId).delete();toast('Acesso removido.');admPtlCliCarregar();}
   catch(e){logErro('ADM','admPtlCliExcluir',e);}
 }
