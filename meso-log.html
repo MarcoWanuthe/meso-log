@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-10-22-FIX4 -->
+<!-- meso-log v2026-10-23-FIX5-FIX4 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15982,7 +15982,7 @@ async function portalCarregarTodosPedidos(){
 }
 
 function portalListaFiltrar(){
-  if(!_portalPedidos || !_portalPedidos.length) return;
+  if(!_portalPedidos || !_portalPedidos.length){portalRenderLista([]);return;}
   const busca=(document.getElementById('ptl-filtro-busca')?.value||'').toLowerCase();
   const fStatus=document.getElementById('ptl-filtro-status')?.value||'';
   const fTipo=document.getElementById('ptl-filtro-tipo')?.value||'';
@@ -16692,9 +16692,9 @@ async function fiscalCarregarKpis(){
       {icon:'📄',label:'NF-e Emitidas',val:totalEmitidas,cor:'#667eea'},
       {icon:'📥',label:'NF-e Recebidas',val:totalRecebidas,cor:'#48bb78'},
       {icon:'🔄',label:'Remessas',val:totalRemessas,cor:'#ed8936'},
-      {icon:'💚',label:'Receitas',val:'R$ '+fmt(receitas),cor:'#276749'},
-      {icon:'❤️',label:'Despesas',val:'R$ '+fmt(despesas),cor:'#c53030'},
-      {icon:'💰',label:'Saldo',val:'R$ '+fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
+      {icon:'💚',label:'Receitas',val:fmt(receitas),cor:'#276749'},
+      {icon:'❤️',label:'Despesas',val:fmt(despesas),cor:'#c53030'},
+      {icon:'💰',label:'Saldo',val:fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
     ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:12px;border-left:3px solid '+k.cor+';text-align:center">'
       +'<div style="font-size:1.3rem">'+k.icon+'</div>'
       +'<div style="font-size:1.1rem;font-weight:700;color:'+k.cor+'">'+k.val+'</div>'
@@ -16994,9 +16994,9 @@ async function fiscalCarregarLancamentos(){
     const receitas=docs.filter(d=>d.tipo==='receita').reduce((a,d)=>a+d.valor,0);
     const despesas=docs.filter(d=>d.tipo==='despesa').reduce((a,d)=>a+d.valor,0);
     if(kpi) kpi.innerHTML=[
-      {icon:'💚',label:'Receitas',val:'R$ '+fmt(receitas),cor:'#276749'},
-      {icon:'❤️',label:'Despesas',val:'R$ '+fmt(despesas),cor:'#c53030'},
-      {icon:'💰',label:'Saldo',val:'R$ '+fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
+      {icon:'💚',label:'Receitas',val:fmt(receitas),cor:'#276749'},
+      {icon:'❤️',label:'Despesas',val:fmt(despesas),cor:'#c53030'},
+      {icon:'💰',label:'Saldo',val:fmt(receitas-despesas),cor:(receitas-despesas)>=0?'#276749':'#c53030'},
     ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:12px;text-align:center;border-left:3px solid '+k.cor+'"><div style="font-size:1.2rem;font-weight:700;color:'+k.cor+'">'+k.val+'</div><div style="font-size:0.75rem;color:var(--text-muted)">'+k.icon+' '+k.label+'</div></div>').join('');
     if(!docs.length){cont.innerHTML='<p style="color:var(--text-muted)">Nenhum lançamento encontrado.</p>';return;}
     cont.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.85rem">'
@@ -17043,9 +17043,9 @@ async function fiscalGerarRelatorio(){
     cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px">'
       +[{l:'NF-e Emitidas',v:emitidas.length+' · R$ '+fmt(totalNfe),c:'#667eea'},
         {l:'Remessas',v:remessas.length+' · R$ '+fmt(totalRem),c:'#ed8936'},
-        {l:'Receitas',v:'R$ '+fmt(receitas),c:'#276749'},
-        {l:'Despesas',v:'R$ '+fmt(despesas),c:'#c53030'},
-        {l:'Saldo',v:'R$ '+fmt(receitas-despesas),c:(receitas-despesas)>=0?'#276749':'#c53030'}
+        {l:'Receitas',v:fmt(receitas),c:'#276749'},
+        {l:'Despesas',v:fmt(despesas),c:'#c53030'},
+        {l:'Saldo',v:fmt(receitas-despesas),c:(receitas-despesas)>=0?'#276749':'#c53030'}
        ].map(k=>'<div style="background:var(--bg-card);border-radius:8px;padding:14px;border-left:3px solid '+k.c+'"><div style="font-weight:700;color:'+k.c+'">'+k.v+'</div><div style="font-size:0.75rem;color:var(--text-muted)">'+k.l+'</div></div>').join('')
       +'</div>'
       +'<h4 style="margin-bottom:8px">NF-e Emitidas ('+emitidas.length+')</h4>'
