@@ -1,0 +1,28 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "solicitacoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dataSolicitacao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "solicitacoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dataSolicitacao", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "solicitacoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "filial", "order": "ASCENDING" },
+        { "fieldPath": "dataSolicitacao", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
