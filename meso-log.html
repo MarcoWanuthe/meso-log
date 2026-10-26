@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-10-23-FIX6 -->
+<!-- meso-log v2026-10-26-FIX7 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2949,7 +2949,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           </div>
           <div style="overflow-x:auto">
             <table class="prod-table">
-              <thead><tr><th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Categoria</th><th style="text-align:center">Qtd</th><th>Ação</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>Lote</th><th>Validade</th><th>Categoria</th><th style="text-align:center">Qtd</th><th style="text-align:right">Venda</th><th>Ação</th></tr></thead>
               <tbody id="ger-est-tbody"></tbody>
             </table>
           </div>
@@ -3819,6 +3819,16 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <div class="form-group"><label>Data de Validade</label><input type="text" id="est-edit-validade" placeholder="dd/mm/aaaa ou mm/aaaa"></div>
     <div class="form-group"><label>Categoria</label><input type="text" id="est-edit-categoria"></div>
     <div class="form-group"><label>Quantidade em Estoque</label><input type="number" id="est-edit-quantidade" min="0" step="1"></div>
+    <div style="border-top:1px solid #e0e0e0;margin:12px 0 4px;padding-top:12px">
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:4px">💰 PREÇO (aplicado a todos os lotes deste código)</div>
+      <div style="font-size:11px;color:#888;margin-bottom:8px">Markup = % sobre o custo · Margem = % de lucro sobre a venda. Edite qualquer um dos três que os outros recalculam.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label>Preço de Custo (R$)</label><input type="number" id="est-edit-custo" min="0" step="0.01" oninput="estPrecoCalc('custo')"></div>
+        <div class="form-group"><label>Preço de Venda (R$)</label><input type="number" id="est-edit-venda" min="0" step="0.01" oninput="estPrecoCalc('venda')"></div>
+        <div class="form-group"><label>Markup %</label><input type="number" id="est-edit-markup" step="0.01" oninput="estPrecoCalc('markup')"></div>
+        <div class="form-group"><label>Margem %</label><input type="number" id="est-edit-margem" step="0.01" max="99.99" oninput="estPrecoCalc('margem')"></div>
+      </div>
+    </div>
     <input type="hidden" id="est-edit-docid">
     <button class="btn btn-success" style="width:100%;margin-top:8px" onclick="salvarEstoqueItem()">💾 Salvar Alterações</button>
     <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="excluirEstoqueItem(document.getElementById('est-edit-docid').value)">🗑️ Excluir Item</button>
@@ -7277,8 +7287,28 @@ function renderGerenciarEstoque(){
       <td style="font-size:12px">${s.dataValidade||'S/Val.'}</td>
       <td style="font-size:12px">${s.categoria||'—'}</td>
       <td style="font-weight:700;text-align:center">${Number(s.quantidade)||0}</td>
+      <td style="font-size:12px;text-align:right;white-space:nowrap">${Number(s.precoVenda)>0?fmt(s.precoVenda):'<span style="color:#dc2626;font-size:11px">sem preço</span>'}</td>
       <td><button class="btn btn-outline btn-sm" onclick="abrirEditarEstoque('${s.id}')">✏️</button></td>
-    </tr>`).join()||'<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa">Nenhum item.</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:20px;color:#aaa">Nenhum item.</td></tr>';
+}
+
+// Custo / Venda / Markup / Margem — interligados
+function estPrecoCalc(origem){
+  const el=k=>document.getElementById('est-edit-'+k);
+  const n=k=>parseFloat(el(k).value);
+  const r=v=>Math.round(v*100)/100;
+  const c=n('custo');
+  if(origem==='markup'){ const mk=n('markup'); if(c>0&&!isNaN(mk)) el('venda').value=r(c*(1+mk/100)); }
+  else if(origem==='margem'){ const mg=n('margem'); if(c>0&&!isNaN(mg)&&mg<100) el('venda').value=r(c/(1-mg/100)); }
+  else if(origem==='custo'){
+    // custo mudou: mantém o markup e recalcula a venda
+    const mk=n('markup'); if(c>0&&!isNaN(mk)) el('venda').value=r(c*(1+mk/100));
+  }
+  const v=n('venda');
+  if(c>0&&v>0){
+    if(origem!=='markup') el('markup').value=r((v/c-1)*100);
+    if(origem!=='margem') el('margem').value=r((1-c/v)*100);
+  }else if(origem==='venda'){ el('markup').value=''; el('margem').value=''; }
 }
 
 function abrirEditarEstoque(id){
@@ -7291,6 +7321,11 @@ function abrirEditarEstoque(id){
   document.getElementById('est-edit-validade').value = s.dataValidade||'';
   document.getElementById('est-edit-categoria').value = s.categoria||'';
   document.getElementById('est-edit-quantidade').value = Number(s.quantidade)||0;
+  document.getElementById('est-edit-custo').value = Number(s.precoCusto)||'';
+  document.getElementById('est-edit-venda').value = Number(s.precoVenda)||'';
+  document.getElementById('est-edit-markup').value = '';
+  document.getElementById('est-edit-margem').value = '';
+  estPrecoCalc('venda');
   document.getElementById('modal-estoque-edit').classList.add('open');
 }
 
@@ -7303,8 +7338,24 @@ async function salvarEstoqueItem(){
     categoria: document.getElementById('est-edit-categoria').value.trim(),
     quantidade: Number(document.getElementById('est-edit-quantidade').value)||0
   };
+  const _r2=v=>Math.round((Number(v)||0)*100)/100;
+  const preco = {
+    precoCusto: _r2(document.getElementById('est-edit-custo').value),
+    precoVenda: _r2(document.getElementById('est-edit-venda').value),
+    markup: _r2(document.getElementById('est-edit-markup').value),
+    margem: _r2(document.getElementById('est-edit-margem').value)
+  };
+  Object.assign(upd, preco);
   try{
     await db.collection('stock').doc(id).update(upd);
+    // Propaga preço para os demais lotes do mesmo código
+    const cod = document.getElementById('est-edit-codigo').value.trim();
+    const outros = cod ? allStock.filter(x=>x.codigo===cod && x.id!==id) : [];
+    if(outros.length){
+      const batch = db.batch();
+      outros.forEach(x=>batch.update(db.collection('stock').doc(x.id), preco));
+      await batch.commit();
+    }
     closeModal('modal-estoque-edit');
     toast('✅ Item atualizado!');
   }catch(e){alert('Erro: '+e.message);}
@@ -16156,18 +16207,22 @@ function portalBuscarProdutoAC(val){
   if(!val||val.length<2){ac.style.display='none';return;}
   _ptlProdTO=setTimeout(()=>{
     const q=val.toLowerCase();
+    const qDig=q.replace(/\D/g,'');
     const filtered=_portalProdutos.filter(p=>
-      (p.nome||'').toLowerCase().includes(q)||(p.codigo||p.sku||'').toLowerCase().includes(q)
+      (p.nome||'').toLowerCase().includes(q)
+      ||(p.codigo||'').toLowerCase().includes(q)
+      ||(qDig.length>=2&&(p.barcode||'').includes(qDig))
     ).slice(0,15);
     const items=filtered.map(p=>{
-      const qty=p.quantidade||p.qtd||0;
-      const prod={id:p.id,nome:p.nome,codigo:p.codigo||p.sku||'',preco:p.preco||p.precoVenda||0,volume:p.volume||p.vol||1};
+      const qty=p.qtd||0;
+      const prod={id:p.id,nome:p.nome,codigo:p.codigo||'',preco:p.precoVenda||0,volume:p.volume||1};
       const enc=encodeURIComponent(JSON.stringify(prod));
-      return '<div class="ptl-ac-item" onclick="portalAdicionarItemPedido(\''+p.id+'\',\''+enc+'\')">'
+      return '<div class="ptl-ac-item" onclick="portalAdicionarItemPedido(\''+_esc(p.id)+'\',\''+enc+'\')">'
         +'<strong>'+_esc(p.nome||'')+'</strong>'
         +(prod.codigo?'<span style="color:#9ca3af;font-size:11px;margin-left:8px">'+_esc(prod.codigo)+'</span>':'')
-        +'<span style="color:#9ca3af;font-size:11px;margin-left:8px">Estoque: '+qty+'</span>'
-        +'<span style="color:#065f46;font-size:11px;margin-left:8px">'+fmt(prod.preco)+'</span>'
+        +(p.barcode?'<span style="color:#9ca3af;font-size:11px;margin-left:8px">EAN '+_esc(p.barcode)+'</span>':'')
+        +'<span style="margin-left:8px">'+_ptlBadgeEstoque(qty)+'</span>'
+        +'<span style="color:#065f46;font-size:11px;margin-left:8px">'+(prod.preco>0?fmt(prod.preco):'Preço a definir')+'</span>'
         +'</div>';
     });
     ac.innerHTML=items.length?items.join(''):'<div class="ptl-ac-item" style="color:#9ca3af">Nenhum produto</div>';
@@ -16417,31 +16472,44 @@ function _ptlMostrarPrint(d,num){
 
 // ── Catálogo ─────────────────────────────────────────────────
 async function portalCarregarCatalogo(){
-  const grid=document.getElementById('portal-grid-produtos');if(!grid)return;
-  grid.innerHTML='<p style="color:#9ca3af;padding:20px">Carregando catálogo...</p>';
+  const grid=document.getElementById('portal-grid-produtos');
+  if(grid)grid.innerHTML='<p style="color:#9ca3af;padding:20px">Carregando catálogo...</p>';
   try{
-    const snap=await db.collection('stock').orderBy('nome').get();
-    _portalProdutos=[];
-    snap.forEach(d=>{const dd=d.data();_portalProdutos.push({id:d.id,...dd});});
-    portalRenderCatalogo(_portalProdutos);
-  }catch(e){grid.innerHTML='<p style="color:red">Erro: '+e.message+'</p>';}
+    const snap=await db.collection('stock').get();
+    // Agrupa lotes por código; soma estoque; NUNCA copia precoCusto
+    const porCod={};
+    snap.forEach(d=>{
+      const s=d.data();const cod=(s.codigo||'').trim();if(!cod)return;
+      const p=porCod[cod]||(porCod[cod]={id:cod,codigo:cod,nome:'',barcode:'',precoVenda:0,qtd:0,volume:1});
+      p.qtd+=Number(s.quantidade)||0;
+      if(!p.nome&&s.descricao)p.nome=String(s.descricao);
+      if(!p.barcode&&s.barcode)p.barcode=String(s.barcode);
+      if(Number(s.precoVenda)>0)p.precoVenda=Number(s.precoVenda);
+    });
+    _portalProdutos=Object.values(porCod).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    if(grid)portalRenderCatalogo(_portalProdutos);
+  }catch(e){console.warn('portalCarregarCatalogo:',e);if(grid)grid.innerHTML='<p style="color:red">Erro: '+_esc(e.message)+'</p>';}
+}
+function _ptlBadgeEstoque(qty){
+  return qty>0?'<span style="color:#6b7280;font-size:11px">Estoque: '+qty+'</span>'
+    :'<span style="background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px">SEM ESTOQUE</span>';
 }
 function portalBuscar(){
   const q=(document.getElementById('portal-busca')?.value||'').toLowerCase();
-  portalRenderCatalogo(q?_portalProdutos.filter(p=>(p.nome||'').toLowerCase().includes(q)):_portalProdutos);
+  portalRenderCatalogo(q?_portalProdutos.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.codigo||'').toLowerCase().includes(q)||(p.barcode||'').includes(q)):_portalProdutos);
 }
 function portalRenderCatalogo(lista){
   const grid=document.getElementById('portal-grid-produtos');if(!grid)return;
   if(!lista.length){grid.innerHTML='<p style="color:#9ca3af;padding:20px">Nenhum produto disponível.</p>';return;}
   grid.innerHTML=lista.map(p=>{
-    const qty=p.quantidade||p.qtd||0;
-    const prod={id:p.id,nome:p.nome,codigo:p.codigo||p.sku||'',preco:p.preco||p.precoVenda||0,volume:p.volume||1};
+    const qty=p.qtd||0;
+    const prod={id:p.id,nome:p.nome,codigo:p.codigo||'',preco:p.precoVenda||0,volume:p.volume||1};
     const enc=encodeURIComponent(JSON.stringify(prod));
-    return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;cursor:pointer;border:1px solid #e5e7eb" onclick="portalAdicionarItemPedido(\''+p.id+'\',\''+enc+'\')">'
-      +'<div style="font-size:12px;font-weight:700;margin-bottom:4px">'+p.nome+'</div>'
-      +(p.codigo?'<div style="font-size:10px;color:var(--text-muted)">'+p.codigo+'</div>':'')
-      +'<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Estoque: '+qty+'</div>'
-      +'<div style="font-size:13px;font-weight:700;color:#065f46;margin-top:6px">'+fmt(prod.preco)+'</div>'
+    return '<div style="background:var(--bg-card);border-radius:10px;padding:14px;cursor:pointer;border:1px solid #e5e7eb" onclick="portalAdicionarItemPedido(\''+_esc(p.id)+'\',\''+enc+'\')">'
+      +'<div style="font-size:12px;font-weight:700;margin-bottom:4px">'+_esc(p.nome||'')+'</div>'
+      +(p.codigo?'<div style="font-size:10px;color:var(--text-muted)">'+_esc(p.codigo)+'</div>':'')
+      +'<div style="margin-top:4px">'+_ptlBadgeEstoque(qty)+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#065f46;margin-top:6px">'+(prod.preco>0?fmt(prod.preco):'<span style="color:#9ca3af;font-size:11px">Preço a definir</span>')+'</div>'
       +'<button class="btn btn-primary" style="width:100%;margin-top:8px;font-size:11px;padding:5px">+ Adicionar</button>'
     +'</div>';
   }).join('');
