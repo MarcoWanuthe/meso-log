@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-10-26-FIX7 -->
+<!-- meso-log v2026-10-27-FIX8 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1543,6 +1543,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-clientes"> Clientes</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-fiscal"> Fiscal</label>
                 <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-pdv"> PDV / Eventos</label>
+                <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer"><input type="checkbox" id="plat-perm-financeiro"> 💳 Financeiro (aprova pagamentos)</label>
               </div>
             </div>
             <div style="display:flex;gap:8px;margin-top:14px">
@@ -1558,10 +1559,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   <th style="text-align:left;min-width:130px">Usuário</th>
                   <th>Solic.</th><th>Estoque</th><th>Ops</th><th>Fat.</th>
                   <th>Rec.</th><th>Portal</th><th>Filiais</th><th>Fiscal</th>
-                  <th>PDV</th><th>ADM</th><th>Status</th><th>Ações</th>
+                  <th>PDV</th><th>Clientes</th><th>Fin.</th><th>ADM</th><th>Status</th><th>Ações</th>
                 </tr></thead>
                 <tbody id="plat-acesso-tbody">
-                  <tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
+                  <tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
                 </tbody>
               </table>
             </div>
@@ -3887,7 +3888,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
 .ptl-b-orc{background:#fef3c7;color:#92400e}.ptl-b-conf{background:#dbeafe;color:#1e40af}
 .ptl-b-agfin{background:#fed7aa;color:#9a3412}.ptl-b-apr{background:#d1fae5;color:#065f46}
 .ptl-b-fatx{background:#ede9fe;color:#5b21b6}.ptl-b-exp{background:#d1fae5;color:#064e3b}
-.ptl-b-can{background:#fee2e2;color:#991b1b}
+.ptl-b-can{background:#fee2e2;color:#991b1b}.ptl-b-rec{background:#fecaca;color:#7f1d1d}
 .ptl-sec{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}
 .ptl-sec-hdr{background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;align-items:center;gap:10px}
 .ptl-sec-num{width:22px;height:22px;border-radius:50%;background:#111;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -3913,7 +3914,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
       <span class="ptl-badge ptl-b-orc">Em Orçamento</span>
       <span class="ptl-badge ptl-b-conf">Confirmado</span>
       <span class="ptl-badge ptl-b-agfin">Ag. Financeiro</span>
-      <span class="ptl-badge ptl-b-apr">Aprovado</span>
+      <span class="ptl-badge ptl-b-rec">Recusado</span>
+      <span class="ptl-badge ptl-b-apr">Aprovado Financeiro</span>
       <span class="ptl-badge ptl-b-fatx">Em Faturamento</span>
       <span class="ptl-badge ptl-b-exp">Expedido</span>
       <span class="ptl-badge ptl-b-can">Cancelado</span>
@@ -4163,6 +4165,20 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Total Geral</div>
             <div style="font-weight:700;font-size:18px;color:#065f46" id="ptl-total-geral">R$ 0,00</div>
           </div>
+        </div>
+      </div>
+      <!-- COMPROVANTE DE PAGAMENTO -->
+      <div style="margin:0 16px 16px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+        <div class="ptl-sec-hdr">
+          <div class="ptl-sec-num">5</div>
+          <span style="font-weight:700;font-size:13px">COMPROVANTE DE PAGAMENTO</span>
+          <label class="btn btn-outline" style="margin-left:auto;font-size:12px;cursor:pointer">📎 Anexar comprovante
+            <input type="file" id="ptl-comp-input" accept="image/*,application/pdf" multiple style="display:none" onchange="portalCompSelecionar(this)">
+          </label>
+        </div>
+        <div style="padding:12px 16px">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Obrigatório em pedidos de <b>Venda</b> antes de enviar ao Financeiro. Imagem (comprimida automaticamente) ou PDF até 700 KB.</div>
+          <div id="ptl-comp-lista" style="display:flex;gap:8px;flex-wrap:wrap"><span style="color:#9ca3af;font-size:12px">Nenhum comprovante anexado.</span></div>
         </div>
       </div>
       <!-- ACTION BUTTONS -->
@@ -5392,7 +5408,7 @@ function startListeners(){
   // Ordenação feita localmente, após receber todos os documentos
   unsubPedidosFat = db.collection('pedidosFaturamento').limit(500).onSnapshot(snap=>{
     allPedidosFat = snap.docs
-      .map(d=>({id:d.id,...d.data()}))
+      .map(d=>_fatNormalizarPortal({id:d.id,...d.data()}))
       .sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
     if(document.getElementById('fview-fila')?.style.display!=='none')      renderFilaPedidos();
     if(document.getElementById('fview-historico')?.style.display!=='none') renderHistorico();
@@ -12395,16 +12411,17 @@ const PLAT_MODULOS=[
   {key:'fiscal',label:'Fiscal'},
   {key:'pdv',label:'PDV'},
   {key:'clientes',label:'Clientes'},
+  {key:'financeiro',label:'Fin.'},
 ];
 
 async function platAdmCarregar(){
   const tbody=document.getElementById('plat-acesso-tbody');
   if(!tbody)return;
-  tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
   try{
     const snap=await db.collection('usuarios_plataforma').orderBy('nome').get();
     if(snap.empty){
-      tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
       return;
     }
     tbody.innerHTML=snap.docs.map(doc=>{
@@ -12425,7 +12442,7 @@ async function platAdmCarregar(){
         +'</td></tr>';
     }).join('');
   }catch(e){
-    tbody.innerHTML='<tr><td colspan="14" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="16" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
   }
 }
 
@@ -15989,8 +16006,9 @@ let _portalTabelaSel=null, _portalEditDocId=null;
 const PORTAL_STATUS={
   orcamento:    {label:'Em Orçamento',    cls:'ptl-b-orc',  next:['confirmado','cancelado']},
   confirmado:   {label:'Confirmado',      cls:'ptl-b-conf', next:['ag_financeiro','cancelado']},
-  ag_financeiro:{label:'Ag. Financeiro',  cls:'ptl-b-agfin',next:['aprovado','cancelado']},
-  aprovado:     {label:'Aprovado',        cls:'ptl-b-apr',  next:['em_faturamento','cancelado']},
+  ag_financeiro:{label:'Ag. Financeiro',  cls:'ptl-b-agfin',next:['aprovado','recusado','cancelado']},
+  recusado:     {label:'Recusado Financeiro',cls:'ptl-b-rec',next:['ag_financeiro','cancelado']},
+  aprovado:     {label:'Aprovado Financeiro',cls:'ptl-b-apr',next:['em_faturamento','cancelado']},
   em_faturamento:{label:'Em Faturamento', cls:'ptl-b-fatx', next:['expedido','cancelado']},
   expedido:     {label:'Expedido',        cls:'ptl-b-exp',  next:[]},
   cancelado:    {label:'Cancelado',       cls:'ptl-b-can',  next:[]}
@@ -16053,11 +16071,7 @@ function portalRenderLista(lista){
     const total=p.totalGeral||p.totalItens||0;
     const dt=p.criadoEm?new Date(p.criadoEm).toLocaleDateString('pt-BR'):'—';
     const tipo={venda:'Venda',bonificado:'Bonificado',troca:'Troca',mostra:'Mostra'}[p.tipoPedido]||p.tipoPedido||'—';
-    const st=PORTAL_STATUS[p.status]||{next:[]};
-    const nextBtns=(st.next||[]).map(ns=>{
-      const nst=PORTAL_STATUS[ns]||{label:ns};
-      return '<button class="btn btn-outline" style="font-size:11px;padding:3px 7px;white-space:nowrap" onclick="portalAtualizarStatus(\''+p.id+'\',\''+ns+'\')">→ '+nst.label+'</button>';
-    }).join(' ');
+    const nextBtns=_ptlAcoesStatus(p.id,p.status||'orcamento');
     return '<tr>'
       +'<td style="font-weight:700;font-size:12px;white-space:nowrap">'+(p.numero||'—')+'</td>'
       +'<td style="font-size:12px">'+(p.cliente?.nome||'—')+'<br><span style="color:#9ca3af;font-size:10px">'+(p.cliente?.cidade||'')+(p.cliente?.uf?' - '+p.cliente.uf:'')+'</span></td>'
@@ -16091,6 +16105,7 @@ function portalNovoForm(docId){
   const tbody=document.getElementById('ptl-itens-tbody');
   if(tbody)tbody.innerHTML='<tr id="ptl-itens-empty"><td colspan="9" style="text-align:center;color:#9ca3af;padding:20px">Nenhum produto adicionado.</td></tr>';
   const sb=document.getElementById('ptl-status-bar');if(sb)sb.style.display='none';
+  _ptlCompPend=[];_ptlCompCache={};portalCompRender([]);
   portalAtualizarTotal();
   if(docId)portalCarregarPedido(docId);
 }
@@ -16117,11 +16132,12 @@ async function portalCarregarPedido(docId){
     if(d.cliente){_portalClienteSel={...d.cliente};portalRenderClienteCard(d.cliente);}
     _portalItens=(d.itens||[]).map(it=>({...it}));
     portalRenderItens();
-    portalRenderStatusBar(d.status||'orcamento');
+    portalRenderStatusBar(d.status||'orcamento',d);
+    portalCompCarregar(docId);
   }catch(e){toast('Erro ao carregar: '+e.message);}
 }
 
-function portalRenderStatusBar(status){
+function portalRenderStatusBar(status,dPed){
   const sb=document.getElementById('ptl-status-bar');
   if(!sb)return;sb.style.display='flex';
   const st=PORTAL_STATUS[status]||{label:status,cls:'ptl-b-orc',next:[]};
@@ -16130,10 +16146,9 @@ function portalRenderStatusBar(status){
   const acts=document.getElementById('ptl-status-actions');
   if(acts){
     const docId=document.getElementById('ptl-pedido-docid').value;
-    acts.innerHTML=(st.next||[]).map(ns=>{
-      const nst=PORTAL_STATUS[ns]||{label:ns};
-      return '<button class="btn btn-outline" style="font-size:12px" onclick="portalAtualizarStatus(\''+docId+'\',\''+ns+'\')">→ '+nst.label+'</button>';
-    }).join('');
+    acts.innerHTML=(status==='recusado'&&dPed?.motivoRecusa
+        ?'<span style="font-size:12px;color:#991b1b;margin-right:8px">Motivo da recusa: <b>'+_esc(dPed.motivoRecusa)+'</b></span>':'')
+      +(docId?_ptlAcoesStatus(docId,status):'');
   }
 }
 
@@ -16340,6 +16355,9 @@ async function portalConfirmarPedido(){
 async function _ptlSalvar(dados,msg){
   try{
     const docId=document.getElementById('ptl-pedido-docid').value;
+    const stAtual=document.getElementById('ptl-pedido-status')?.value||'orcamento';
+    if(docId&&!_ptlIsAdm()&&!['orcamento','confirmado','recusado'].includes(stAtual)){
+      toast('⚠️ Pedido já enviado ao Financeiro/Faturamento não pode ser alterado. Peça ao ADM.');return;}
     if(docId){await db.collection('pedidos_portal').doc(docId).update(dados);toast(msg);}
     else{
       const num='PED-'+Date.now().toString().slice(-8);
@@ -16348,55 +16366,263 @@ async function _ptlSalvar(dados,msg){
       document.getElementById('ptl-pedido-docid').value=ref.id;
       document.getElementById('ptl-num-pedido').value=num;toast(msg);
     }
+    const idSalvo=document.getElementById('ptl-pedido-docid').value;
+    if(idSalvo&&_ptlCompPend.length){const pend=_ptlCompPend;_ptlCompPend=[];for(const f of pend)await _ptlCompUpload(idSalvo,f);}
+    document.getElementById('ptl-pedido-status').value=dados.status;
     portalRenderStatusBar(dados.status);
+    if(idSalvo)portalCompCarregar(idSalvo);
   }catch(e){toast('Erro ao salvar: '+e.message);}
 }
 
 function portalCancelarEdicao(){portalTab('pedidos');}
 
-// ── Status Machine + Integrações ──────────────────────────────
-async function portalAtualizarStatus(docId,novoStatus){
+// ── Status Machine + Integrações (FIX8) ───────────────────────
+// Fluxo: Vendedor (comprovante) → Financeiro (aprova/recusa) → Faturamento (pré-separação baixa estoque por lote FIFO)
+function _ptlIsAdm(){return !!(platUser?.isAdm||admLoggedIn);}
+function _ptlIsFin(){return _ptlIsAdm()||!!platUser?.permissoes?.financeiro;}
+function _ptlPodeMover(atual,novo){
+  if(_ptlIsAdm())return true;
+  if(atual==='ag_financeiro')return (novo==='aprovado'||novo==='recusado')&&_ptlIsFin();
+  if(['aprovado','em_faturamento','expedido','cancelado'].includes(atual))return false; // após aprovação: automático / só ADM
+  return ['confirmado','ag_financeiro','cancelado'].includes(novo);
+}
+function _ptlAcoesStatus(docId,status){
+  const st=PORTAL_STATUS[status]||{next:[]};
+  const id=_esc(docId);
+  return (st.next||[]).filter(ns=>_ptlPodeMover(status,ns)).map(ns=>{
+    if(status==='ag_financeiro'&&ns==='recusado')return '';
+    if(status==='ag_financeiro'&&ns==='aprovado'){
+      return '<button class="btn" style="font-size:11px;padding:3px 8px;white-space:nowrap;background:#065f46;color:#fff;border:none" onclick="portalFinAnalisar(\''+id+'\')">💳 Analisar pagamento</button>';
+    }
+    const nst=PORTAL_STATUS[ns]||{label:ns};
+    const lbl=ns==='ag_financeiro'?(status==='recusado'?'Reenviar ao Financeiro':'Enviar ao Financeiro'):nst.label;
+    return '<button class="btn btn-outline" style="font-size:11px;padding:3px 7px;white-space:nowrap" onclick="portalAtualizarStatus(\''+id+'\',\''+ns+'\')">→ '+lbl+'</button>';
+  }).filter(Boolean).join(' ');
+}
+
+// Itens do Portal → formato do Faturamento
+function _ptlItensParaFat(itens){
+  return (itens||[]).map((it,i)=>({seq:i+1,codigo:it.codigo||'',descricao:it.descricao||it.nome||'',
+    quantidade:Number(it.quantidade??it.qtd)||0,unidade:it.unidade||'un',
+    precoLiquido:Number(it.precoLiquido??it.precoUnit)||0,lotesSelecionados:it.lotesSelecionados||[]}));
+}
+function _ptlMontarPedidoFat(docId,d,por,ts){
+  const cli=d.cliente||{};
+  return {origem:'portal',pedidoPortalId:docId,
+    numeroPedidoMesoLog:d.numero||docId,numeroPedidoMercus:'',pedidoErp:'',
+    empresaId:'',empresaNome:'Mesoestetic Pharma Group BR',empresaSigla:'',
+    tipoEntrega:d.transportadora?'envio':'pendente',eventoId:'',
+    status:'pagamento_verificado',pagamentoVerificado:true,
+    pagamentoVerificadoEm:ts,pagamentoVerificadoPor:por+' (Financeiro)',
+    faturistaId:'',faturistaNome:'',
+    clienteNome:cli.nome||'',clienteCNPJ:cli.cnpj||'',
+    clienteEndereco:d.enderecoEntrega||cli.endereco||'',
+    clienteCidade:[cli.cidade,cli.uf].filter(Boolean).join(' - '),
+    vendedor:d.vendedor||'',condicaoPagamento:d.pagamento||'',transportadora:d.transportadora||'',
+    observacoes:d.obs||'',totalGeral:d.totalGeral||0,
+    itens:_ptlItensParaFat(d.itens),
+    criadoEm:ts,atualizadoEm:ts,operadoPor:platUser?.username||''};
+}
+// Pedidos antigos do Portal (status 'fila' e campos do Portal) passam a funcionar na Fila do Faturamento
+function _fatNormalizarPortal(p){
+  if(p.origem!=='portal')return p;
+  if(p.status==='fila'){p.status='pagamento_verificado';p.pagamentoVerificado=true;}
+  if(!p.numeroPedidoMesoLog&&p.numero)p.numeroPedidoMesoLog=p.numero;
+  if(!p.clienteCNPJ&&p.clienteCnpj)p.clienteCNPJ=p.clienteCnpj;
+  if(!p.condicaoPagamento&&p.pagamento)p.condicaoPagamento=p.pagamento;
+  if(!p.observacoes&&p.obs)p.observacoes=p.obs;
+  if((p.itens||[]).some(it=>it.descricao===undefined||it.quantidade===undefined))p.itens=_ptlItensParaFat(p.itens);
+  return p;
+}
+
+async function portalAtualizarStatus(docId,novoStatus,opt){
+  opt=opt||{};
   const st=PORTAL_STATUS[novoStatus]||{label:novoStatus};
-  if(!await mesoCofirm('Alterar status para "'+st.label+'"?'))return;
+  let d;
+  try{const sn=await db.collection('pedidos_portal').doc(docId).get();
+    if(!sn.exists){toast('Pedido não encontrado.');return false;}d=sn.data();}
+  catch(e){toast('Erro: '+e.message);return false;}
+  const atual=d.status||'orcamento';
+  if(!_ptlIsAdm()&&!(PORTAL_STATUS[atual]?.next||[]).includes(novoStatus)){toast('Mudança de status não permitida a partir de "'+(PORTAL_STATUS[atual]?.label||atual)+'".');return false;}
+  if(!_ptlPodeMover(atual,novoStatus)){toast('Você não tem permissão para esta etapa.');return false;}
+  if(novoStatus==='ag_financeiro'&&(d.tipoPedido||'venda')==='venda'){
+    let n=0;try{n=(await _ptlCompListar(docId)).length;}catch(_){}
+    if(!n){toast('📎 Anexe o comprovante de pagamento antes de enviar ao Financeiro.');return false;}
+  }
+  const msg=novoStatus==='aprovado'?'Aprovar o pagamento e liberar o pedido para o Faturamento?'
+    :novoStatus==='recusado'?'Recusar o pagamento e devolver o pedido ao vendedor?'
+    :'Alterar status para "'+st.label+'"?';
+  if(!await mesoCofirm(msg))return false;
+  const ts=new Date().toISOString();
+  const por=platUser?.nome||platUser?.username||'ADM';
+  const FV=firebase.firestore.FieldValue;
+  const upd={status:novoStatus,atualizadoEm:ts};
+  const hist={de:atual,para:novoStatus,por,em:ts};
+  if(novoStatus==='ag_financeiro'){upd.enviadoFinanceiroEm=ts;upd.enviadoFinanceiroPor=por;upd.motivoRecusa=FV.delete();}
+  if(novoStatus==='aprovado'){upd.financeiroAprovadoEm=ts;upd.financeiroAprovadoPor=por;}
+  if(novoStatus==='recusado'){upd.motivoRecusa=opt.motivo||'';upd.financeiroRecusadoEm=ts;upd.financeiroRecusadoPor=por;hist.motivo=opt.motivo||'';}
+  upd.historicoStatus=FV.arrayUnion(hist);
+  try{await db.collection('pedidos_portal').doc(docId).update(upd);}
+  catch(e){toast('Erro: '+e.message);return false;}
+  toast('Status → '+st.label);
+  // E-mail ao cliente só nos marcos externos (não em etapas internas como Financeiro/Recusa)
+  if(['aprovado','expedido','cancelado'].includes(novoStatus)){
+    try{(typeof enviarEmailStatus==='function')&&enviarEmailStatus({id:docId,...d,status:novoStatus},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
+  }
+  if(novoStatus==='aprovado'){
+    try{
+      const existeFat=await db.collection('pedidosFaturamento').where('pedidoPortalId','==',docId).limit(1).get();
+      if(existeFat.empty){
+        await db.collection('pedidosFaturamento').add(_ptlMontarPedidoFat(docId,d,por,ts));
+        toast('📦 Enviado ao Faturamento com pagamento verificado!');
+      }else{toast('ℹ️ Pedido já estava em Faturamento.');}
+    }catch(e){toast('Aviso: erro ao enviar ao Faturamento — '+e.message);}
+  }
+  if(novoStatus==='cancelado'&&['aprovado','em_faturamento','expedido'].includes(atual)){
+    toast('⚠️ Cancele também no Faturamento para estornar o estoque reservado.');
+  }
+  // Baixa de estoque NÃO acontece aqui: é feita uma única vez na Pré-Separação do Faturamento (lotes FIFO).
+  portalCarregarTodosPedidos();
+  if(document.getElementById('ptl-pedido-docid')?.value===docId){
+    document.getElementById('ptl-pedido-status').value=novoStatus;
+    portalRenderStatusBar(novoStatus,{...d,motivoRecusa:novoStatus==='recusado'?(opt.motivo||''):''});
+    portalCompCarregar(docId);
+  }
+  return true;
+}
+
+// ── Comprovantes de pagamento ─────────────────────────────────
+const PTL_COMP_COL='pedidos_portal_comprovantes';
+let _ptlCompPend=[];   // arquivos escolhidos antes do pedido ser salvo
+let _ptlCompCache={};
+async function _ptlArquivoParaDataUrl(file){
+  if(file.type.startsWith('image/'))return await _comprimirImagem(file,700);
+  if(file.type==='application/pdf'&&file.size<=716800)
+    return await new Promise((ok,no)=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.onerror=no;r.readAsDataURL(file);});
+  return null;
+}
+async function portalCompSelecionar(input){
+  const files=[...(input.files||[])];input.value='';
+  if(!files.length)return;
+  const docId=document.getElementById('ptl-pedido-docid').value;
+  for(const f of files){
+    if(!(f.type.startsWith('image/')||f.type==='application/pdf')){toast('⚠️ '+f.name+': use imagem ou PDF.');continue;}
+    if(f.type==='application/pdf'&&f.size>716800){toast('⚠️ '+f.name+': PDF acima de 700 KB. Envie uma foto/print do comprovante.');continue;}
+    if(docId)await _ptlCompUpload(docId,f);else _ptlCompPend.push(f);
+  }
+  if(docId)portalCompCarregar(docId);else portalCompRender([]);
+}
+async function _ptlCompUpload(pedidoId,file){
   try{
-    await db.collection('pedidos_portal').doc(docId).update({status:novoStatus,atualizadoEm:new Date().toISOString()});
-    toast('Status → '+st.label);
-    try{const sn2=await db.collection('pedidos_portal').doc(docId).get();if(sn2.exists)(typeof enviarEmailStatus==='function') && enviarEmailStatus({id:docId,...sn2.data()},novoStatus);}catch(eEmail){console.warn('email status:',eEmail);}
-    if(novoStatus==='aprovado'){
-      try{
-        // BUG-09 fix: verificar se já existe entrada em faturamento para este pedido
-        const existeFat=await db.collection('pedidosFaturamento').where('pedidoPortalId','==',docId).limit(1).get();
-        if(existeFat.empty){
-          const sn=await db.collection('pedidos_portal').doc(docId).get();const d=sn.data();
-          await db.collection('pedidosFaturamento').add({
-            origem:'portal',pedidoPortalId:docId,numero:d.numero||docId,
-            clienteNome:d.cliente?.nome||'',clienteCnpj:d.cliente?.cnpj||'',
-            vendedor:d.vendedor||'',pagamento:d.pagamento||'',
-            totalGeral:d.totalGeral||0,itens:d.itens||[],obs:d.obs||'',
-            status:'fila',criadoEm:new Date().toISOString(),operadoPor:platUser?.username||''});
-          toast('📦 Enviado para Faturamento!');
-        }else{
-          toast('ℹ️ Pedido já estava em Faturamento.');
-        }
-      }catch(e){toast('Aviso: erro ao criar faturamento — '+e.message);}
+    toast('⏳ Enviando '+file.name+'...');
+    const dataUrl=await _ptlArquivoParaDataUrl(file);
+    if(!dataUrl){toast('⚠️ Não foi possível processar '+file.name);return false;}
+    await db.collection(PTL_COMP_COL).add({pedidoId,nome:file.name,
+      mime:dataUrl.slice(5,dataUrl.indexOf(';')),tamanhoKB:Math.round(dataUrl.length*0.75/1024),dataUrl,
+      enviadoPor:platUser?.nome||platUser?.username||'',enviadoEm:new Date().toISOString()});
+    await db.collection('pedidos_portal').doc(pedidoId).update({comprovantesQtd:firebase.firestore.FieldValue.increment(1)});
+    toast('📎 Comprovante anexado');return true;
+  }catch(e){console.warn('comprovante:',e);toast('Erro ao anexar: '+e.message);return false;}
+}
+async function _ptlCompListar(pedidoId){
+  const snap=await db.collection(PTL_COMP_COL).where('pedidoId','==',pedidoId).get();
+  return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.enviadoEm||'').localeCompare(b.enviadoEm||''));
+}
+async function portalCompCarregar(pedidoId){
+  const box=document.getElementById('ptl-comp-lista');
+  if(box)box.innerHTML='<span style="color:#9ca3af;font-size:12px">Carregando...</span>';
+  try{portalCompRender(await _ptlCompListar(pedidoId));}
+  catch(e){if(box)box.innerHTML='<span style="color:red;font-size:12px">Erro: '+_esc(e.message)+'</span>';}
+}
+function _ptlCompThumb(c,podeExcluir){
+  const nome=_esc(c.nome||'comprovante');const id=_esc(c.id);
+  const isImg=(c.mime||'').startsWith('image/');
+  return '<div style="border:1px solid #e5e7eb;border-radius:6px;padding:6px;width:130px;font-size:11px;background:#fff">'
+    +(isImg?'<img src="'+_esc(c.dataUrl)+'" style="width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="_ptlCompAbrir(\''+id+'\')">'
+           :'<div style="height:80px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;background:#f9fafb;border-radius:4px" onclick="_ptlCompAbrir(\''+id+'\')">📄</div>')
+    +'<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px" title="'+nome+'">'+nome+'</div>'
+    +'<div style="color:#9ca3af">'+_esc(c.enviadoPor||'')+'</div>'
+    +(podeExcluir?'<button style="margin-top:4px;width:100%;background:#fee2e2;color:#991b1b;border:none;border-radius:4px;padding:2px;cursor:pointer;font-size:11px" onclick="portalCompExcluir(\''+id+'\')">Remover</button>':'')
+    +'</div>';
+}
+function _ptlCompAbrir(id){
+  const c=_ptlCompCache[id];if(!c)return;
+  const w=window.open('','_blank');if(!w){toast('Permita pop-ups para visualizar o comprovante.');return;}
+  const t='<title>'+_esc(c.nome||'Comprovante')+'</title><body style="margin:0;background:#111">';
+  w.document.write((c.mime||'').startsWith('image/')
+    ?t+'<img src="'+_esc(c.dataUrl)+'" style="max-width:100%;display:block;margin:auto">'
+    :t+'<iframe src="'+_esc(c.dataUrl)+'" style="border:0;width:100%;height:100vh"></iframe>');
+  w.document.close();
+}
+function portalCompRender(lista){
+  const box=document.getElementById('ptl-comp-lista');if(!box)return;
+  (lista||[]).forEach(c=>{_ptlCompCache[c.id]=c;});
+  const st=document.getElementById('ptl-pedido-status')?.value||'orcamento';
+  const editavel=_ptlIsAdm()||['orcamento','confirmado','recusado'].includes(st);
+  const inp=document.getElementById('ptl-comp-input');if(inp)inp.disabled=!editavel;
+  const pend=_ptlCompPend.map(f=>'<div style="border:1px dashed #d1d5db;border-radius:6px;padding:6px;width:130px;font-size:11px;color:#6b7280">⏳ '+_esc(f.name)+'<br>(enviado ao salvar o pedido)</div>').join('');
+  box.innerHTML=((lista||[]).map(c=>_ptlCompThumb(c,editavel)).join('')+pend)
+    ||'<span style="color:#9ca3af;font-size:12px">Nenhum comprovante anexado.</span>';
+}
+async function portalCompExcluir(id){
+  if(!await mesoCofirm('Remover este comprovante?'))return;
+  const c=_ptlCompCache[id];
+  try{
+    await db.collection(PTL_COMP_COL).doc(id).delete();
+    if(c?.pedidoId){
+      await db.collection('pedidos_portal').doc(c.pedidoId).update({comprovantesQtd:firebase.firestore.FieldValue.increment(-1)});
+      portalCompCarregar(c.pedidoId);
     }
-    if(novoStatus==='expedido'){
-      try{
-        const sn=await db.collection('pedidos_portal').doc(docId).get();const d=sn.data();
-        const batch=db.batch();
-        for(const it of(d.itens||[])){
-          if(!it.id)continue;
-          batch.update(db.collection('stock').doc(it.id),{quantidade:firebase.firestore.FieldValue.increment(-Math.abs(it.qtd))});
-        }
-        await batch.commit();toast('📦 Estoque debitado!');
-      }catch(e){toast('Aviso: erro ao debitar estoque — '+e.message);}
-    }
-    portalCarregarTodosPedidos();
-    if(document.getElementById('ptl-pedido-docid')?.value===docId){
-      document.getElementById('ptl-pedido-status').value=novoStatus;
-      portalRenderStatusBar(novoStatus);
-    }
+    toast('Comprovante removido');
   }catch(e){toast('Erro: '+e.message);}
+}
+
+// ── Financeiro: análise do pagamento ─────────────────────────
+async function portalFinAnalisar(docId){
+  if(!_ptlIsFin()){toast('Apenas o Financeiro pode analisar pagamentos.');return;}
+  let d,comps=[];
+  try{
+    const sn=await db.collection('pedidos_portal').doc(docId).get();
+    if(!sn.exists){toast('Pedido não encontrado.');return;}
+    d=sn.data();comps=await _ptlCompListar(docId);
+  }catch(e){toast('Erro: '+e.message);return;}
+  comps.forEach(c=>{_ptlCompCache[c.id]=c;});
+  document.getElementById('ptl-fin-modal')?.remove();
+  const tipo={venda:'Venda',bonificado:'Bonificado',troca:'Troca',mostra:'Mostra'}[d.tipoPedido]||d.tipoPedido||'—';
+  const id=_esc(docId);
+  const ov=document.createElement('div');ov.id='ptl-fin-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px';
+  ov.innerHTML='<div style="background:#fff;width:min(640px,96vw);border-radius:8px;font-size:13px;color:#111">'
+    +'<div style="padding:14px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px 8px 0 0">'
+      +'<strong>💳 Análise de pagamento — '+_esc(d.numero||'')+'</strong>'
+      +'<button class="btn btn-outline" onclick="document.getElementById(\'ptl-fin-modal\').remove()">✕</button></div>'
+    +'<div style="padding:16px 20px">'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 16px;margin-bottom:14px">'
+        +'<div><span style="color:#6b7280">Cliente:</span> <strong>'+_esc(d.cliente?.nome||'—')+'</strong></div>'
+        +'<div><span style="color:#6b7280">CNPJ:</span> '+_esc(d.cliente?.cnpj||'—')+'</div>'
+        +'<div><span style="color:#6b7280">Vendedor:</span> '+_esc(d.vendedor||'—')+'</div>'
+        +'<div><span style="color:#6b7280">Tipo:</span> '+_esc(tipo)+'</div>'
+        +'<div><span style="color:#6b7280">Cond. pagamento:</span> '+_esc(d.pagamento||'—')+'</div>'
+        +'<div><span style="color:#6b7280">Total:</span> <strong style="color:#065f46;font-size:15px">'+fmt(d.totalGeral||0)+'</strong></div>'
+      +'</div>'
+      +'<div style="font-weight:700;margin-bottom:6px">Comprovantes ('+comps.length+')</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+        +(comps.map(c=>_ptlCompThumb(c,false)).join('')||'<span style="color:#b91c1c">Nenhum comprovante anexado.</span>')+'</div>'
+      +'<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px">Confira o crédito no extrato do banco antes de aprovar.</div>'
+      +'<label style="font-size:12px;color:#6b7280">Motivo (obrigatório para recusar)</label>'
+      +'<textarea id="ptl-fin-motivo" class="input" rows="2" style="width:100%;box-sizing:border-box;margin-bottom:12px" placeholder="Ex.: valor divergente, crédito não localizado..."></textarea>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+        +'<button class="btn" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca" onclick="portalFinDecidir(\''+id+'\',false)">✖ Recusar</button>'
+        +'<button class="btn" style="background:#065f46;color:#fff;border:none" onclick="portalFinDecidir(\''+id+'\',true)">✔ Aprovar pagamento</button>'
+      +'</div>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+async function portalFinDecidir(docId,aprovar){
+  const motivo=(document.getElementById('ptl-fin-motivo')?.value||'').trim();
+  if(!aprovar&&!motivo){toast('Informe o motivo da recusa.');return;}
+  const ok=await portalAtualizarStatus(docId,aprovar?'aprovado':'recusado',{motivo});
+  if(ok)document.getElementById('ptl-fin-modal')?.remove();
 }
 
 // ── Visualizar / Print ────────────────────────────────────────
