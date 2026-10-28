@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- meso-log v2026-10-27-FIX8 -->
+<!-- meso-log v2026-10-28-FIX9 -->
 <html lang="pt-BR">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -419,8 +419,8 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
     <div id="plat-login-interno" style="display:none">
       <button onclick="platVoltarPerfil()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;margin-bottom:16px;padding:0;font-family:inherit">← Voltar</button>
       <div style="margin-bottom:14px">
-        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Usuário</label>
-        <input type="text" id="plat-login-username" placeholder="ex: joao.silva" autocomplete="username"
+        <label style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">E-mail</label>
+        <input type="text" id="plat-login-username" placeholder="seu@email.com" autocomplete="username"
           style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;border-radius:0"
           onkeydown="if(event.key==='Enter')document.getElementById('plat-login-senha').focus()">
       </div>
@@ -431,6 +431,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           onkeydown="if(event.key==='Enter')platLogin()">
       </div>
       <p id="plat-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
+      <div style="text-align:right;margin:-8px 0 14px"><a href="javascript:void(0)" onclick="authEsqueciSenha('plat-login-username','plat-login-erro')" style="color:#888;font-size:11px">Esqueci minha senha</a></div>
       <button id="plat-login-btn" onclick="platLogin()"
         style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
         ENTRAR
@@ -452,6 +453,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
           onkeydown="if(event.key==='Enter')clientePortalLogin()">
       </div>
       <p id="cli-login-erro" style="display:none;color:#ff6b6b;font-size:12px;margin-bottom:12px;text-align:center"></p>
+      <div style="text-align:right;margin:-8px 0 14px"><a href="javascript:void(0)" onclick="authEsqueciSenha('cli-login-email','cli-login-erro')" style="color:#888;font-size:11px">Esqueci minha senha</a></div>
       <button id="cli-login-btn" onclick="clientePortalLogin()"
         style="width:100%;background:#fff;color:#000;border:none;padding:13px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:inherit">
         ACESSAR PORTAL
@@ -1512,7 +1514,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                 <input type="text" id="plat-usr-senha" placeholder="Senha">
                 <p id="plat-usr-senha-hint" style="display:none;font-size:11px;color:#888;margin-top:2px">Deixe em branco para manter a senha atual</p>
               </div>
-              <div class="form-group"><label>E-mail (opcional)</label><input type="email" id="plat-usr-email" placeholder="email@empresa.com"></div>
+              <div class="form-group"><label>E-mail (login seguro)</label><input type="email" id="plat-usr-email" placeholder="email@empresa.com"></div>
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -1559,10 +1561,10 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
                   <th style="text-align:left;min-width:130px">Usuário</th>
                   <th>Solic.</th><th>Estoque</th><th>Ops</th><th>Fat.</th>
                   <th>Rec.</th><th>Portal</th><th>Filiais</th><th>Fiscal</th>
-                  <th>PDV</th><th>Clientes</th><th>Fin.</th><th>ADM</th><th>Status</th><th>Ações</th>
+                  <th>PDV</th><th>Clientes</th><th>Fin.</th><th>ADM</th><th>Acesso</th><th>Status</th><th>Ações</th>
                 </tr></thead>
                 <tbody id="plat-acesso-tbody">
-                  <tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
+                  <tr><td colspan="17" style="text-align:center;color:#aaa;padding:16px">Clique na aba para carregar</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1603,7 +1605,7 @@ body{background:#F0F2F5;display:flex;min-height:100vh}
             </div>
             <div style="overflow-x:auto">
               <table class="prod-table">
-                <thead><tr><th>Nome</th><th>E-mail</th><th>CNPJ</th><th>Representante</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Nome</th><th>E-mail</th><th>CNPJ</th><th>Representante</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead>
                 <tbody id="adm-ptlcli-tbody"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr></tbody>
               </table>
             </div>
@@ -5258,6 +5260,7 @@ function initFirebase(cfg){
     seedProducts();
     // Start live listeners
     startListeners();
+    _authObservar();
     document.getElementById('setup-screen').style.display='none';
     if(identityEmail) showIdentityBar();
     toast('✅ Conectado ao Firebase!');
@@ -12282,6 +12285,14 @@ async function platLogin(){
   if(!rateLimit('plat-login',5,60)){platShowError('Muitas tentativas. Aguarde 1 minuto.');return;}
   const btn=document.getElementById('plat-login-btn');
   if(btn){btn.disabled=true;btn.textContent='Autenticando...';}
+  if(username.includes('@')){
+    _authEntrando=true;
+    try{const u=(await firebase.auth().signInWithEmailAndPassword(username,senha)).user;await _platEntrarComAuth(u,false);}
+    catch(e){platShowError(_authMsgErro(e));}
+    _authEntrando=false;
+    if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+    return;
+  }
   try{
     // 1. Checar senha master ADM (configuracoes/geral.senhaAdm)
     let masterOk=false;
@@ -12343,6 +12354,7 @@ async function platLogin(){
     document.getElementById('plat-login-overlay').style.display='none';
     document.getElementById('plat-login-senha').value='';
     toast('Bem-vindo, '+platUser.nome+'!');
+    setTimeout(()=>toast('ℹ️ Login por usuário será desativado. Peça ao ADM para ativar seu acesso por e-mail.'),2500);
     try{await db.collection('plat_audit_log').add({acao:'login',usuario:platUser.username,nome:platUser.nome,ts:firebase.firestore.FieldValue.serverTimestamp()});}catch(_){}
 
   }catch(e){
@@ -12353,6 +12365,7 @@ async function platLogin(){
 
 async function platLogout(){
   if(!await mesoCofirm('Sair da plataforma?'))return;
+  try{await firebase.auth().signOut();}catch(_){}
   platUser=null;
   admLoggedIn=false;
   solicUser=null;
@@ -12399,6 +12412,143 @@ function platApplyPermissions(){
   if(nomeEl)nomeEl.textContent=platUser.nome+(platUser.isAdm?' (ADM)':'');
 }
 
+// ── ACESSO SEGURO (Firebase Auth) — FIX9 ───────────────────────
+// Cada pessoa (equipe ou cliente) passa a ter uma conta de e-mail no Firebase Auth.
+// A coleção `perfis/{uid}` diz às regras do banco quem é interno, cliente, ADM e se está ativo.
+// Fase de transição: o login antigo (usuário + senha) continua funcionando até o banco ser fechado.
+const MASTER_EMAIL='wanuthe.mesoesteticbrasil@gmail.com';
+const _PERM_TODAS={solicitacoes:true,estoque:true,operacoes:true,faturamento:true,recepcao:true,portal:true,filiais:true,fiscal:true,pdv:true,clientes:true,financeiro:true};
+let _authEntrando=false;
+
+function _authErroCredencial(e){
+  return ['auth/user-not-found','auth/wrong-password','auth/invalid-credential','auth/invalid-login-credentials'].includes(e?.code);
+}
+function _authMsgErro(e){
+  const m={'auth/user-not-found':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.',
+    'auth/invalid-credential':'E-mail ou senha incorretos.','auth/invalid-login-credentials':'E-mail ou senha incorretos.',
+    'auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos ou use "Esqueci minha senha".',
+    'auth/user-disabled':'Conta desativada.','auth/network-request-failed':'Sem conexão. Verifique a internet.',
+    'auth/email-already-in-use':'Este e-mail já tem conta.','auth/weak-password':'Senha fraca: use ao menos 6 caracteres.'};
+  return m[e?.code]||e?.message||'Erro ao entrar.';
+}
+function _perfilInterno(refId,d,email){
+  return {tipo:'interno',refId,email:(email||d.email||'').toLowerCase(),nome:d.nome||'',
+    ativo:d.ativo!==false,isAdm:!!d.isAdm,permissoes:d.permissoes||{},atualizadoEm:new Date().toISOString()};
+}
+function _perfilCliente(refId,d,email){
+  return {tipo:'cliente',refId,email:(email||d.email||'').toLowerCase(),nome:d.nome||'',
+    ativo:d.ativo!==false,atualizadoEm:new Date().toISOString()};
+}
+async function _authCarregarPerfil(user){
+  if(!user)return null;
+  const em=(user.email||'').toLowerCase();
+  if(em===MASTER_EMAIL)return {tipo:'interno',master:true,ativo:true};
+  const sn=await db.collection('perfis').doc(user.uid).get();
+  if(sn.exists)return sn.data();
+  // Vínculo no 1º login (conta que já existia no Firebase) — funciona durante a transição
+  try{
+    const q1=await db.collection('usuarios_plataforma').where('email','==',em).limit(1).get();
+    if(!q1.empty){const d=q1.docs[0];const pf=_perfilInterno(d.id,d.data(),em);
+      await db.collection('perfis').doc(user.uid).set(pf);await d.ref.update({authUid:user.uid});return pf;}
+    const q2=await db.collection('clientes_portal').where('email','==',em).limit(1).get();
+    if(!q2.empty){const d=q2.docs[0];const pf=_perfilCliente(d.id,d.data(),em);
+      await db.collection('perfis').doc(user.uid).set(pf);await d.ref.update({authUid:user.uid});return pf;}
+  }catch(e){console.warn('vínculo de perfil:',e);}
+  return null;
+}
+async function _platEntrarComAuth(user,silencioso){
+  const falhar=async msg=>{if(!silencioso)platShowError(msg);try{await firebase.auth().signOut();}catch(_){}return false;};
+  const pf=await _authCarregarPerfil(user);
+  if(!pf||pf.tipo!=='interno')
+    return await falhar(pf?.tipo==='cliente'?'Este e-mail é de cliente — use "Portal do Cliente".':'Este e-mail não tem acesso à Equipe Interna. Fale com o ADM.');
+  if(pf.master){
+    platUser={id:'adm',nome:'Administrador',username:'adm',email:user.email,uid:user.uid,isAdm:true,permissoes:{..._PERM_TODAS}};
+  }else{
+    const ud=await db.collection('usuarios_plataforma').doc(pf.refId).get();
+    if(!ud.exists)return await falhar('Cadastro não encontrado. Fale com o ADM.');
+    const d=ud.data();
+    if(d.ativo===false||pf.ativo===false)return await falhar('Conta inativa. Contate o administrador.');
+    platUser={id:ud.id,nome:d.nome,username:d.username,email:user.email,uid:user.uid,isAdm:!!d.isAdm,permissoes:d.permissoes||{}};
+  }
+  if(platUser.isAdm)admLoggedIn=true;
+  try{startListeners();}catch(e){console.warn('listeners:',e);}
+  platApplyPermissions();
+  const ov=document.getElementById('plat-login-overlay');if(ov)ov.style.display='none';
+  const ps=document.getElementById('plat-login-senha');if(ps)ps.value='';
+  toast('Bem-vindo, '+platUser.nome+'!');
+  try{await db.collection('plat_audit_log').add({acao:'login',metodo:'email',usuario:platUser.username,nome:platUser.nome,ts:firebase.firestore.FieldValue.serverTimestamp()});}catch(_){}
+  return true;
+}
+// Mantém a sessão da equipe interna ao recarregar a página
+function _authObservar(){
+  try{firebase.auth().languageCode='pt-BR';}catch(_){}
+  firebase.auth().onAuthStateChanged(async user=>{
+    if(!user||_authEntrando||platUser||_portalClienteLogado)return;
+    try{const pf=await _authCarregarPerfil(user);if(pf?.tipo==='interno'&&!platUser)await _platEntrarComAuth(user,true);}
+    catch(e){console.warn('sessão:',e);}
+  });
+}
+async function authEsqueciSenha(inputId,erroId){
+  const em=(document.getElementById(inputId)?.value||'').trim().toLowerCase();
+  const er=document.getElementById(erroId);
+  const show=m=>{if(er){er.textContent=m;er.style.display='';}};
+  if(!em||!em.includes('@')){show('Digite seu e-mail no campo acima e clique de novo em "Esqueci minha senha".');return;}
+  try{await firebase.auth().sendPasswordResetEmail(em);show('✅ Se este e-mail tiver acesso, enviamos um link para criar uma nova senha (veja também o spam).');}
+  catch(e){show(e.code==='auth/user-not-found'?'✅ Se este e-mail tiver acesso, enviamos um link para criar uma nova senha (veja também o spam).':_authMsgErro(e));}
+}
+
+// ── ADM: ativar acesso seguro (cria a conta e envia e-mail para a pessoa criar a senha) ──
+function _authSecundario(){
+  let app=firebase.apps.find(a=>a.name==='cadastro');
+  if(!app)app=firebase.initializeApp(firebase.app().options,'cadastro');
+  return app.auth();
+}
+function _senhaAleatoria(){const a=new Uint8Array(18);crypto.getRandomValues(a);return btoa(String.fromCharCode(...a))+'Aa9!';}
+async function _authCriarConta(email){
+  const a2=_authSecundario();
+  const cred=await a2.createUserWithEmailAndPassword(email,_senhaAleatoria());
+  const uid=cred.user.uid;
+  await a2.signOut();
+  await firebase.auth().sendPasswordResetEmail(email);
+  return uid;
+}
+async function _ativarAcessoSeguro(colecao,docId,montarPerfil,recarregar){
+  if(!platUser?.isAdm){toast('Apenas ADM.');return;}
+  try{
+    const sn=await db.collection(colecao).doc(docId).get();if(!sn.exists)return;
+    const d=sn.data();const em=(d.email||'').trim().toLowerCase();
+    if(!em||!em.includes('@')){toast('Cadastre primeiro o e-mail (✏️ Editar).');return;}
+    if(em===MASTER_EMAIL){toast('Este é o e-mail do ADM master — não precisa ativar.');return;}
+    if(!await mesoCofirm('Ativar acesso seguro para '+(d.nome||em)+'?\n\nVamos enviar um e-mail para '+em+' com o link para a pessoa criar a própria senha.'))return;
+    const uid=await _authCriarConta(em);
+    await db.collection('perfis').doc(uid).set(montarPerfil(docId,d,em));
+    await sn.ref.update({authUid:uid,email:em,acessoSeguroEm:new Date().toISOString()});
+    toast('🔐 Acesso ativado! E-mail enviado para '+em);
+    recarregar();
+  }catch(e){
+    if(e.code==='auth/email-already-in-use')toast('Este e-mail já tem conta. Peça para a pessoa entrar com ele (ou usar "Esqueci minha senha"): o vínculo é feito no 1º login.');
+    else toast('Erro: '+_authMsgErro(e));
+  }
+}
+function platAdmCriarAcessoSeguro(docId){return _ativarAcessoSeguro('usuarios_plataforma',docId,_perfilInterno,platAdmCarregar);}
+function admPtlCliCriarAcessoSeguro(docId){return _ativarAcessoSeguro('clientes_portal',docId,_perfilCliente,admPtlCliCarregar);}
+async function _perfilSync(colecao,docId,montarPerfil){
+  try{
+    const sn=await db.collection(colecao).doc(docId).get();const d=sn.data();
+    if(d?.authUid)await db.collection('perfis').doc(d.authUid).set(montarPerfil(docId,d,d.email),{merge:true});
+  }catch(e){console.warn('sync perfil:',e);}
+}
+async function _perfilDesativar(colecao,docId){
+  try{const sn=await db.collection(colecao).doc(docId).get();const uid=sn.data()?.authUid;
+    if(uid)await db.collection('perfis').doc(uid).set({ativo:false,removidoEm:new Date().toISOString()},{merge:true});}
+  catch(e){console.warn('desativar perfil:',e);}
+}
+function _celAcessoSeguro(d,fn,id){
+  return d.authUid
+    ?'<span title="Entra com e-mail e senha própria" style="color:#107C10;font-weight:600;font-size:11px;white-space:nowrap">🔐 Ativo</span>'
+    :'<button class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:#111;color:#fff;border:none;white-space:nowrap" onclick="'+fn+'(\''+id+'\')">🔐 Ativar</button>';
+}
+
 // ─── ADM: CRUD Usuários da Plataforma ─────────────────────────────────────────
 const PLAT_MODULOS=[
   {key:'solicitacoes',label:'Solic.'},
@@ -12417,11 +12567,11 @@ const PLAT_MODULOS=[
 async function platAdmCarregar(){
   const tbody=document.getElementById('plat-acesso-tbody');
   if(!tbody)return;
-  tbody.innerHTML='<tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="17" style="text-align:center;color:#aaa;padding:16px">Carregando...</td></tr>';
   try{
     const snap=await db.collection('usuarios_plataforma').orderBy('nome').get();
     if(snap.empty){
-      tbody.innerHTML='<tr><td colspan="16" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="17" style="text-align:center;color:#aaa;padding:16px">Nenhum usuário cadastrado. Crie o primeiro acima.</td></tr>';
       return;
     }
     tbody.innerHTML=snap.docs.map(doc=>{
@@ -12435,6 +12585,7 @@ async function platAdmCarregar(){
         +'<td style="font-weight:600;white-space:nowrap">'+nm+'<br><span style="font-weight:400;font-size:11px;color:#888">@'+un+'</span></td>'
         +cells
         +'<td style="text-align:center"><input type="checkbox" '+(d.isAdm?'checked':'')+' onchange="platAdmTogglePerm(\''+doc.id+'\',\'__adm__\',this)"></td>'
+        +'<td style="text-align:center">'+_celAcessoSeguro(d,'platAdmCriarAcessoSeguro',doc.id)+'</td>'
         +'<td style="text-align:center"><span style="color:'+(d.ativo!==false?'#107C10':'#D13438')+';font-weight:600">'+(d.ativo!==false?'Ativo':'Inativo')+'</span></td>'
         +'<td style="white-space:nowrap">'
         +'<button class="btn btn-outline btn-sm" onclick="platAdmEditar(\''+doc.id+'\')">&#9998; Editar</button> '
@@ -12442,7 +12593,7 @@ async function platAdmCarregar(){
         +'</td></tr>';
     }).join('');
   }catch(e){
-    tbody.innerHTML='<tr><td colspan="16" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="17" style="color:red;padding:12px">Erro: '+e.message+'</td></tr>';
   }
 }
 
@@ -12450,6 +12601,7 @@ async function platAdmTogglePerm(userId,permKey,checkbox){
   try{
     const update=permKey==='__adm__'?{isAdm:checkbox.checked}:{['permissoes.'+permKey]:checkbox.checked};
     await db.collection('usuarios_plataforma').doc(userId).update(update);
+    _perfilSync('usuarios_plataforma',userId,_perfilInterno);
     toast(checkbox.checked?'Permissão concedida':'Permissão revogada');
   }catch(e){
     toast('Erro: '+e.message);
@@ -12462,7 +12614,7 @@ async function platAdmSalvar(){
   const nome=(document.getElementById('plat-usr-nome')?.value||'').trim();
   const username=(document.getElementById('plat-usr-username')?.value||'').trim().toLowerCase();
   const senha=document.getElementById('plat-usr-senha')?.value||'';
-  const email=(document.getElementById('plat-usr-email')?.value||'').trim();
+  const email=(document.getElementById('plat-usr-email')?.value||'').trim().toLowerCase();
   const ativo=document.getElementById('plat-usr-ativo')?.value!=='false';
   const isAdm=document.getElementById('plat-usr-isadm')?.value==='true';
   if(!nome||!username){toast('Preencha nome e usuário.');return;}
@@ -12475,6 +12627,7 @@ async function platAdmSalvar(){
     if(senha)data.senha=await hashSenha(senha);
     if(id){
       await db.collection('usuarios_plataforma').doc(id).update(data);
+      _perfilSync('usuarios_plataforma',id,_perfilInterno);
       toast('Usuário atualizado!');
     }else{
       data.criadoEm=new Date().toISOString();
@@ -12519,6 +12672,7 @@ function platAdmEditar(id){
 async function platAdmExcluir(id,nome){
   if(!await mesoCofirm('Excluir usuário "'+nome+'"?'))return;
   try{
+    await _perfilDesativar('usuarios_plataforma',id);
     await db.collection('usuarios_plataforma').doc(id).delete();
     toast('Usuário removido.');
     platAdmCarregar();
@@ -18347,11 +18501,25 @@ async function clientePortalLogin(){
   if(!email||!senha){if(err){err.textContent='Preencha e-mail e senha.';err.style.display='';}return;}
   if(btn)btn.disabled=true;
   try{
-    const senhaHash=await hashSenha(senha);
-    const snap=await db.collection('clientes_portal').where('email','==',email).limit(1).get();
-    if(snap.empty){throw new Error('E-mail não encontrado.');}
-    const doc=snap.docs[0];const cli=doc.data();
-    if(cli.senhaHash!==senhaHash&&cli.senha!==senhaHash){throw new Error('Senha incorreta.');}
+    let doc=null,cli=null;
+    _authEntrando=true;
+    try{
+      // 1) Acesso seguro (Firebase Auth)
+      const u=(await firebase.auth().signInWithEmailAndPassword(email,senha)).user;
+      const pf=await _authCarregarPerfil(u);
+      if(pf?.tipo==='cliente'&&pf.refId){const sn=await db.collection('clientes_portal').doc(pf.refId).get();if(sn.exists){doc=sn;cli=sn.data();}}
+      if(!cli){await firebase.auth().signOut();throw new Error(pf?.tipo==='interno'?'Este e-mail é da Equipe Interna — use "Equipe Interna".':'Este e-mail não tem acesso ao Portal do Cliente.');}
+    }catch(eAuth){
+      if(!_authErroCredencial(eAuth)){_authEntrando=false;throw new Error(_authMsgErro(eAuth));}
+      // 2) Acesso antigo (transição — será desativado quando o banco for fechado)
+      const senhaHash=await hashSenha(senha);
+      const snap=await db.collection('clientes_portal').where('email','==',email).limit(1).get();
+      if(snap.empty){_authEntrando=false;throw new Error('E-mail ou senha incorretos.');}
+      doc=snap.docs[0];cli=doc.data();
+      if(cli.senhaHash!==senhaHash&&cli.senha!==senhaHash){_authEntrando=false;throw new Error('E-mail ou senha incorretos.');}
+    }
+    _authEntrando=false;
+    if(cli.ativo===false){await firebase.auth().signOut().catch(()=>{});throw new Error('Acesso inativo. Fale com a Mesoestetic.');}
     _portalClienteLogado={id:doc.id,...cli};
     document.getElementById('plat-login-overlay').style.display='none';
     document.getElementById('cli-login-senha').value='';
@@ -18381,7 +18549,7 @@ async function clientePortalLogin(){
 function clientePortalLogout(){
   if(_ptlCliPedidosUnsub){_ptlCliPedidosUnsub();_ptlCliPedidosUnsub=null;}
   _portalClienteLogado=null;
-  location.reload();
+  firebase.auth().signOut().catch(()=>{}).finally(()=>location.reload());
 }
 
 function portalCliInit(){
@@ -18540,6 +18708,7 @@ async function admPtlCliCarregar(){
         +'<td style="font-size:12px">'+_esc(c.cnpj||'—')+'</td>'
         +'<td style="font-size:12px">'+_esc(c.repNome||'—')+'</td>'
         +'<td><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+(c.ativo!==false?'#dcfce7':'#fee2e2')+';color:'+(c.ativo!==false?'#166534':'#991b1b')+'">'+(c.ativo!==false?'Ativo':'Inativo')+'</span></td>'
+        +'<td>'+_celAcessoSeguro(c,'admPtlCliCriarAcessoSeguro',d.id)+'</td>'
         +'<td style="white-space:nowrap">'
         +'<button class="btn btn-outline btn-sm" onclick="admPtlCliEditar(\''+d.id+'\')" style="font-size:11px;padding:3px 8px">✏️</button> '
         +'<button style="background:#fee2e2;border:none;color:#991b1b;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer" onclick="admPtlCliExcluir(\''+d.id+'\',\''+_esc((c.nome||'').replace(/'/g,''))+'\')">🗑️</button>'
@@ -18562,6 +18731,7 @@ async function admPtlCliSalvar(){
   try{
     if(id){
       await db.collection('clientes_portal').doc(id).update(dados);
+      _perfilSync('clientes_portal',id,_perfilCliente);
       toast('✅ Acesso atualizado!');
     }else{
       if(!senha){toast('Defina uma senha para o novo cliente.');return;}
@@ -18600,7 +18770,7 @@ function admPtlCliLimpar(){
 
 async function admPtlCliExcluir(docId,nome){
   if(!await mesoCofirm('Remover acesso de '+nome+'? O cliente não conseguirá mais entrar no portal.'))return;
-  try{await db.collection('clientes_portal').doc(docId).delete();toast('Acesso removido.');admPtlCliCarregar();}
+  try{await _perfilDesativar('clientes_portal',docId);await db.collection('clientes_portal').doc(docId).delete();toast('Acesso removido.');admPtlCliCarregar();}
   catch(e){logErro('ADM','admPtlCliExcluir',e);}
 }
 
